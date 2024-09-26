@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import { dbConnect } from "./utils/dbConnect";
 import { errorHandler } from "./middlewares/errorHandler";
 import rootRouter from "./routes";
+import morgan from "morgan";
 
 config();
 
@@ -11,6 +12,7 @@ const app: Express = express();
 
 app.use(cookieParser());
 app.use(json());
+app.use(morgan("dev"));
 
 dbConnect();
 

@@ -1,26 +1,26 @@
 import { object, string } from "zod";
 
-export const UserSignupSchema = object({
+export const AdminSignupSchema = object({
   name: string(),
   email: string().email(),
   password: string(),
 });
 
-export const VerifyUserEmailSchema = object({
+export const VerifyAdminEmailSchema = object({
   email: string(),
   otp: string(),
 });
 
-export const UserLoginSchema = object({
+export const AdminLoginSchema = object({
   email: string(),
   password: string(),
 });
 
-export const ForgetUserPasswordSchema = object({
+export const ForgetAdminPasswordSchema = object({
   email: string(),
 });
 
-export const ChangeUserPasswordSchema = object({
+export const ChangeAdminPasswordSchema = object({
   email: string(),
   password: string(),
   otp: string(),
