@@ -33,21 +33,33 @@ const dbConnect_1 = require("./utils/dbConnect");
 const errorHandler_1 = require("./middlewares/errorHandler");
 const routes_1 = __importDefault(require("./routes"));
 const morgan_1 = __importDefault(require("morgan"));
+const server_1 = require("@apollo/server");
+const express4_1 = require("@apollo/server/express4");
+const graphql_1 = require("./graphql");
 (0, dotenv_1.config)();
 const app = (0, express_1.default)();
+const server = new server_1.ApolloServer({
+    typeDefs: graphql_1.schema.typeDefs,
+    resolvers: graphql_1.schema.resolvers,
+});
 app.use((0, cookie_parser_1.default)());
 app.use((0, express_1.json)());
 app.use((0, morgan_1.default)("dev"));
-(0, dbConnect_1.dbConnect)();
-app.use("/api", routes_1.default);
-app.use(errorHandler_1.errorHandler);
-const port = process.env.PORT;
-try {
-    app.listen(port, () => {
-        console.log(`App working at http://localhost:${process.env.PORT}`);
-    });
+async function startServer() {
+    await server.start();
+    (0, dbConnect_1.dbConnect)();
+    app.use("/api", routes_1.default);
+    app.use("/graphql", (0, express4_1.expressMiddleware)(server));
+    app.use(errorHandler_1.errorHandler);
+    const port = process.env.PORT;
+    try {
+        app.listen(port, () => {
+            console.log(`App working at http://localhost:${port}`);
+        });
+    }
+    catch (error) {
+        console.error(`Server failed to start with the error:\n${error}`);
+    }
 }
-catch (error) {
-    console.error(`Server failed to start with the error:\n${error}`);
-}
+startServer();
 //# sourceMappingURL=app.js.map

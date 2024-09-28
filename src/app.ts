@@ -5,28 +5,40 @@ import { dbConnect } from "./utils/dbConnect";
 import { errorHandler } from "./middlewares/errorHandler";
 import rootRouter from "./routes";
 import morgan from "morgan";
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@apollo/server/express4";
+import { schema } from "./graphql";
 
 config();
-
 const app: Express = express();
-
+const server = new ApolloServer({
+  typeDefs: schema.typeDefs,
+  resolvers: schema.resolvers,
+});
 app.use(cookieParser());
 app.use(json());
 app.use(morgan("dev"));
 
-dbConnect();
+async function startServer() {
+  await server.start();
 
-app.use("/api", rootRouter);
+  dbConnect();
 
-app.use(errorHandler);
+  app.use("/api", rootRouter);
+  app.use("/graphql", expressMiddleware(server));
 
-// *Server Start
-const port = process.env.PORT;
+  app.use(errorHandler);
 
-try {
-  app.listen(port, () => {
-    console.log(`App working at http://localhost:${process.env.PORT}`);
-  });
-} catch (error) {
-  console.error(`Server failed to start with the error:\n${error}`);
+  // *Server Start
+  const port = process.env.PORT;
+
+  try {
+    app.listen(port, () => {
+      console.log(`App working at http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error(`Server failed to start with the error:\n${error}`);
+  }
 }
+
+startServer();
