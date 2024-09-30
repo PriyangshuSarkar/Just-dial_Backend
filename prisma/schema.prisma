@@ -21,6 +21,7 @@ model User {
   deletedAt    DateTime?
   salt         String
   address      Address[] @relation("UserAddresses")
+  // Avatar images
 }
 
 model Business {
@@ -40,6 +41,8 @@ model Business {
   phone        String?
   type         String?
   address      Address[] @relation("BusinessAddresses")
+  // Company Logo
+  // Company Images
 }
 
 model Admin {
@@ -54,6 +57,7 @@ model Admin {
   isVerified   Boolean   @default(false)
   otp          String?
   otpExpiresAt DateTime?
+  // Admin Avatar
 }
 
 model Address {

@@ -1,15 +1,15 @@
 import { randomBytes } from "crypto";
 import {
-  ChangeUserPasswordInput,
-  ChangeUserPasswordSchema,
-  ForgetUserPasswordInput,
-  ForgetUserPasswordSchema,
-  UserLoginInput,
-  UserLoginSchema,
-  UserSignupInput,
-  UserSignupSchema,
-  VerifyUserEmailInput,
-  VerifyUserEmailSchema,
+  ChangeAdminPasswordInput,
+  ChangeAdminPasswordSchema,
+  ForgetAdminPasswordInput,
+  ForgetAdminPasswordSchema,
+  AdminLoginInput,
+  AdminLoginSchema,
+  AdminSignupInput,
+  AdminSignupSchema,
+  VerifyAdminEmailInput,
+  VerifyAdminEmailSchema,
 } from "./db";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
@@ -17,21 +17,21 @@ import { sendEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
 
 export const Mutation = {
-  userSignup: async (_: unknown, args: UserSignupInput) => {
+  adminSignup: async (_: unknown, args: AdminSignupInput) => {
     // Validate input
-    const validatedData = UserSignupSchema.parse(args);
-    const existingUser = await prisma.user.findFirst({
+    const validatedData = AdminSignupSchema.parse(args);
+    const existingAdmin = await prisma.admin.findFirst({
       where: { email: validatedData.email, isVerified: true },
     });
 
-    if (existingUser) {
-      throw new Error("User already exists and email is verified!");
+    if (existingAdmin) {
+      throw new Error("Admin already exists and email is verified!");
     }
 
     const otp = randomBytes(3).toString("hex").substring(0, 6);
     const { salt, hash } = hashPassword(validatedData.password);
 
-    const newUser = await prisma.user.upsert({
+    const newAdmin = await prisma.admin.upsert({
       where: { email: validatedData.email },
       update: {
         name: validatedData.name,
@@ -52,96 +52,100 @@ export const Mutation = {
     });
 
     const sendOtpEmail = async (
-      userName: string,
+      adminName: string,
       email: string,
       otp: string,
     ): Promise<void> => {
       const emailSubject = "Confirm Your Email Address";
-      const emailText = `Hello ${userName},\n\nThank you for signing up! Please confirm your email address by entering the following OTP:\n\n${otp}\n\nBest regards,\nYour Company Name`;
+      const emailText = `Hello ${adminName},\n\nThank you for signing up! Please confirm your email address by entering the following OTP:\n\n${otp}\n\nBest regards,\nYour Company Name`;
       await sendEmail(email, emailSubject, emailText);
     };
 
-    await sendOtpEmail(newUser.name, newUser.email, otp);
+    await sendOtpEmail(newAdmin.name, newAdmin.email, otp);
 
     return {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      message: "User created! Please verify your email.",
+      id: newAdmin.id,
+      name: newAdmin.name,
+      email: newAdmin.email,
+      message: "Admin created! Please verify your email.",
     };
   },
 
-  verifyUserEmail: async (_: unknown, args: VerifyUserEmailInput) => {
-    const validatedData = VerifyUserEmailSchema.parse(args);
+  verifyAdminEmail: async (_: unknown, args: VerifyAdminEmailInput) => {
+    const validatedData = VerifyAdminEmailSchema.parse(args);
 
-    const user = await prisma.user.findFirst({
+    const admin = await prisma.admin.findFirst({
       where: {
         email: validatedData.email,
       },
     });
 
-    if (!user) {
+    if (!admin) {
       throw new Error("Email doesn't exist!");
     }
 
     const currentTime = new Date();
 
-    if (user.otpExpiresAt! < currentTime) {
+    if (admin.otpExpiresAt! < currentTime) {
       throw new Error("OTP has expired.");
     }
 
-    if (user.otp! !== validatedData.otp) {
+    if (admin.otp! !== validatedData.otp) {
       throw new Error("OTP doesn't match!");
     }
 
-    const validatedUser = await prisma.user.update({
+    const validatedAdmin = await prisma.admin.update({
       where: {
-        email: user.email,
+        email: admin.email,
       },
       data: {
         isVerified: true,
       },
     });
 
-    const token = sign({ userId: validatedUser.id }, process.env.JWT_SECRET!, {
-      expiresIn: process.env.JWT_EXPIRATION_TIME!,
-    });
+    const token = sign(
+      { adminId: validatedAdmin.id },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: process.env.JWT_EXPIRATION_TIME!,
+      },
+    );
 
     return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      message: "User OTP verified!",
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      message: "Admin OTP verified!",
       token: token,
     };
   },
 
-  userLogin: async (_: unknown, args: UserLoginInput) => {
-    const validatedData = UserLoginSchema.parse(args);
+  adminLogin: async (_: unknown, args: AdminLoginInput) => {
+    const validatedData = AdminLoginSchema.parse(args);
 
-    const user = await prisma.user.findFirst({
+    const admin = await prisma.admin.findFirst({
       where: { email: validatedData.email },
     });
 
-    if (!user) {
+    if (!admin) {
       throw new Error("Email doesn't exit!");
     }
 
     const verify = verifyPassword(
       validatedData.password,
-      user.salt,
-      user.password,
+      admin.salt,
+      admin.password,
     );
 
     if (verify) {
-      const token = sign({ userId: user.id }, process.env.JWT_SECRET!, {
+      const token = sign({ adminId: admin.id }, process.env.JWT_SECRET!, {
         expiresIn: process.env.JWT_EXPIRATION_TIME!,
       });
 
       return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
         message: "Logged in successful.",
         token: token,
       };
@@ -150,63 +154,63 @@ export const Mutation = {
     }
   },
 
-  forgetUserPassword: async (_: unknown, args: ForgetUserPasswordInput) => {
-    const validatedData = ForgetUserPasswordSchema.parse(args);
+  forgetAdminPassword: async (_: unknown, args: ForgetAdminPasswordInput) => {
+    const validatedData = ForgetAdminPasswordSchema.parse(args);
 
     const sendOtpEmail = async (
-      userName: string,
+      adminName: string,
       email: string,
       otp: string,
     ) => {
       const emailSubject = "Password Reset OTP";
-      const emailText = `Hello ${userName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
+      const emailText = `Hello ${adminName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
 
       await sendEmail(email, emailSubject, emailText);
     };
 
     const otp = randomBytes(3).toString("hex").substring(0, 6);
 
-    const user = await prisma.user.update({
-      where: { email: validatedData.email }, // Find the user by email
+    const admin = await prisma.admin.update({
+      where: { email: validatedData.email }, // Find the admin by email
       data: {
         otp: otp,
         otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
       },
     });
 
-    await sendOtpEmail(user.name, user.email, otp);
+    await sendOtpEmail(admin.name, admin.email, otp);
 
     return {
-      message: `The password reset otp is sent at ${user.email}`,
+      message: `The password reset otp is sent at ${admin.email}`,
     };
   },
 
-  changeUserPassword: async (_: unknown, args: ChangeUserPasswordInput) => {
-    const validatedData = ChangeUserPasswordSchema.parse(args);
+  changeAdminPassword: async (_: unknown, args: ChangeAdminPasswordInput) => {
+    const validatedData = ChangeAdminPasswordSchema.parse(args);
 
-    const user = await prisma.user.findFirst({
+    const admin = await prisma.admin.findFirst({
       where: {
         email: validatedData.email,
       },
     });
-    if (!user) {
+    if (!admin) {
       throw new Error("Email doesn't exit!");
     }
 
     const currentTime = new Date();
 
-    if (user.otpExpiresAt! < currentTime) {
+    if (admin.otpExpiresAt! < currentTime) {
       throw new Error("OTP has expired.");
     }
 
-    if (user.otp! !== validatedData.otp) {
+    if (admin.otp! !== validatedData.otp) {
       throw new Error("OTP doesn't match!");
     }
 
     const verify = verifyPassword(
       validatedData.password,
-      user.salt,
-      user.password,
+      admin.salt,
+      admin.password,
     );
 
     if (verify) {
@@ -215,8 +219,8 @@ export const Mutation = {
 
     const { salt, hash } = hashPassword(validatedData.password);
 
-    const updatedPassword = await prisma.user.update({
-      where: { email: user.email },
+    const updatedPassword = await prisma.admin.update({
+      where: { email: admin.email },
       data: {
         password: hash,
         salt: salt,

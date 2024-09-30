@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/server": "^4.11.0",
+    "@graphql-tools/schema": "^10.0.6",
     "@prisma/client": "^5.20.0",
     "cookie-parser": "^1.4.6",
     "depcheck": "^1.4.7",

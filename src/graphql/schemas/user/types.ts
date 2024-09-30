@@ -2,10 +2,11 @@ import { gql } from "graphql-tag";
 
 export const typeDefs = gql`
   type User {
-    id: ID!
-    name: String!
-    email: String!
-    message: String!
+    id: ID
+    name: String
+    email: String
+    message: String
+    token: String
   }
 
   type Query {
@@ -13,8 +14,10 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    signup(name: String!, email: String!, password: String!): User!
+    userSignup(name: String!, email: String!, password: String!): User!
+    verifyUserEmail(email: String!, otp: String!): User!
+    userLogin(email: String!, password: String!): User!
+    forgetUserPassword(email: String!): User!
+    changeUserPassword(email: String!, password: String!, otp: String!): User!
   }
 `;
-
-// console.log(typeDefs);

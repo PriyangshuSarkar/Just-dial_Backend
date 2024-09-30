@@ -130,7 +130,7 @@ exports.userLogin = (0, tryCatch_1.tryCatch)(async (request, response) => {
 exports.forgetUserPassword = (0, tryCatch_1.tryCatch)(async (request, response) => {
     const validatedData = user_1.ForgetUserPasswordSchema.parse(request.body);
     const sendOtpEmail = async (userName, email, otp) => {
-        const emailSubject = "Confirm Your Email Address";
+        const emailSubject = "Password Reset OTP";
         const emailText = `Hello ${userName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
         await (0, emailService_1.sendEmail)(email, emailSubject, emailText);
     };
@@ -144,10 +144,7 @@ exports.forgetUserPassword = (0, tryCatch_1.tryCatch)(async (request, response) 
     });
     await sendOtpEmail(user.name, user.email, otp);
     return response.status(200).json({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        massage: "Password updated successfully.",
+        massage: `The password reset otp is sent at ${user.email}`,
     });
 });
 exports.changeUserPassword = (0, tryCatch_1.tryCatch)(async (request, response) => {

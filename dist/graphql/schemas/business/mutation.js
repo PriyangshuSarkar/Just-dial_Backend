@@ -8,17 +8,17 @@ const password_1 = require("../../../utils/password");
 const emailService_1 = require("../../../utils/emailService");
 const jsonwebtoken_1 = require("jsonwebtoken");
 exports.Mutation = {
-    userSignup: async (_, args) => {
-        const validatedData = db_1.UserSignupSchema.parse(args);
-        const existingUser = await dbConnect_1.prisma.user.findFirst({
+    businessSignup: async (_, args) => {
+        const validatedData = db_1.BusinessSignupSchema.parse(args);
+        const existingBusiness = await dbConnect_1.prisma.business.findFirst({
             where: { email: validatedData.email, isVerified: true },
         });
-        if (existingUser) {
-            throw new Error("User already exists and email is verified!");
+        if (existingBusiness) {
+            throw new Error("Business already exists and email is verified!");
         }
         const otp = (0, crypto_1.randomBytes)(3).toString("hex").substring(0, 6);
         const { salt, hash } = (0, password_1.hashPassword)(validatedData.password);
-        const newUser = await dbConnect_1.prisma.user.upsert({
+        const newBusiness = await dbConnect_1.prisma.business.upsert({
             where: { email: validatedData.email },
             update: {
                 name: validatedData.name,
@@ -37,72 +37,72 @@ exports.Mutation = {
                 otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
             },
         });
-        const sendOtpEmail = async (userName, email, otp) => {
+        const sendOtpEmail = async (businessName, email, otp) => {
             const emailSubject = "Confirm Your Email Address";
-            const emailText = `Hello ${userName},\n\nThank you for signing up! Please confirm your email address by entering the following OTP:\n\n${otp}\n\nBest regards,\nYour Company Name`;
+            const emailText = `Hello ${businessName},\n\nThank you for signing up! Please confirm your email address by entering the following OTP:\n\n${otp}\n\nBest regards,\nYour Company Name`;
             await (0, emailService_1.sendEmail)(email, emailSubject, emailText);
         };
-        await sendOtpEmail(newUser.name, newUser.email, otp);
+        await sendOtpEmail(newBusiness.name, newBusiness.email, otp);
         return {
-            id: newUser.id,
-            name: newUser.name,
-            email: newUser.email,
-            message: "User created! Please verify your email.",
+            id: newBusiness.id,
+            name: newBusiness.name,
+            email: newBusiness.email,
+            message: "Business created! Please verify your email.",
         };
     },
-    verifyUserEmail: async (_, args) => {
-        const validatedData = db_1.VerifyUserEmailSchema.parse(args);
-        const user = await dbConnect_1.prisma.user.findFirst({
+    verifyBusinessEmail: async (_, args) => {
+        const validatedData = db_1.VerifyBusinessEmailSchema.parse(args);
+        const business = await dbConnect_1.prisma.business.findFirst({
             where: {
                 email: validatedData.email,
             },
         });
-        if (!user) {
+        if (!business) {
             throw new Error("Email doesn't exist!");
         }
         const currentTime = new Date();
-        if (user.otpExpiresAt < currentTime) {
+        if (business.otpExpiresAt < currentTime) {
             throw new Error("OTP has expired.");
         }
-        if (user.otp !== validatedData.otp) {
+        if (business.otp !== validatedData.otp) {
             throw new Error("OTP doesn't match!");
         }
-        const validatedUser = await dbConnect_1.prisma.user.update({
+        const validatedBusiness = await dbConnect_1.prisma.business.update({
             where: {
-                email: user.email,
+                email: business.email,
             },
             data: {
                 isVerified: true,
             },
         });
-        const token = (0, jsonwebtoken_1.sign)({ userId: validatedUser.id }, process.env.JWT_SECRET, {
+        const token = (0, jsonwebtoken_1.sign)({ businessId: validatedBusiness.id }, process.env.JWT_SECRET, {
             expiresIn: process.env.JWT_EXPIRATION_TIME,
         });
         return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            message: "User OTP verified!",
+            id: business.id,
+            name: business.name,
+            email: business.email,
+            message: "Business OTP verified!",
             token: token,
         };
     },
-    userLogin: async (_, args) => {
-        const validatedData = db_1.UserLoginSchema.parse(args);
-        const user = await dbConnect_1.prisma.user.findFirst({
+    businessLogin: async (_, args) => {
+        const validatedData = db_1.BusinessLoginSchema.parse(args);
+        const business = await dbConnect_1.prisma.business.findFirst({
             where: { email: validatedData.email },
         });
-        if (!user) {
+        if (!business) {
             throw new Error("Email doesn't exit!");
         }
-        const verify = (0, password_1.verifyPassword)(validatedData.password, user.salt, user.password);
+        const verify = (0, password_1.verifyPassword)(validatedData.password, business.salt, business.password);
         if (verify) {
-            const token = (0, jsonwebtoken_1.sign)({ userId: user.id }, process.env.JWT_SECRET, {
+            const token = (0, jsonwebtoken_1.sign)({ businessId: business.id }, process.env.JWT_SECRET, {
                 expiresIn: process.env.JWT_EXPIRATION_TIME,
             });
             return {
-                id: user.id,
-                name: user.name,
-                email: user.email,
+                id: business.id,
+                name: business.name,
+                email: business.email,
                 message: "Logged in successful.",
                 token: token,
             };
@@ -111,50 +111,50 @@ exports.Mutation = {
             throw new Error("Wrong password!");
         }
     },
-    forgetUserPassword: async (_, args) => {
-        const validatedData = db_1.ForgetUserPasswordSchema.parse(args);
-        const sendOtpEmail = async (userName, email, otp) => {
+    forgetBusinessPassword: async (_, args) => {
+        const validatedData = db_1.ForgetBusinessPasswordSchema.parse(args);
+        const sendOtpEmail = async (businessName, email, otp) => {
             const emailSubject = "Password Reset OTP";
-            const emailText = `Hello ${userName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
+            const emailText = `Hello ${businessName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
             await (0, emailService_1.sendEmail)(email, emailSubject, emailText);
         };
         const otp = (0, crypto_1.randomBytes)(3).toString("hex").substring(0, 6);
-        const user = await dbConnect_1.prisma.user.update({
+        const business = await dbConnect_1.prisma.business.update({
             where: { email: validatedData.email },
             data: {
                 otp: otp,
                 otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
             },
         });
-        await sendOtpEmail(user.name, user.email, otp);
+        await sendOtpEmail(business.name, business.email, otp);
         return {
-            message: `The password reset otp is sent at ${user.email}`,
+            message: `The password reset otp is sent at ${business.email}`,
         };
     },
-    changeUserPassword: async (_, args) => {
-        const validatedData = db_1.ChangeUserPasswordSchema.parse(args);
-        const user = await dbConnect_1.prisma.user.findFirst({
+    changeBusinessPassword: async (_, args) => {
+        const validatedData = db_1.ChangeBusinessPasswordSchema.parse(args);
+        const business = await dbConnect_1.prisma.business.findFirst({
             where: {
                 email: validatedData.email,
             },
         });
-        if (!user) {
+        if (!business) {
             throw new Error("Email doesn't exit!");
         }
         const currentTime = new Date();
-        if (user.otpExpiresAt < currentTime) {
+        if (business.otpExpiresAt < currentTime) {
             throw new Error("OTP has expired.");
         }
-        if (user.otp !== validatedData.otp) {
+        if (business.otp !== validatedData.otp) {
             throw new Error("OTP doesn't match!");
         }
-        const verify = (0, password_1.verifyPassword)(validatedData.password, user.salt, user.password);
+        const verify = (0, password_1.verifyPassword)(validatedData.password, business.salt, business.password);
         if (verify) {
             throw new Error("Password can't me same as last password.");
         }
         const { salt, hash } = (0, password_1.hashPassword)(validatedData.password);
-        const updatedPassword = await dbConnect_1.prisma.user.update({
-            where: { email: user.email },
+        const updatedPassword = await dbConnect_1.prisma.business.update({
+            where: { email: business.email },
             data: {
                 password: hash,
                 salt: salt,

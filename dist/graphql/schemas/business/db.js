@@ -1,24 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChangeUserPasswordSchema = exports.ForgetUserPasswordSchema = exports.UserLoginSchema = exports.VerifyUserEmailSchema = exports.UserSignupSchema = void 0;
+exports.ChangeBusinessPasswordSchema = exports.ForgetBusinessPasswordSchema = exports.BusinessLoginSchema = exports.VerifyBusinessEmailSchema = exports.BusinessSignupSchema = void 0;
 const zod_1 = require("zod");
-exports.UserSignupSchema = (0, zod_1.object)({
+exports.BusinessSignupSchema = (0, zod_1.object)({
     name: (0, zod_1.string)().min(2).max(50),
     email: (0, zod_1.string)().email(),
     password: (0, zod_1.string)().min(6).max(100),
 });
-exports.VerifyUserEmailSchema = (0, zod_1.object)({
+exports.VerifyBusinessEmailSchema = (0, zod_1.object)({
     email: (0, zod_1.string)(),
     otp: (0, zod_1.string)(),
 });
-exports.UserLoginSchema = (0, zod_1.object)({
+exports.BusinessLoginSchema = (0, zod_1.object)({
     email: (0, zod_1.string)(),
     password: (0, zod_1.string)(),
 });
-exports.ForgetUserPasswordSchema = (0, zod_1.object)({
+exports.ForgetBusinessPasswordSchema = (0, zod_1.object)({
     email: (0, zod_1.string)(),
 });
-exports.ChangeUserPasswordSchema = (0, zod_1.object)({
+exports.ChangeBusinessPasswordSchema = (0, zod_1.object)({
     email: (0, zod_1.string)(),
     password: (0, zod_1.string)(),
     otp: (0, zod_1.string)(),
