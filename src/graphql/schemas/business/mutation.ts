@@ -28,7 +28,9 @@ export const Mutation = {
       throw new Error("Business already exists and email is verified!");
     }
 
-    const otp = randomBytes(3).toString("hex").substring(0, 6);
+    const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
+      .toString()
+      .padStart(6, "0");
     const { salt, hash } = hashPassword(validatedData.password);
 
     const newBusiness = await prisma.business.upsert({
@@ -171,7 +173,9 @@ export const Mutation = {
       await sendEmail(email, emailSubject, emailText);
     };
 
-    const otp = randomBytes(3).toString("hex").substring(0, 6);
+    const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
+      .toString()
+      .padStart(6, "0");
 
     const business = await prisma.business.update({
       where: { email: validatedData.email }, // Find the business by email

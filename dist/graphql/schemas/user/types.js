@@ -11,6 +11,13 @@ exports.typeDefs = (0, graphql_tag_1.gql) `
     token: String
   }
 
+  type Image {
+    url: String!
+    publicId: String!
+  }
+
+  scalar Upload
+
   type Query {
     status: String!
   }
@@ -21,6 +28,7 @@ exports.typeDefs = (0, graphql_tag_1.gql) `
     userLogin(email: String!, password: String!): User!
     forgetUserPassword(email: String!): User!
     changeUserPassword(email: String!, password: String!, otp: String!): User!
+    uploadImage(file: Upload!): Image!
   }
 `;
 //# sourceMappingURL=types.js.map

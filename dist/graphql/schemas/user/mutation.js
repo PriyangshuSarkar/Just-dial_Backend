@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mutation = void 0;
 const crypto_1 = require("crypto");
@@ -7,6 +10,7 @@ const dbConnect_1 = require("../../../utils/dbConnect");
 const password_1 = require("../../../utils/password");
 const emailService_1 = require("../../../utils/emailService");
 const jsonwebtoken_1 = require("jsonwebtoken");
+const cloudinary_1 = __importDefault(require("../../../utils/cloudinary"));
 exports.Mutation = {
     userSignup: async (_, args) => {
         const validatedData = db_1.UserSignupSchema.parse(args);
@@ -16,7 +20,9 @@ exports.Mutation = {
         if (existingUser) {
             throw new Error("User already exists and email is verified!");
         }
-        const otp = (0, crypto_1.randomBytes)(3).toString("hex").substring(0, 6);
+        const otp = (parseInt((0, crypto_1.randomBytes)(3).toString("hex"), 16) % 1000000)
+            .toString()
+            .padStart(6, "0");
         const { salt, hash } = (0, password_1.hashPassword)(validatedData.password);
         const newUser = await dbConnect_1.prisma.user.upsert({
             where: { email: validatedData.email },
@@ -118,7 +124,9 @@ exports.Mutation = {
             const emailText = `Hello ${userName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
             await (0, emailService_1.sendEmail)(email, emailSubject, emailText);
         };
-        const otp = (0, crypto_1.randomBytes)(3).toString("hex").substring(0, 6);
+        const otp = (parseInt((0, crypto_1.randomBytes)(3).toString("hex"), 16) % 1000000)
+            .toString()
+            .padStart(6, "0");
         const user = await dbConnect_1.prisma.user.update({
             where: { email: validatedData.email },
             data: {
@@ -165,6 +173,21 @@ exports.Mutation = {
             name: updatedPassword.name,
             email: updatedPassword.email,
             massage: "Password updated successfully.",
+        };
+    },
+    uploadImage: async (_, { file }) => {
+        const validatedData = db_1.FileUploadSchema.parse(file);
+        const result = await new Promise((resolve, reject) => {
+            const stream = cloudinary_1.default.uploader.upload_stream((error, result) => {
+                if (error)
+                    return reject(error);
+                resolve(result);
+            });
+            validatedData.createReadStream().pipe(stream);
+        });
+        return {
+            url: result.url,
+            publicId: result.public_id,
         };
     },
 };

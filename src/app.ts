@@ -2,8 +2,6 @@ import express, { json, Express } from "express";
 import cookieParser from "cookie-parser";
 import { config } from "dotenv";
 import { dbConnect } from "./utils/dbConnect";
-import { errorHandler } from "./middlewares/errorHandler";
-import rootRouter from "./routes";
 import morgan from "morgan";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
@@ -14,6 +12,7 @@ const app: Express = express();
 const server = new ApolloServer({
   typeDefs: schema.typeDefs,
   resolvers: schema.resolvers,
+  csrfPrevention: false,
 });
 app.use(cookieParser());
 app.use(json());
@@ -24,10 +23,9 @@ async function startServer() {
 
   dbConnect();
 
-  app.use("/api", rootRouter);
-  app.use("/graphql", expressMiddleware(server));
+  // app.use("/api");
 
-  app.use(errorHandler);
+  app.use("/graphql", expressMiddleware(server));
 
   // *Server Start
   const port = process.env.PORT;

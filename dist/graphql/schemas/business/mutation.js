@@ -16,7 +16,9 @@ exports.Mutation = {
         if (existingBusiness) {
             throw new Error("Business already exists and email is verified!");
         }
-        const otp = (0, crypto_1.randomBytes)(3).toString("hex").substring(0, 6);
+        const otp = (parseInt((0, crypto_1.randomBytes)(3).toString("hex"), 16) % 1000000)
+            .toString()
+            .padStart(6, "0");
         const { salt, hash } = (0, password_1.hashPassword)(validatedData.password);
         const newBusiness = await dbConnect_1.prisma.business.upsert({
             where: { email: validatedData.email },
@@ -118,7 +120,9 @@ exports.Mutation = {
             const emailText = `Hello ${businessName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
             await (0, emailService_1.sendEmail)(email, emailSubject, emailText);
         };
-        const otp = (0, crypto_1.randomBytes)(3).toString("hex").substring(0, 6);
+        const otp = (parseInt((0, crypto_1.randomBytes)(3).toString("hex"), 16) % 1000000)
+            .toString()
+            .padStart(6, "0");
         const business = await dbConnect_1.prisma.business.update({
             where: { email: validatedData.email },
             data: {

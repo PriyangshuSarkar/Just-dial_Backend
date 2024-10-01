@@ -2,6 +2,8 @@ import { randomBytes } from "crypto";
 import {
   ChangeUserPasswordInput,
   ChangeUserPasswordSchema,
+  FileUploadInput,
+  FileUploadSchema,
   ForgetUserPasswordInput,
   ForgetUserPasswordSchema,
   UserLoginInput,
@@ -15,6 +17,9 @@ import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
+import cloudinary from "../../../utils/cloudinary";
+// import { GraphQLUpload } from "graphql-upload/GraphQLUpload";
+import { FileUpload } from "graphql-upload/Upload";
 
 export const Mutation = {
   userSignup: async (_: unknown, args: UserSignupInput) => {
@@ -28,7 +33,9 @@ export const Mutation = {
       throw new Error("User already exists and email is verified!");
     }
 
-    const otp = randomBytes(3).toString("hex").substring(0, 6);
+    const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
+      .toString()
+      .padStart(6, "0");
     const { salt, hash } = hashPassword(validatedData.password);
 
     const newUser = await prisma.user.upsert({
@@ -164,7 +171,9 @@ export const Mutation = {
       await sendEmail(email, emailSubject, emailText);
     };
 
-    const otp = randomBytes(3).toString("hex").substring(0, 6);
+    const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
+      .toString()
+      .padStart(6, "0");
 
     const user = await prisma.user.update({
       where: { email: validatedData.email }, // Find the user by email
@@ -228,6 +237,35 @@ export const Mutation = {
       name: updatedPassword.name,
       email: updatedPassword.email,
       massage: "Password updated successfully.",
+    };
+  },
+
+  uploadImage: async (_: unknown, { file }: { file: FileUpload }) => {
+    // const { createReadStream, filename, mimetype, encoding } = await file;
+
+    const validatedData = FileUploadSchema.parse(file);
+
+    interface CloudinaryUploadResult {
+      url: string;
+      public_id: string;
+      [key: string]: unknown; // To allow for any additional fields Cloudinary may include
+    }
+
+    // Upload to Cloudinary
+    const result = await new Promise<CloudinaryUploadResult>(
+      (resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream((error, result) => {
+          if (error) return reject(error);
+          resolve(result as CloudinaryUploadResult);
+        });
+
+        validatedData.createReadStream().pipe(stream);
+      },
+    );
+
+    return {
+      url: result.url,
+      publicId: result.public_id,
     };
   },
 };

@@ -9,6 +9,13 @@ export const typeDefs = gql`
     token: String
   }
 
+  type Image {
+    url: String!
+    publicId: String!
+  }
+
+  scalar Upload
+
   type Query {
     status: String!
   }
@@ -19,5 +26,6 @@ export const typeDefs = gql`
     userLogin(email: String!, password: String!): User!
     forgetUserPassword(email: String!): User!
     changeUserPassword(email: String!, password: String!, otp: String!): User!
+    uploadImage(file: Upload!): Image!
   }
 `;
