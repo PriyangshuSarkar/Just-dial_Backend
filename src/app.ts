@@ -2,10 +2,10 @@ import express, { json, Express } from "express";
 import cookieParser from "cookie-parser";
 import { config } from "dotenv";
 import { dbConnect } from "./utils/dbConnect";
-import morgan from "morgan";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { schema } from "./graphql";
+import graphqlUploadExpress from "graphql-upload/graphqlUploadExpress.js";
 
 config();
 const app: Express = express();
@@ -16,7 +16,7 @@ const server = new ApolloServer({
 });
 app.use(cookieParser());
 app.use(json());
-app.use(morgan("dev"));
+app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
 
 async function startServer() {
   await server.start();

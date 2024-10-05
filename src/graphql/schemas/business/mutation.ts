@@ -10,11 +10,14 @@ import {
   BusinessSignupSchema,
   VerifyBusinessEmailInput,
   VerifyBusinessEmailSchema,
+  UpdateBusinessDetailsInput,
+  UpdateBusinessDetailsSchema,
 } from "./db";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
+import { verifyToken } from "../../middlewares/verifyToken";
 
 export const Mutation = {
   businessSignup: async (_: unknown, args: BusinessSignupInput) => {
@@ -56,7 +59,7 @@ export const Mutation = {
     const sendOtpEmail = async (
       businessName: string,
       email: string,
-      otp: string,
+      otp: string
     ): Promise<void> => {
       const emailSubject = "Confirm Your Email Address";
       const emailText = `Hello ${businessName},\n\nThank you for signing up! Please confirm your email address by entering the following OTP:\n\n${otp}\n\nBest regards,\nYour Company Name`;
@@ -66,9 +69,7 @@ export const Mutation = {
     await sendOtpEmail(newBusiness.name, newBusiness.email, otp);
 
     return {
-      id: newBusiness.id,
-      name: newBusiness.name,
-      email: newBusiness.email,
+      ...newBusiness,
       message: "Business created! Please verify your email.",
     };
   },
@@ -110,13 +111,11 @@ export const Mutation = {
       process.env.JWT_SECRET!,
       {
         expiresIn: process.env.JWT_EXPIRATION_TIME!,
-      },
+      }
     );
 
     return {
-      id: business.id,
-      name: business.name,
-      email: business.email,
+      ...validatedBusiness,
       message: "Business OTP verified!",
       token: token,
     };
@@ -126,7 +125,7 @@ export const Mutation = {
     const validatedData = BusinessLoginSchema.parse(args);
 
     const business = await prisma.business.findFirst({
-      where: { email: validatedData.email },
+      where: { email: validatedData.email, isVerified: true },
     });
 
     if (!business) {
@@ -136,7 +135,7 @@ export const Mutation = {
     const verify = verifyPassword(
       validatedData.password,
       business.salt,
-      business.password,
+      business.password
     );
 
     if (verify) {
@@ -145,9 +144,7 @@ export const Mutation = {
       });
 
       return {
-        id: business.id,
-        name: business.name,
-        email: business.email,
+        ...business,
         message: "Logged in successful.",
         token: token,
       };
@@ -158,14 +155,14 @@ export const Mutation = {
 
   forgetBusinessPassword: async (
     _: unknown,
-    args: ForgetBusinessPasswordInput,
+    args: ForgetBusinessPasswordInput
   ) => {
     const validatedData = ForgetBusinessPasswordSchema.parse(args);
 
     const sendOtpEmail = async (
       businessName: string,
       email: string,
-      otp: string,
+      otp: string
     ) => {
       const emailSubject = "Password Reset OTP";
       const emailText = `Hello ${businessName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
@@ -178,7 +175,7 @@ export const Mutation = {
       .padStart(6, "0");
 
     const business = await prisma.business.update({
-      where: { email: validatedData.email }, // Find the business by email
+      where: { email: validatedData.email, isVerified: true }, // Find the business by email
       data: {
         otp: otp,
         otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -194,13 +191,14 @@ export const Mutation = {
 
   changeBusinessPassword: async (
     _: unknown,
-    args: ChangeBusinessPasswordInput,
+    args: ChangeBusinessPasswordInput
   ) => {
     const validatedData = ChangeBusinessPasswordSchema.parse(args);
 
     const business = await prisma.business.findFirst({
       where: {
         email: validatedData.email,
+        isVerified: true,
       },
     });
     if (!business) {
@@ -220,7 +218,7 @@ export const Mutation = {
     const verify = verifyPassword(
       validatedData.password,
       business.salt,
-      business.password,
+      business.password
     );
 
     if (verify) {
@@ -230,7 +228,7 @@ export const Mutation = {
     const { salt, hash } = hashPassword(validatedData.password);
 
     const updatedPassword = await prisma.business.update({
-      where: { email: business.email },
+      where: { email: business.email, isVerified: true },
       data: {
         password: hash,
         salt: salt,
@@ -238,10 +236,66 @@ export const Mutation = {
     });
 
     return {
-      id: updatedPassword.id,
-      name: updatedPassword.name,
-      email: updatedPassword.email,
+      ...updatedPassword,
       massage: "Password updated successfully.",
+    };
+  },
+
+  updateBusinessDetails: async (
+    _: unknown,
+    args: UpdateBusinessDetailsInput
+  ) => {
+    const validatedData = UpdateBusinessDetailsSchema.parse(args);
+
+    const owner: any = verifyToken(validatedData.token);
+
+    if (!owner || typeof owner.userId !== "string") {
+      throw new Error("Invalid or missing token");
+    }
+
+    const business = await prisma.business.findUnique({
+      where: { id: owner.businessId, isVerified: true },
+      include: { address: true },
+    });
+
+    if (!business) {
+      throw new Error("Business not found!");
+    }
+
+    if (validatedData.address) {
+      await prisma.address.upsert({
+        where: { businessId: business.id },
+        update: {
+          street: validatedData.address.street || business.address?.street,
+          city: validatedData.address.city || business.address?.city,
+          state: validatedData.address.state || business.address?.state,
+          pincode: validatedData.address.pincode || business.address?.pincode,
+        },
+        create: {
+          businessId: business.id,
+          street: validatedData.address.street,
+          city: validatedData.address.city,
+          state: validatedData.address.state,
+          pincode: validatedData.address.pincode,
+        },
+      });
+    }
+
+    // Update business details
+    const updatedBusiness = await prisma.business.update({
+      where: { id: business.id, isVerified: true },
+      data: {
+        website: validatedData.website || business.website,
+        name: validatedData.name || business.name,
+        phone: validatedData.phone || business.phone,
+        type: validatedData.type || business.type,
+      },
+      include: { address: true }, // Include updated address in response if needed
+    });
+
+    return {
+      ...updatedBusiness,
+      message: "Business details updated successfully.",
     };
   },
 };

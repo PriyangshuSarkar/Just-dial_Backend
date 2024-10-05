@@ -1,11 +1,4 @@
-import { Readable } from "stream";
-import {
-  object,
-  string,
-  infer as infer_,
-  function as function_,
-  instanceof as instanceof_,
-} from "zod";
+import { object, string, infer as infer_ } from "zod";
 
 export const UserSignupSchema = object({
   name: string().min(2).max(50),
@@ -38,10 +31,23 @@ export const ChangeUserPasswordSchema = object({
 });
 export type ChangeUserPasswordInput = infer_<typeof ChangeUserPasswordSchema>;
 
-export const FileUploadSchema = object({
-  filename: string(),
-  mimetype: string(),
-  encoding: string(),
-  createReadStream: function_().returns(instanceof_(Readable)),
+export const UpdateUserDetailsSchema = object({
+  token: string(),
+  name: string().optional(),
+  phone: string().optional(),
+  address: object({
+    street: string(),
+    city: string(),
+    state: string(),
+    pincode: string(),
+  }).optional(),
 });
-export type FileUploadInput = infer_<typeof FileUploadSchema>;
+export type UpdateUserDetailsInput = infer_<typeof UpdateUserDetailsSchema>;
+
+// export const FileUploadSchema = object({
+//   filename: string(),
+//   mimetype: string(),
+//   encoding: string(),
+//   createReadStream: function_().returns(instanceof_(Readable)),
+// });
+// export type FileUploadInput = infer_<typeof FileUploadSchema>;

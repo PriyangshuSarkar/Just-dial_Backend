@@ -13,4 +13,5 @@ export const schema = {
     businessSchema.resolvers,
     adminSchema.resolvers,
   ],
+  context: [userSchema.context, businessSchema.context],
 };

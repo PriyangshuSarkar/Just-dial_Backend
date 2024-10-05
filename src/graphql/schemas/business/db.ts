@@ -34,3 +34,20 @@ export const ChangeBusinessPasswordSchema = object({
 export type ChangeBusinessPasswordInput = infer_<
   typeof ChangeBusinessPasswordSchema
 >;
+
+export const UpdateBusinessDetailsSchema = object({
+  token: string(),
+  name: string().optional(),
+  website: string().url().optional(),
+  phone: string().optional(),
+  type: string().optional(),
+  address: object({
+    street: string(),
+    city: string(),
+    state: string(),
+    pincode: string(),
+  }).optional(),
+});
+export type UpdateBusinessDetailsInput = infer_<
+  typeof UpdateBusinessDetailsSchema
+>;

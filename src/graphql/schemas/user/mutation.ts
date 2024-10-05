@@ -2,10 +2,10 @@ import { randomBytes } from "crypto";
 import {
   ChangeUserPasswordInput,
   ChangeUserPasswordSchema,
-  FileUploadInput,
-  FileUploadSchema,
   ForgetUserPasswordInput,
   ForgetUserPasswordSchema,
+  UpdateUserDetailsInput,
+  UpdateUserDetailsSchema,
   UserLoginInput,
   UserLoginSchema,
   UserSignupInput,
@@ -17,9 +17,7 @@ import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
-import cloudinary from "../../../utils/cloudinary";
-// import { GraphQLUpload } from "graphql-upload/GraphQLUpload";
-import { FileUpload } from "graphql-upload/Upload";
+import { verifyToken } from "../../middlewares/verifyToken";
 
 export const Mutation = {
   userSignup: async (_: unknown, args: UserSignupInput) => {
@@ -61,7 +59,7 @@ export const Mutation = {
     const sendOtpEmail = async (
       userName: string,
       email: string,
-      otp: string,
+      otp: string
     ): Promise<void> => {
       const emailSubject = "Confirm Your Email Address";
       const emailText = `Hello ${userName},\n\nThank you for signing up! Please confirm your email address by entering the following OTP:\n\n${otp}\n\nBest regards,\nYour Company Name`;
@@ -71,9 +69,7 @@ export const Mutation = {
     await sendOtpEmail(newUser.name, newUser.email, otp);
 
     return {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
+      ...newUser,
       message: "User created! Please verify your email.",
     };
   },
@@ -115,9 +111,7 @@ export const Mutation = {
     });
 
     return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
+      ...validatedUser,
       message: "User OTP verified!",
       token: token,
     };
@@ -127,7 +121,7 @@ export const Mutation = {
     const validatedData = UserLoginSchema.parse(args);
 
     const user = await prisma.user.findFirst({
-      where: { email: validatedData.email },
+      where: { email: validatedData.email, isVerified: true },
     });
 
     if (!user) {
@@ -137,7 +131,7 @@ export const Mutation = {
     const verify = verifyPassword(
       validatedData.password,
       user.salt,
-      user.password,
+      user.password
     );
 
     if (verify) {
@@ -146,9 +140,7 @@ export const Mutation = {
       });
 
       return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+        ...user,
         message: "Logged in successful.",
         token: token,
       };
@@ -163,7 +155,7 @@ export const Mutation = {
     const sendOtpEmail = async (
       userName: string,
       email: string,
-      otp: string,
+      otp: string
     ) => {
       const emailSubject = "Password Reset OTP";
       const emailText = `Hello ${userName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
@@ -176,7 +168,7 @@ export const Mutation = {
       .padStart(6, "0");
 
     const user = await prisma.user.update({
-      where: { email: validatedData.email }, // Find the user by email
+      where: { email: validatedData.email, isVerified: true }, // Find the user by email
       data: {
         otp: otp,
         otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -196,6 +188,7 @@ export const Mutation = {
     const user = await prisma.user.findFirst({
       where: {
         email: validatedData.email,
+        isVerified: true,
       },
     });
     if (!user) {
@@ -215,7 +208,7 @@ export const Mutation = {
     const verify = verifyPassword(
       validatedData.password,
       user.salt,
-      user.password,
+      user.password
     );
 
     if (verify) {
@@ -225,7 +218,7 @@ export const Mutation = {
     const { salt, hash } = hashPassword(validatedData.password);
 
     const updatedPassword = await prisma.user.update({
-      where: { email: user.email },
+      where: { email: user.email, isVerified: true },
       data: {
         password: hash,
         salt: salt,
@@ -233,39 +226,106 @@ export const Mutation = {
     });
 
     return {
-      id: updatedPassword.id,
-      name: updatedPassword.name,
-      email: updatedPassword.email,
+      ...updatedPassword,
       massage: "Password updated successfully.",
     };
   },
 
-  uploadImage: async (_: unknown, { file }: { file: FileUpload }) => {
-    // const { createReadStream, filename, mimetype, encoding } = await file;
+  updateUserDetails: async (_: unknown, args: UpdateUserDetailsInput) => {
+    const validatedData = UpdateUserDetailsSchema.parse(args);
 
-    const validatedData = FileUploadSchema.parse(file);
+    const owner: any = verifyToken(validatedData.token);
 
-    interface CloudinaryUploadResult {
-      url: string;
-      public_id: string;
-      [key: string]: unknown; // To allow for any additional fields Cloudinary may include
+    if (!owner || typeof owner.userId !== "string") {
+      throw new Error("Invalid or missing token");
     }
 
-    // Upload to Cloudinary
-    const result = await new Promise<CloudinaryUploadResult>(
-      (resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream((error, result) => {
-          if (error) return reject(error);
-          resolve(result as CloudinaryUploadResult);
-        });
+    const user = await prisma.user.findUnique({
+      where: { id: owner.userId, isVerified: true },
+      include: { address: true },
+    });
 
-        validatedData.createReadStream().pipe(stream);
+    if (!user) {
+      throw new Error("User not found!");
+    }
+
+    // Update or create address
+    if (validatedData.address) {
+      await prisma.address.upsert({
+        where: { userId: user.id },
+        update: {
+          street: validatedData.address.street || user.address?.street,
+          city: validatedData.address.city || user.address?.city,
+          state: validatedData.address.state || user.address?.state,
+          pincode: validatedData.address.pincode || user.address?.pincode,
+        },
+        create: {
+          userId: user.id,
+          street: validatedData.address.street,
+          city: validatedData.address.city,
+          state: validatedData.address.state,
+          pincode: validatedData.address.pincode,
+        },
+      });
+    }
+
+    // Update user name and phone
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id, isVerified: true },
+      data: {
+        name: validatedData.name || user.name,
+        phone: validatedData.phone || user.phone,
       },
-    );
+      include: { address: true },
+    });
 
     return {
-      url: result.url,
-      publicId: result.public_id,
+      ...updatedUser,
+      message: "User details updated successfully.",
     };
   },
 };
+
+// import cloudinary from "../../../utils/cloudinary";
+// import { GraphQLUpload } from "graphql-upload/GraphQLUpload";
+// import { FileUpload } from "graphql-upload/Upload";
+
+// interface UploadResult {
+//   url: string;
+//   publicId: string;
+// }
+
+// interface CloudinaryUploadResult {
+//   url: string;
+//   public_id: string;
+//   [key: string]: unknown; // To allow for any additional fields Cloudinary may include
+// }
+
+// uploadImage: async (
+//   _: unknown,
+//   { file }: { file: FileUpload }
+// ): Promise<UploadResult> => {
+//   // const { createReadStream, filename, mimetype, encoding } = await file;
+
+//   const validatedData = FileUploadSchema.parse(file);
+
+//   // Upload to Cloudinary
+//   const result: CloudinaryUploadResult = await new Promise(
+//     (resolve, reject) => {
+//       const stream = cloudinary.uploader.upload_stream(
+//         { folder: "uploads" }, // You can customize the folder
+//         (error, result) => {
+//           if (error) return reject(error);
+//           resolve(result as CloudinaryUploadResult);
+//         }
+//       );
+
+//       validatedData.createReadStream().pipe(stream);
+//     }
+//   );
+
+//   return {
+//     url: result.url,
+//     publicId: result.public_id,
+//   };
+// },
