@@ -17,7 +17,8 @@ import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
-import { verifyToken } from "../../middlewares/verifyToken";
+import { verifyToken } from "../../../utils/verifyToken";
+import { uploadToCloudinary } from "../../../utils/cloudinary";
 
 export const Mutation = {
   userSignup: async (_: unknown, args: UserSignupInput) => {
@@ -249,6 +250,16 @@ export const Mutation = {
       throw new Error("User not found!");
     }
 
+    let avatarUrl: string | undefined;
+
+    // Handle avatar upload if provided
+    if (validatedData.avatar) {
+      avatarUrl = (await uploadToCloudinary(
+        [validatedData.avatar],
+        "avatars"
+      )) as string;
+    }
+
     // Update or create address
     if (validatedData.address) {
       await prisma.address.upsert({
@@ -275,6 +286,7 @@ export const Mutation = {
       data: {
         name: validatedData.name || user.name,
         phone: validatedData.phone || user.phone,
+        avatar: avatarUrl || user.avatar,
       },
       include: { address: true },
     });
@@ -285,47 +297,3 @@ export const Mutation = {
     };
   },
 };
-
-// import cloudinary from "../../../utils/cloudinary";
-// import { GraphQLUpload } from "graphql-upload/GraphQLUpload";
-// import { FileUpload } from "graphql-upload/Upload";
-
-// interface UploadResult {
-//   url: string;
-//   publicId: string;
-// }
-
-// interface CloudinaryUploadResult {
-//   url: string;
-//   public_id: string;
-//   [key: string]: unknown; // To allow for any additional fields Cloudinary may include
-// }
-
-// uploadImage: async (
-//   _: unknown,
-//   { file }: { file: FileUpload }
-// ): Promise<UploadResult> => {
-//   // const { createReadStream, filename, mimetype, encoding } = await file;
-
-//   const validatedData = FileUploadSchema.parse(file);
-
-//   // Upload to Cloudinary
-//   const result: CloudinaryUploadResult = await new Promise(
-//     (resolve, reject) => {
-//       const stream = cloudinary.uploader.upload_stream(
-//         { folder: "uploads" }, // You can customize the folder
-//         (error, result) => {
-//           if (error) return reject(error);
-//           resolve(result as CloudinaryUploadResult);
-//         }
-//       );
-
-//       validatedData.createReadStream().pipe(stream);
-//     }
-//   );
-
-//   return {
-//     url: result.url,
-//     publicId: result.public_id,
-//   };
-// },

@@ -1,4 +1,4 @@
-import { object, string, infer as infer_ } from "zod";
+import { object, string, infer as infer_, any } from "zod";
 
 export const UserSignupSchema = object({
   name: string().min(2).max(50),
@@ -41,6 +41,7 @@ export const UpdateUserDetailsSchema = object({
     state: string(),
     pincode: string(),
   }).optional(),
+  avatar: any().optional(),
 });
 export type UpdateUserDetailsInput = infer_<typeof UpdateUserDetailsSchema>;
 

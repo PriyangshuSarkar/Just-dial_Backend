@@ -1,4 +1,4 @@
-import { object, string, infer as infer_ } from "zod";
+import { object, string, infer as infer_, any } from "zod";
 
 export const BusinessSignupSchema = object({
   name: string().min(2).max(50),
@@ -47,6 +47,8 @@ export const UpdateBusinessDetailsSchema = object({
     state: string(),
     pincode: string(),
   }).optional(),
+  companyLogo: any().optional(), // Handle single logo upload
+  companyImages: any().array().optional(), // Handle multiple image uploads
 });
 export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema

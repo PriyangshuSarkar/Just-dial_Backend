@@ -17,7 +17,8 @@ import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
-import { verifyToken } from "../../middlewares/verifyToken";
+import { verifyToken } from "../../../utils/verifyToken";
+import { uploadToCloudinary } from "../../../utils/cloudinary";
 
 export const Mutation = {
   businessSignup: async (_: unknown, args: BusinessSignupInput) => {
@@ -262,6 +263,24 @@ export const Mutation = {
       throw new Error("Business not found!");
     }
 
+    // Upload logo if provided
+    let logoUrl: string | undefined;
+    if (validatedData.companyLogo) {
+      logoUrl = (await uploadToCloudinary(
+        validatedData.companyLogo,
+        "business_logos"
+      )) as string;
+    }
+
+    // Upload images if provided
+    let imagesUrls: string[] | undefined;
+    if (validatedData.companyImages) {
+      imagesUrls = (await uploadToCloudinary(
+        validatedData.companyImages,
+        "business_images"
+      )) as string[];
+    }
+
     if (validatedData.address) {
       await prisma.address.upsert({
         where: { businessId: business.id },
@@ -289,6 +308,10 @@ export const Mutation = {
         name: validatedData.name || business.name,
         phone: validatedData.phone || business.phone,
         type: validatedData.type || business.type,
+        companyLogo: logoUrl || business.companyLogo, // Store logo URL
+        companyImages: imagesUrls
+          ? [...(business.companyImages || []), ...imagesUrls]
+          : business.companyImages,
       },
       include: { address: true }, // Include updated address in response if needed
     });

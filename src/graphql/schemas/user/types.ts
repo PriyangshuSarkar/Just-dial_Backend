@@ -27,17 +27,7 @@ export const typeDefs = gql`
     pincode: String
   }
 
-  # type Image {
-  #   url: String!
-  #   publicId: String!
-  # }
-
-  # input Upload {
-  #   name: String!
-  #   type: String!
-  #   size: Int!
-  #   path: String!
-  # }
+  scalar Upload
 
   type Query {
     status: String!
@@ -54,7 +44,7 @@ export const typeDefs = gql`
       phone: String
       token: String
       address: AddressInput
+      avatar: Upload
     ): User
-    # uploadImage(file: Upload!): Image!
   }
 `;

@@ -35,6 +35,8 @@ export const typeDefs = gql`
     status: String!
   }
 
+  scalar Update
+
   type Mutation {
     businessSignup(name: String!, email: String!, password: String!): Business
     verifyBusinessEmail(email: String!, otp: String!): Business
@@ -51,6 +53,8 @@ export const typeDefs = gql`
       phone: String
       type: String
       address: AddressInput
+      companyLogo: Upload
+      companyImages: [Upload]
     ): Business
   }
 `;
