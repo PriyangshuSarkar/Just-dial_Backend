@@ -7,64 +7,209 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Subscription {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  duration    Int // Duration in days
+  features    String[]
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model User {
-  id           String    @id @default(uuid())
-  name         String
-  email        String    @unique
-  isVerified   Boolean   @default(false)
-  phone        String?
-  password     String
-  otp          String?
-  otpExpiresAt DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
-  salt         String
-  address      Address?  @relation("UserAddress") // Relation defined here without fields/references
-  addressId    String?   @unique // Ensure one-to-one relationship
-  avatar       String?
+  id                  String        @id @default(uuid())
+  name                String
+  email               String        @unique
+  password            String
+  salt                String
+  isVerified          Boolean       @default(false)
+  phone               String?
+  otp                 String?
+  otpExpiresAt        DateTime?
+  avatar              String?
+  addressId           String?       @unique
+  address             Address?      @relation("UserAddress")
+  reviews             Review[]
+  bookings            Booking[]
+  subscriptionId      String?
+  subscription        Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionExpire  DateTime?
+  paymentVerification Boolean
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  deletedAt           DateTime?
 }
 
 model Business {
   id            String    @id @default(uuid())
-  otp           String?
-  otpExpiresAt  DateTime?
-  website       String?
-  rating        Float?    @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  name          String
+  email         String    @unique
   password      String
   salt          String
   isVerified    Boolean   @default(false)
-  email         String    @unique
-  name          String
   phone         String?
   type          String?
-  address       Address?  @relation("BusinessAddress") // Relation defined here without fields/references
-  addressId     String?   @unique // Ensure one-to-one relationship
+  website       String?
+  otp           String?
+  otpExpiresAt  DateTime?
   companyLogo   String?
   companyImages String[]
+  latitude      Float?
+  longitude     Float?
+  addressId     String?   @unique
+  address       Address?  @relation("BusinessAddress")
+  services      Service[]
+  reviews       Review[]
+  averageRating Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
 }
 
 model Admin {
-  id           String    @id @default(uuid())
-  name         String
-  email        String    @unique
-  password     String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model Service {
+  id              String      @id @default(uuid())
+  name            String
+  overview        String?
+  price           Float
+  discountedPrice Float?
+  photos          String[]
+  businessId      String
+  business        Business    @relation(fields: [businessId], references: [id])
+  categoryId      String
+  category        Category    @relation(fields: [categoryId], references: [id])
+  subcategoryId   String
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
+  tags            Tag[]
+  facilities      Facility[]
+  bookings        Booking[]
+  offers          Offer[]
+  reviews         Review[]
+  averageRating   Float?
+  addressId       String?     @unique
+  address         Address?    @relation("ServiceAddress")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model Address {
-  id         String   @id @default(uuid())
-  street     String?
-  city       String?
-  state      String?
-  pincode    String?
-  user       User?    @relation("UserAddress", fields: [userId], references: [id])
-  userId     String?  @unique // Ensure one-to-one relationship
+  id         String    @id @default(uuid())
+  street     Street[]
+  city       City[]
+  state      State[]
+  country    Country[]
+  pincode    Pincode[]
+  userId     String?   @unique
+  user       User?     @relation("UserAddress", fields: [userId], references: [id])
+  businessId String?   @unique
   business   Business? @relation("BusinessAddress", fields: [businessId], references: [id])
-  businessId String?  @unique // Ensure one-to-one relationship
+  serviceId  String?   @unique
+  service    Service?  @relation("ServiceAddress", fields: [serviceId], references: [id])
+}
+
+model Street {
+  id      Int       @id @default(autoincrement())
+  name    String
+  address Address[]
+}
+
+model City {
+  id      Int       @id @default(autoincrement())
+  name    String
+  address Address[]
+}
+
+model State {
+  id      Int       @id @default(autoincrement())
+  name    String
+  address Address[]
+}
+
+model Country {
+  id      Int       @id @default(autoincrement())
+  name    String
+  address Address[]
+}
+
+model Pincode {
+  id      Int       @id @default(autoincrement())
+  name    String
+  address Address[]
+}
+
+model Category {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  services      Service[]
+  subcategories Subcategory[]
+}
+
+model Subcategory {
+  id         String    @id @default(uuid())
+  name       String    @unique
+  categoryId String
+  category   Category  @relation(fields: [categoryId], references: [id])
+  services   Service[]
+}
+
+model Tag {
+  id        String  @id @default(uuid())
+  name      String
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+}
+
+model Facility {
+  id        String  @id @default(uuid())
+  name      String
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+}
+
+model Review {
+  id         String    @id @default(uuid())
+  rating     Int
+  comment    String?
+  serviceId  String
+  service    Service   @relation(fields: [serviceId], references: [id])
+  businessId String?
+  business   Business? @relation(fields: [businessId], references: [id])
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+}
+
+model Booking {
+  id        String   @id @default(uuid())
+  date      DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Offer {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  discountRate Float
+  startDate    DateTime
+  endDate      DateTime
+  serviceId    String
+  service      Service  @relation(fields: [serviceId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
