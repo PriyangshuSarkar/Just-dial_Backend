@@ -25,7 +25,7 @@ export const Mutation = {
     // Validate input
     const validatedData = UserSignupSchema.parse(args);
     const existingUser = await prisma.user.findFirst({
-      where: { email: validatedData.email, isVerified: true },
+      where: { email: validatedData.email, isVerified: true, deletedAt: null },
     });
 
     if (existingUser) {
@@ -122,7 +122,7 @@ export const Mutation = {
     const validatedData = UserLoginSchema.parse(args);
 
     const user = await prisma.user.findFirst({
-      where: { email: validatedData.email, isVerified: true },
+      where: { email: validatedData.email, isVerified: true, deletedAt: null },
     });
 
     if (!user) {
@@ -169,7 +169,7 @@ export const Mutation = {
       .padStart(6, "0");
 
     const user = await prisma.user.update({
-      where: { email: validatedData.email, isVerified: true }, // Find the user by email
+      where: { email: validatedData.email, isVerified: true, deletedAt: null }, // Find the user by email
       data: {
         otp: otp,
         otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -190,6 +190,7 @@ export const Mutation = {
       where: {
         email: validatedData.email,
         isVerified: true,
+        deletedAt: null,
       },
     });
     if (!user) {
@@ -219,7 +220,7 @@ export const Mutation = {
     const { salt, hash } = hashPassword(validatedData.password);
 
     const updatedPassword = await prisma.user.update({
-      where: { email: user.email, isVerified: true },
+      where: { email: user.email, isVerified: true, deletedAt: null },
       data: {
         password: hash,
         salt: salt,
@@ -242,8 +243,18 @@ export const Mutation = {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: owner.userId, isVerified: true },
-      include: { address: true },
+      where: { id: owner.userId, isVerified: true, deletedAt: null },
+      include: {
+        address: {
+          include: {
+            street: true,
+            city: true,
+            state: true,
+            country: true,
+            pincode: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -262,31 +273,70 @@ export const Mutation = {
 
     // Update or create address
     if (validatedData.address) {
+      // Check or create Street
+      const street = await prisma.street.upsert({
+        where: { name: validatedData.address.street },
+        update: {},
+        create: { name: validatedData.address.street },
+      });
+
+      // Check or create City
+      const city = await prisma.city.upsert({
+        where: { name: validatedData.address.city },
+        update: {},
+        create: { name: validatedData.address.city },
+      });
+
+      // Check or create State
+      const state = await prisma.state.upsert({
+        where: { name: validatedData.address.state },
+        update: {},
+        create: { name: validatedData.address.state },
+      });
+
+      // Check or create Country
+      const country = await prisma.country.upsert({
+        where: { name: validatedData.address.country },
+        update: {},
+        create: { name: validatedData.address.country },
+      });
+
+      // Check or create Pincode
+      const pincode = await prisma.pincode.upsert({
+        where: { name: validatedData.address.pincode },
+        update: {},
+        create: { name: validatedData.address.pincode },
+      });
+
+      // Update or create Address with the above references
       await prisma.address.upsert({
         where: { userId: user.id },
         update: {
-          street: validatedData.address.street || user.address?.street,
-          city: validatedData.address.city || user.address?.city,
-          state: validatedData.address.state || user.address?.state,
-          pincode: validatedData.address.pincode || user.address?.pincode,
+          street: { connect: { id: street.id } },
+          city: { connect: { id: city.id } },
+          state: { connect: { id: state.id } },
+          country: { connect: { id: country.id } },
+          pincode: { connect: { id: pincode.id } },
         },
         create: {
           userId: user.id,
-          street: validatedData.address.street,
-          city: validatedData.address.city,
-          state: validatedData.address.state,
-          pincode: validatedData.address.pincode,
+          street: { connect: { id: street.id } },
+          city: { connect: { id: city.id } },
+          state: { connect: { id: state.id } },
+          country: { connect: { id: country.id } },
+          pincode: { connect: { id: pincode.id } },
         },
       });
     }
 
     // Update user name and phone
     const updatedUser = await prisma.user.update({
-      where: { id: user.id, isVerified: true },
+      where: { id: user.id, isVerified: true, deletedAt: null },
       data: {
         name: validatedData.name || user.name,
         phone: validatedData.phone || user.phone,
         avatar: avatarUrl || user.avatar,
+        hideDetails: validatedData.hideDetails || user.hideDetails,
       },
       include: { address: true },
     });

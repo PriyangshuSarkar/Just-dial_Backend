@@ -7,66 +7,85 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Subscription {
-  id          String   @id @default(uuid())
+model UserSubscription {
+  id          String    @id @default(uuid())
   name        String
   description String?
   price       Float
   duration    Int // Duration in days
   features    String[]
   users       User[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 }
 
 model User {
-  id                  String        @id @default(uuid())
+  id                  String            @id @default(uuid())
   name                String
-  email               String        @unique
+  email               String            @unique
   password            String
   salt                String
-  isVerified          Boolean       @default(false)
+  isVerified          Boolean           @default(false)
   phone               String?
+  hideDetails         Boolean           @default(true)
   otp                 String?
   otpExpiresAt        DateTime?
   avatar              String?
-  addressId           String?       @unique
-  address             Address?      @relation("UserAddress")
+  addressId           String?           @unique
+  address             Address?          @relation("UserAddress")
   reviews             Review[]
   bookings            Booking[]
   subscriptionId      String?
-  subscription        Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
   subscriptionExpire  DateTime?
-  paymentVerification Boolean
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  paymentVerification Boolean?          @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
   deletedAt           DateTime?
 }
 
+model BusinessSubscription {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  duration    Int // Duration in days
+  features    String[]
+  businesses  Business[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+}
+
 model Business {
-  id            String    @id @default(uuid())
-  name          String
-  email         String    @unique
-  password      String
-  salt          String
-  isVerified    Boolean   @default(false)
-  phone         String?
-  type          String?
-  website       String?
-  otp           String?
-  otpExpiresAt  DateTime?
-  companyLogo   String?
-  companyImages String[]
-  latitude      Float?
-  longitude     Float?
-  addressId     String?   @unique
-  address       Address?  @relation("BusinessAddress")
-  services      Service[]
-  reviews       Review[]
-  averageRating Float?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id                  String                @id @default(uuid())
+  name                String
+  email               String                @unique
+  password            String
+  salt                String
+  isVerified          Boolean               @default(false)
+  phone               String?
+  type                String?
+  website             String?
+  otp                 String?
+  otpExpiresAt        DateTime?
+  companyLogo         String?
+  companyImages       String[]
+  latitude            Float?
+  longitude           Float?
+  addressId           String?               @unique
+  address             Address?              @relation("BusinessAddress")
+  services            Service[]
+  reviews             Review[]
+  averageRating       Float?
+  subscriptionId      String?
+  subscription        BusinessSubscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionExpire  DateTime?
+  paymentVerification Boolean?              @default(false)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
 }
 
 model Admin {
@@ -85,11 +104,9 @@ model Service {
   overview        String?
   price           Float
   discountedPrice Float?
-  photos          String[]
+  serviceImages   String[]
   businessId      String
   business        Business    @relation(fields: [businessId], references: [id])
-  categoryId      String
-  category        Category    @relation(fields: [categoryId], references: [id])
   subcategoryId   String
   subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
   tags            Tag[]
@@ -102,6 +119,7 @@ model Service {
   address         Address?    @relation("ServiceAddress")
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
 }
 
 model Address {
@@ -117,43 +135,48 @@ model Address {
   business   Business? @relation("BusinessAddress", fields: [businessId], references: [id])
   serviceId  String?   @unique
   service    Service?  @relation("ServiceAddress", fields: [serviceId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
 }
 
 model Street {
   id      Int       @id @default(autoincrement())
-  name    String
+  name    String    @unique
   address Address[]
 }
 
 model City {
   id      Int       @id @default(autoincrement())
-  name    String
+  name    String    @unique
   address Address[]
 }
 
 model State {
   id      Int       @id @default(autoincrement())
-  name    String
+  name    String    @unique
   address Address[]
 }
 
 model Country {
   id      Int       @id @default(autoincrement())
-  name    String
+  name    String    @unique
   address Address[]
 }
 
 model Pincode {
   id      Int       @id @default(autoincrement())
-  name    String
+  name    String    @unique
   address Address[]
 }
 
 model Category {
   id            String        @id @default(uuid())
   name          String        @unique
-  services      Service[]
   subcategories Subcategory[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
 }
 
 model Subcategory {
@@ -162,20 +185,29 @@ model Subcategory {
   categoryId String
   category   Category  @relation(fields: [categoryId], references: [id])
   services   Service[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
 }
 
 model Tag {
-  id        String  @id @default(uuid())
-  name      String
+  id        String    @id @default(uuid())
+  name      String    @unique
   serviceId String
-  service   Service @relation(fields: [serviceId], references: [id])
+  service   Service   @relation(fields: [serviceId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model Facility {
-  id        String  @id @default(uuid())
-  name      String
+  id        String    @id @default(uuid())
+  name      String    @unique
   serviceId String
-  service   Service @relation(fields: [serviceId], references: [id])
+  service   Service   @relation(fields: [serviceId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model Review {
@@ -189,27 +221,32 @@ model Review {
   userId     String
   user       User      @relation(fields: [userId], references: [id])
   createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
 }
 
 model Booking {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   date      DateTime
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
   serviceId String
-  service   Service  @relation(fields: [serviceId], references: [id])
-  createdAt DateTime @default(now())
+  service   Service   @relation(fields: [serviceId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model Offer {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   title        String
   description  String?
   discountRate Float
   startDate    DateTime
   endDate      DateTime
   serviceId    String
-  service      Service  @relation(fields: [serviceId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  service      Service   @relation(fields: [serviceId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 }

@@ -18,6 +18,7 @@ export const typeDefs = gql`
     city: String
     state: String
     pincode: String
+    country: String
   }
 
   input AddressInput {
@@ -25,6 +26,7 @@ export const typeDefs = gql`
     city: String
     state: String
     pincode: String
+    country: String
   }
 
   scalar Upload
@@ -42,6 +44,7 @@ export const typeDefs = gql`
     updateUserDetails(
       name: String
       phone: String
+      hideDetails: Boolean
       token: String
       address: AddressInput
       avatar: Upload

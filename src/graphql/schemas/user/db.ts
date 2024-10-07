@@ -1,4 +1,4 @@
-import { object, string, infer as infer_, any } from "zod";
+import { object, string, infer as infer_, any, boolean } from "zod";
 
 export const UserSignupSchema = object({
   name: string().min(2).max(50),
@@ -35,20 +35,14 @@ export const UpdateUserDetailsSchema = object({
   token: string(),
   name: string().optional(),
   phone: string().optional(),
+  hideDetails: boolean().optional(),
   address: object({
-    street: string(),
-    city: string(),
-    state: string(),
-    pincode: string(),
+    street: string().toLowerCase(),
+    city: string().toLowerCase(),
+    state: string().toLowerCase(),
+    pincode: string().toLowerCase(),
+    country: string().toLowerCase(),
   }).optional(),
   avatar: any().optional(),
 });
 export type UpdateUserDetailsInput = infer_<typeof UpdateUserDetailsSchema>;
-
-// export const FileUploadSchema = object({
-//   filename: string(),
-//   mimetype: string(),
-//   encoding: string(),
-//   createReadStream: function_().returns(instanceof_(Readable)),
-// });
-// export type FileUploadInput = infer_<typeof FileUploadSchema>;

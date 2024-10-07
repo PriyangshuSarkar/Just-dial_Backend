@@ -1,4 +1,4 @@
-import { object, string, infer as infer_, any } from "zod";
+import { object, string, infer as infer_, any, number } from "zod";
 
 export const BusinessSignupSchema = object({
   name: string().min(2).max(50),
@@ -42,10 +42,11 @@ export const UpdateBusinessDetailsSchema = object({
   phone: string().optional(),
   type: string().optional(),
   address: object({
-    street: string(),
-    city: string(),
-    state: string(),
-    pincode: string(),
+    street: string().toLowerCase(),
+    city: string().toLowerCase(),
+    state: string().toLowerCase(),
+    pincode: string().toLowerCase(),
+    country: string().toLowerCase(),
   }).optional(),
   companyLogo: any().optional(), // Handle single logo upload
   companyImages: any().array().optional(), // Handle multiple image uploads
@@ -53,3 +54,25 @@ export const UpdateBusinessDetailsSchema = object({
 export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema
 >;
+
+export const AddOrUpdateServiceSchema = object({
+  token: string(),
+  name: string(),
+  overview: string().optional(),
+  price: number(),
+  discountedPrice: number().optional(),
+  serviceImages: any().optional(),
+  serviceId: string().optional(),
+  businessId: string(),
+  subcategoryId: string(),
+  tags: string().toLowerCase().array().optional(),
+  facilities: string().toLowerCase().array().optional(),
+  address: object({
+    street: string().toLowerCase(),
+    city: string().toLowerCase(),
+    state: string().toLowerCase(),
+    pincode: string().toLowerCase(),
+    country: string().toLowerCase(),
+  }).optional(),
+});
+export type AddOrUpdateServiceInput = infer_<typeof AddOrUpdateServiceSchema>;

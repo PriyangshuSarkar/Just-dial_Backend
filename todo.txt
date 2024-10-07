@@ -1,2 +1,8 @@
 Fix the Admin Mutation to prevent hashing and remove signup feature. ✅
-Add Cloundinary
+Add Cloundinary✅
+
+
+1. List businesses 
+2. customer Subscription 
+3. business subscription
+4. customer can hide details 

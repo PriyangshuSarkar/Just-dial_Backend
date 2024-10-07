@@ -15,6 +15,7 @@ export const typeDefs = gql`
     companyImages: [String]
     message: String
     token: String
+    service: Service
   }
 
   type Address {
@@ -22,6 +23,7 @@ export const typeDefs = gql`
     city: String
     state: String
     pincode: String
+    country: String
   }
 
   input AddressInput {
@@ -29,10 +31,25 @@ export const typeDefs = gql`
     city: String
     state: String
     pincode: String
+    country: String
   }
 
   type Query {
     status: String!
+  }
+
+  type Service {
+    id: ID
+    name: String
+    message: String
+    overview: String
+    price: Float
+    discountedPrice: Float
+    serviceImages: [String]
+    tags: [String]
+    facilities: [String]
+    address: Address
+    subcategory: String
   }
 
   scalar Update
@@ -48,6 +65,7 @@ export const typeDefs = gql`
       otp: String!
     ): Business
     updateBusinessDetails(
+      token: String!
       name: String
       website: String
       phone: String
@@ -55,6 +73,18 @@ export const typeDefs = gql`
       address: AddressInput
       companyLogo: Upload
       companyImages: [Upload]
+    ): Business
+    addOrUpdateService(
+      token: ID!
+      serviceId: ID
+      name: String
+      overview: String
+      price: Float
+      discountedPrice: Float
+      serviceImages: [Upload]
+      address: AddressInput
+      tags: [String]
+      facilities: [String]
     ): Business
   }
 `;
