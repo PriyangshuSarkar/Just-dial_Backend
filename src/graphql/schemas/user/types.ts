@@ -11,14 +11,41 @@ export const typeDefs = gql`
     message: String
     token: String
     avatar: String
+    hideDetails: Boolean
   }
 
   type Address {
-    street: String
-    city: String
-    state: String
-    pincode: String
-    country: String
+    id: ID
+    street: Street
+    city: City
+    state: State
+    country: Country
+    pincode: Pincode
+  }
+
+  type Street {
+    id: ID
+    name: String
+  }
+
+  type City {
+    id: ID
+    name: String
+  }
+
+  type State {
+    id: ID
+    name: String
+  }
+
+  type Country {
+    id: ID
+    name: String
+  }
+
+  type Pincode {
+    id: ID
+    code: String
   }
 
   input AddressInput {

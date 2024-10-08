@@ -5,4 +5,5 @@ Add Cloundinary✅
 1. List businesses 
 2. customer Subscription 
 3. business subscription
-4. customer can hide details 
+4. customer can hide details
+5. if not sub-category not provided then the first element of the sub-category will be returned.

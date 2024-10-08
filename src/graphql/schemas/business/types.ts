@@ -10,32 +10,12 @@ export const typeDefs = gql`
     name: String
     phone: String
     type: String
-    address: Address
+    address: [Address]
     companyLogo: String
     companyImages: [String]
     message: String
     token: String
     service: Service
-  }
-
-  type Address {
-    street: String
-    city: String
-    state: String
-    pincode: String
-    country: String
-  }
-
-  input AddressInput {
-    street: String
-    city: String
-    state: String
-    pincode: String
-    country: String
-  }
-
-  type Query {
-    status: String!
   }
 
   type Service {
@@ -46,13 +26,80 @@ export const typeDefs = gql`
     price: Float
     discountedPrice: Float
     serviceImages: [String]
-    tags: [String]
-    facilities: [String]
-    address: Address
-    subcategory: String
+    tags: [Tag]
+    facilities: [Facility]
+    address: [Address]
+    subcategory: Subcategory
+  }
+
+  type Address {
+    id: ID
+    street: Street
+    city: City
+    state: State
+    country: Country
+    pincode: Pincode
+  }
+
+  type Street {
+    id: ID
+    name: String
+  }
+
+  type City {
+    id: ID
+    name: String
+  }
+
+  type State {
+    id: ID
+    name: String
+  }
+
+  type Country {
+    id: ID
+    name: String
+  }
+
+  type Pincode {
+    id: ID
+    code: String
+  }
+
+  type Tag {
+    id: ID
+    name: String
+  }
+
+  type Facility {
+    id: ID
+    name: String
+  }
+
+  type Subcategory {
+    id: ID
+    name: String
+    category: Category
+  }
+
+  type Category {
+    id: ID
+    name: String
+  }
+
+  input AddressInput {
+    street: String
+    city: String
+    state: String
+    pincode: String
+    country: String
   }
 
   scalar Update
+
+  type Query {
+    status: String!
+  }
 
   type Mutation {
     businessSignup(name: String!, email: String!, password: String!): Business
@@ -73,6 +120,8 @@ export const typeDefs = gql`
       address: AddressInput
       companyLogo: Upload
       companyImages: [Upload]
+      addressesToDelete: [String]
+      companyImagesToDelete: [String]
     ): Business
     addOrUpdateService(
       token: ID!
@@ -85,6 +134,10 @@ export const typeDefs = gql`
       address: AddressInput
       tags: [String]
       facilities: [String]
-    ): Business
+      addressesToDelete: [String]
+      serviceImagesToDelete: [String]
+      tagsToDelete: [String]
+      facilitiesToDelete: [String]
+    ): Service
   }
 `;

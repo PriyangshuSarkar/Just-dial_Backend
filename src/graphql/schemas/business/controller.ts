@@ -20,7 +20,10 @@ import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
 import { verifyToken } from "../../../utils/verifyToken";
-import { uploadToCloudinary } from "../../../utils/cloudinary";
+import {
+  deleteFromCloudinary,
+  uploadToCloudinary,
+} from "../../../utils/cloudinary";
 
 export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
   // Validate input
@@ -71,7 +74,7 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
   await sendOtpEmail(newBusiness.name, newBusiness.email, otp);
 
   return {
-    ...newBusiness,
+    email: newBusiness.email,
     message: "Business created! Please verify your email.",
   };
 };
@@ -109,6 +112,19 @@ export const verifyBusinessEmail = async (
     data: {
       isVerified: true,
     },
+    include: {
+      address: {
+        where: { deletedAt: null },
+        include: {
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
+      services: true,
+    },
   });
 
   const token = sign(
@@ -131,6 +147,19 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
 
   const business = await prisma.business.findFirst({
     where: { email: validatedData.email, isVerified: true, deletedAt: null },
+    include: {
+      address: {
+        where: { deletedAt: null },
+        include: {
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
+      services: true,
+    },
   });
 
   if (!business) {
@@ -239,6 +268,19 @@ export const changeBusinessPassword = async (
       password: hash,
       salt: salt,
     },
+    include: {
+      address: {
+        where: { deletedAt: null },
+        include: {
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
+      services: true,
+    },
   });
 
   return {
@@ -261,17 +303,6 @@ export const updateBusinessDetails = async (
 
   const business = await prisma.business.findUnique({
     where: { id: owner.businessId, isVerified: true, deletedAt: null },
-    include: {
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
-        },
-      },
-    },
   });
 
   if (!business) {
@@ -296,6 +327,24 @@ export const updateBusinessDetails = async (
     )) as string[];
   }
 
+  // Handle image deletion if any images are marked for deletion
+  if (
+    validatedData.companyImagesToDelete &&
+    validatedData.companyImagesToDelete.length > 0
+  ) {
+    const companyImagesToDelete = validatedData.companyImagesToDelete;
+    const remainingImages = business.companyImages?.filter(
+      (imgUrl: string) => !companyImagesToDelete.includes(imgUrl)
+    );
+
+    // Delete images from Cloudinary
+    for (const imageUrl of companyImagesToDelete) {
+      await deleteFromCloudinary(imageUrl); // Implement this function
+    }
+
+    business.companyImages = remainingImages; // Update the company's image list
+  }
+
   let addressId: string | undefined = undefined;
 
   // Handle address if provided
@@ -307,6 +356,22 @@ export const updateBusinessDetails = async (
       "business"
     );
     addressId = address.id;
+  }
+
+  // Soft delete addresses if a string array of address IDs is provided
+  if (
+    validatedData.addressesToDelete &&
+    validatedData.addressesToDelete.length > 0
+  ) {
+    await prisma.address.updateMany({
+      where: {
+        id: { in: validatedData.addressesToDelete },
+        serviceId: business.id, // Ensure these addresses belong to the service
+      },
+      data: {
+        deletedAt: new Date(), // Set the deletedAt field to the current timestamp
+      },
+    });
   }
 
   // Update business details
@@ -323,7 +388,19 @@ export const updateBusinessDetails = async (
         ? [...(business.companyImages || []), ...imagesUrls]
         : business.companyImages,
     },
-    include: { address: true }, // Include updated address in response if needed
+    include: {
+      address: {
+        where: { deletedAt: null },
+        include: {
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
+      services: true,
+    },
   });
 
   return {
@@ -348,7 +425,6 @@ export const addOrUpdateService = async (
   // Find the business by ID
   const business = await prisma.business.findUnique({
     where: { id: owner.businessId, isVerified: true, deletedAt: null },
-    include: { address: true },
   });
 
   if (!business) {
@@ -362,7 +438,6 @@ export const addOrUpdateService = async (
       businessId: validatedData.businessId,
       deletedAt: null,
     },
-    include: { address: true },
   });
 
   // Upload images if provided
@@ -404,10 +479,55 @@ export const addOrUpdateService = async (
     }) || []
   );
 
+  // Disconnection logic for tags, facilities, and offers
+  const tagDisconnect =
+    validatedData.tagsToDelete?.map((tagName) => ({
+      name: tagName,
+    })) || [];
+
+  const facilityDisconnect =
+    validatedData.facilitiesToDelete?.map((facilityName) => ({
+      name: facilityName,
+    })) || [];
+
   // If service exists, update it
   if (existingService) {
+    // Soft delete addresses if a string array of address IDs is provided
+    if (
+      validatedData.addressesToDelete &&
+      validatedData.addressesToDelete.length > 0
+    ) {
+      await prisma.address.updateMany({
+        where: {
+          id: { in: validatedData.addressesToDelete },
+          serviceId: existingService?.id, // Ensure these addresses belong to the service
+        },
+        data: {
+          deletedAt: new Date(), // Set the deletedAt field to the current timestamp
+        },
+      });
+    }
+
+    // Handle image deletion if any images are marked for deletion
+    if (
+      validatedData.serviceImagesToDelete &&
+      validatedData.serviceImagesToDelete.length > 0
+    ) {
+      const serviceImagesToDelete = validatedData.serviceImagesToDelete;
+      const remainingImages = existingService.serviceImages?.filter(
+        (imgUrl: string) => !serviceImagesToDelete.includes(imgUrl)
+      );
+
+      // Delete images from Cloudinary
+      for (const imageUrl of serviceImagesToDelete) {
+        await deleteFromCloudinary(imageUrl); // Implement this function
+      }
+
+      existingService.serviceImages = remainingImages; // Update the company's image list
+    }
+
     const updatedService = await prisma.service.update({
-      where: { id: existingService.id },
+      where: { id: existingService.id, deletedAt: null },
       data: {
         name: validatedData.name || existingService.name,
         overview: validatedData.overview || existingService.overview,
@@ -417,16 +537,27 @@ export const addOrUpdateService = async (
         address: addressId ? { connect: { id: addressId } } : undefined, // Update address if provided
         tags: {
           connectOrCreate: tagConnectOrCreate,
+          disconnect: tagDisconnect, // Disconnect tags
         },
         facilities: {
           connectOrCreate: facilityConnectOrCreate,
+          disconnect: facilityDisconnect, // Disconnect facilities
         },
         serviceImages: imagesUrls
           ? [...(existingService?.serviceImages || []), ...imagesUrls]
           : existingService?.serviceImages,
       },
       include: {
-        address: true,
+        address: {
+          where: { deletedAt: null },
+          include: {
+            street: true,
+            city: true,
+            state: true,
+            country: true,
+            pincode: true,
+          },
+        },
         subcategory: {
           include: {
             category: true,
@@ -462,7 +593,15 @@ export const addOrUpdateService = async (
       serviceImages: imagesUrls || [],
     },
     include: {
-      address: true,
+      address: {
+        include: {
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
       subcategory: {
         include: {
           category: true,
@@ -482,7 +621,7 @@ export const addOrUpdateService = async (
 const handleAddress = async (
   addressData: any,
   entityId: string | null,
-  entityType: "business" | "service" | "user"
+  entityType: "business" | "service"
 ) => {
   // Upsert street
   const street = await prisma.street.upsert({
@@ -529,9 +668,6 @@ const handleAddress = async (
   } else if (entityType === "service") {
     whereClause = { serviceId: entityId || undefined };
     createData = { serviceId: entityId };
-  } else if (entityType === "user") {
-    whereClause = { userId: entityId || undefined };
-    createData = { userId: entityId };
   } else {
     throw new Error("Invalid entity type provided");
   }

@@ -33,7 +33,7 @@ model User {
   otpExpiresAt        DateTime?
   avatar              String?
   addressId           String?           @unique
-  address             Address?          @relation("UserAddress")
+  address             Address?          @relation()
   reviews             Review[]
   bookings            Booking[]
   subscriptionId      String?
@@ -75,7 +75,7 @@ model Business {
   latitude            Float?
   longitude           Float?
   addressId           String?               @unique
-  address             Address?              @relation("BusinessAddress")
+  address             Address?              @relation()
   services            Service[]
   reviews             Review[]
   averageRating       Float?
@@ -116,7 +116,7 @@ model Service {
   reviews         Review[]
   averageRating   Float?
   addressId       String?     @unique
-  address         Address?    @relation("ServiceAddress")
+  address         Address?    @relation()
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   deletedAt       DateTime?
@@ -130,11 +130,11 @@ model Address {
   country    Country[]
   pincode    Pincode[]
   userId     String?   @unique
-  user       User?     @relation("UserAddress", fields: [userId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id])
   businessId String?   @unique
-  business   Business? @relation("BusinessAddress", fields: [businessId], references: [id])
+  business   Business? @relation(fields: [businessId], references: [id])
   serviceId  String?   @unique
-  service    Service?  @relation("ServiceAddress", fields: [serviceId], references: [id])
+  service    Service?  @relation(fields: [serviceId], references: [id])
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
@@ -166,7 +166,7 @@ model Country {
 
 model Pincode {
   id      Int       @id @default(autoincrement())
-  name    String    @unique
+  code    String    @unique
   address Address[]
 }
 

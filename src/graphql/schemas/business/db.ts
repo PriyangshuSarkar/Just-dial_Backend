@@ -48,21 +48,23 @@ export const UpdateBusinessDetailsSchema = object({
     pincode: string().toLowerCase(),
     country: string().toLowerCase(),
   }).optional(),
+  addressesToDelete: string().array().optional(),
   companyLogo: any().optional(), // Handle single logo upload
   companyImages: any().array().optional(), // Handle multiple image uploads
+  companyImagesToDelete: string().array().optional(), // New field
 });
 export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema
 >;
 
 export const AddOrUpdateServiceSchema = object({
+  serviceId: string().optional(),
   token: string(),
   name: string(),
   overview: string().optional(),
   price: number(),
   discountedPrice: number().optional(),
   serviceImages: any().optional(),
-  serviceId: string().optional(),
   businessId: string(),
   subcategoryId: string(),
   tags: string().toLowerCase().array().optional(),
@@ -74,5 +76,9 @@ export const AddOrUpdateServiceSchema = object({
     pincode: string().toLowerCase(),
     country: string().toLowerCase(),
   }).optional(),
+  addressesToDelete: string().array().optional(),
+  serviceImagesToDelete: string().array().optional(),
+  tagsToDelete: string().array().optional(),
+  facilitiesToDelete: string().array().optional(),
 });
 export type AddOrUpdateServiceInput = infer_<typeof AddOrUpdateServiceSchema>;

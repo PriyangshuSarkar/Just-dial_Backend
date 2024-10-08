@@ -51,3 +51,40 @@ export const uploadToCloudinary = async (
   // If only one file was passed, return a string, otherwise return an array
   return fileArray.length === 1 ? uploadedUrls[0] : uploadedUrls;
 };
+
+export const deleteFromCloudinary = async (
+  urls: string | string[] // Accept a single URL or an array of URLs
+): Promise<void | void[]> => {
+  // Normalize URLs to an array for consistent handling
+  const urlArray = Array.isArray(urls) ? urls : [urls];
+
+  const extractPublicId = (url: string): string => {
+    const parts = url.split("/");
+    const publicIdWithExtension = parts[parts.length - 1]; // Get the file name with extension
+    return publicIdWithExtension.split(".")[0]; // Remove the file extension
+  };
+
+  // Extract Cloudinary public IDs from URLs
+  const publicIds = urlArray.map((url) => extractPublicId(url));
+
+  // Delete all files using Promise.all
+  await Promise.all(
+    publicIds.map(async (publicId) => {
+      return new Promise<void>((resolve, reject) => {
+        cloudinary.uploader.destroy(
+          publicId,
+          { resource_type: "image" },
+          (error, result) => {
+            if (error) {
+              reject(error); // Handle error
+            } else if (result.result === "ok") {
+              resolve(); // Resolve promise if deletion is successful
+            } else {
+              reject(new Error("Failed to delete image")); // Handle failure
+            }
+          }
+        );
+      });
+    })
+  );
+};
