@@ -1,3 +1,7 @@
+import { userMe } from "./controller";
+
 export const Query = {
-  status: () => "Server is running",
+  status: () => "User controllers are working.",
+
+  userMe,
 };

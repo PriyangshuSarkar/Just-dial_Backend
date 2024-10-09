@@ -1,10 +1,12 @@
 import {
-  addOrUpdateService,
+  addService,
   businessLogin,
   businessSignup,
   changeBusinessPassword,
   forgetBusinessPassword,
+  removeService,
   updateBusinessDetails,
+  updateService,
   verifyBusinessEmail,
 } from "./controller";
 
@@ -21,5 +23,9 @@ export const Mutation = {
 
   updateBusinessDetails,
 
-  addOrUpdateService,
+  addService,
+
+  updateService,
+
+  removeService,
 };

@@ -1,5 +1,10 @@
 import { object, string, infer as infer_, any, boolean } from "zod";
 
+export const UserMeSchema = object({
+  token: string(),
+});
+export type UserMeInput = infer_<typeof UserMeSchema>;
+
 export const UserSignupSchema = object({
   name: string().min(2).max(50),
   email: string().email(),
@@ -36,13 +41,7 @@ export const UpdateUserDetailsSchema = object({
   name: string().optional(),
   phone: string().optional(),
   hideDetails: boolean().optional(),
-  address: object({
-    street: string().toLowerCase(),
-    city: string().toLowerCase(),
-    state: string().toLowerCase(),
-    pincode: string().toLowerCase(),
-    country: string().toLowerCase(),
-  }).optional(),
   avatar: any().optional(),
+  addressesToDelete: string().array().optional(),
 });
 export type UpdateUserDetailsInput = infer_<typeof UpdateUserDetailsSchema>;

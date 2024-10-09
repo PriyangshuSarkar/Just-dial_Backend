@@ -8,6 +8,8 @@ import {
   UpdateUserDetailsSchema,
   UserLoginInput,
   UserLoginSchema,
+  UserMeInput,
+  UserMeSchema,
   UserSignupInput,
   UserSignupSchema,
   VerifyUserEmailInput,
@@ -19,6 +21,41 @@ import { sendEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
 import { verifyToken } from "../../../utils/verifyToken";
 import { uploadToCloudinary } from "../../../utils/cloudinary";
+
+export const userMe = async (_: unknown, args: UserMeInput) => {
+  const validatedData = UserMeSchema.parse(args);
+
+  const owner: any = verifyToken(validatedData.token);
+
+  if (!owner || typeof owner.userId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: owner.id, isVerified: true, deletedAt: null },
+    include: {
+      address: {
+        include: {
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
+      reviews: true,
+      bookings: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found!");
+  }
+
+  return {
+    ...user,
+  };
+};
 
 export const userSignup = async (_: unknown, args: UserSignupInput) => {
   // Validate input
@@ -300,19 +337,6 @@ export const updateUserDetails = async (
     )) as string;
   }
 
-  let addressId: string | undefined = undefined;
-
-  // Handle address if provided
-  if (validatedData.address) {
-    // Same logic as before for handling address (upserting street, city, state, country, pincode)
-    const address = await handleAddress(
-      validatedData.address,
-      user.id ? user.id : null,
-      "user"
-    );
-    addressId = address.id;
-  }
-
   // Update user name and phone
   const updatedUser = await prisma.user.update({
     where: { id: user.id, isVerified: true, deletedAt: null },
@@ -321,7 +345,6 @@ export const updateUserDetails = async (
       phone: validatedData.phone || user.phone,
       avatar: avatarUrl || user.avatar,
       hideDetails: validatedData.hideDetails || user.hideDetails,
-      address: addressId ? { connect: { id: addressId } } : undefined,
     },
     include: {
       address: {
@@ -340,78 +363,4 @@ export const updateUserDetails = async (
     ...updatedUser,
     message: "User details updated successfully.",
   };
-};
-
-const handleAddress = async (
-  addressData: any,
-  entityId: string | null,
-  entityType: "user"
-) => {
-  // Upsert street
-  const street = await prisma.street.upsert({
-    where: { name: addressData.street },
-    update: {},
-    create: { name: addressData.street },
-  });
-
-  // Upsert city
-  const city = await prisma.city.upsert({
-    where: { name: addressData.city },
-    update: {},
-    create: { name: addressData.city },
-  });
-
-  // Upsert state
-  const state = await prisma.state.upsert({
-    where: { name: addressData.state },
-    update: {},
-    create: { name: addressData.state },
-  });
-
-  // Upsert country
-  const country = await prisma.country.upsert({
-    where: { name: addressData.country },
-    update: {},
-    create: { name: addressData.country },
-  });
-
-  // Upsert pincode
-  const pincode = await prisma.pincode.upsert({
-    where: { name: addressData.pincode },
-    update: {},
-    create: { name: addressData.pincode },
-  });
-
-  // Dynamic logic to handle address based on the entity type (business, service, or user)
-  let whereClause;
-  let createData;
-
-  if (entityType === "user") {
-    whereClause = { userId: entityId || undefined };
-    createData = { userId: entityId };
-  } else {
-    throw new Error("Invalid entity type provided");
-  }
-
-  // Upsert or create address using entityId (businessId, serviceId, or userId)
-  const address = await prisma.address.upsert({
-    where: whereClause,
-    update: {
-      street: { connect: { id: street.id } },
-      city: { connect: { id: city.id } },
-      state: { connect: { id: state.id } },
-      country: { connect: { id: country.id } },
-      pincode: { connect: { id: pincode.id } },
-    },
-    create: {
-      ...createData,
-      street: { connect: { id: street.id } },
-      city: { connect: { id: city.id } },
-      state: { connect: { id: state.id } },
-      country: { connect: { id: country.id } },
-      pincode: { connect: { id: pincode.id } },
-    },
-  });
-
-  return address;
 };

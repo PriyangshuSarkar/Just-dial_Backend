@@ -1,14 +1,6 @@
 import { gql } from "graphql-tag";
 
 export const typeDefs = gql`
-  type Admin {
-    id: ID
-    name: String
-    email: String
-    message: String
-    token: String
-  }
-
   type Query {
     status: String!
   }

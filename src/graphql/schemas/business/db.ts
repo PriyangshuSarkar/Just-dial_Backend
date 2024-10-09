@@ -1,5 +1,10 @@
 import { object, string, infer as infer_, any, number } from "zod";
 
+export const BusinessMeSchema = object({
+  token: string(),
+});
+export type BusinessMeInput = infer_<typeof BusinessMeSchema>;
+
 export const BusinessSignupSchema = object({
   name: string().min(2).max(50),
   email: string().email(),
@@ -41,14 +46,6 @@ export const UpdateBusinessDetailsSchema = object({
   website: string().url().optional(),
   phone: string().optional(),
   type: string().optional(),
-  address: object({
-    street: string().toLowerCase(),
-    city: string().toLowerCase(),
-    state: string().toLowerCase(),
-    pincode: string().toLowerCase(),
-    country: string().toLowerCase(),
-  }).optional(),
-  addressesToDelete: string().array().optional(),
   companyLogo: any().optional(), // Handle single logo upload
   companyImages: any().array().optional(), // Handle multiple image uploads
   companyImagesToDelete: string().array().optional(), // New field
@@ -57,28 +54,37 @@ export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema
 >;
 
-export const AddOrUpdateServiceSchema = object({
-  serviceId: string().optional(),
+export const AddServiceSchema = object({
   token: string(),
   name: string(),
   overview: string().optional(),
-  price: number(),
+  price: number().nonnegative(),
   discountedPrice: number().optional(),
-  serviceImages: any().optional(),
-  businessId: string(),
-  subcategoryId: string(),
+  serviceImages: any().array().optional(), // URLs of images
   tags: string().toLowerCase().array().optional(),
   facilities: string().toLowerCase().array().optional(),
-  address: object({
-    street: string().toLowerCase(),
-    city: string().toLowerCase(),
-    state: string().toLowerCase(),
-    pincode: string().toLowerCase(),
-    country: string().toLowerCase(),
-  }).optional(),
-  addressesToDelete: string().array().optional(),
-  serviceImagesToDelete: string().array().optional(),
-  tagsToDelete: string().array().optional(),
-  facilitiesToDelete: string().array().optional(),
+  subcategoryId: string(), // assuming subcategory is required
 });
-export type AddOrUpdateServiceInput = infer_<typeof AddOrUpdateServiceSchema>;
+export type AddServiceInput = infer_<typeof AddServiceSchema>;
+
+export const UpdateServiceSchema = object({
+  token: string(),
+  serviceId: string(),
+  name: string().optional(),
+  overview: string().optional(),
+  price: number().optional(),
+  discountedPrice: number().optional(),
+  tags: string().toLowerCase().array().optional(),
+  facilities: string().toLowerCase().array().optional(),
+  tagsToDelete: string().toLowerCase().array().optional(),
+  facilitiesToDelete: string().toLowerCase().array().optional(),
+  serviceImages: any().array().optional(), // URLs of new images to add
+  serviceImagesToDelete: string().array().optional(), // URLs of images to delete
+});
+export type UpdateServiceInput = infer_<typeof UpdateServiceSchema>;
+
+export const RemoveServiceSchema = object({
+  token: string(),
+  serviceId: string(),
+});
+export type RemoveServiceInput = infer_<typeof RemoveServiceSchema>;

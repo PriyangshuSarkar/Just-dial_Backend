@@ -7,3 +7,9 @@ Add Cloundinary✅
 3. business subscription
 4. customer can hide details
 5. if not sub-category not provided then the first element of the sub-category will be returned.
+6. Business get
+7. user get
+8. delete business
+9. delete user
+10. delete service
+11. service get
