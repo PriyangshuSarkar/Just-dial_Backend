@@ -1,21 +1,11 @@
 import { gql } from "graphql-tag";
 
 export const typeDefs = gql`
-  # input AddressInput {
-  #   street: String
-  #   city: String
-  #   state: String
-  #   pincode: String
-  #   country: String
-  #   serviceId: ID
-  #   service: Service
-  #   message: String
-  # }
-
   scalar Update
 
   type Query {
     status: String!
+    businessMe(token: String): Business
   }
 
   type Mutation {

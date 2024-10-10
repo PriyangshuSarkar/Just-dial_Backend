@@ -86,6 +86,7 @@ model Business {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   deletedAt           DateTime?
+  gstNumber           Int?
 }
 
 model Admin {

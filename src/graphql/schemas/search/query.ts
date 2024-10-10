@@ -1,7 +1,7 @@
-import { businessMe } from "./controller";
+import { allBusinesses } from "./controller";
 
 export const Query = {
   status: () => "Server is running",
 
-  businessMe,
+  allBusinesses,
 };
