@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextIndex"]
 }
 
 datasource db {
@@ -7,66 +8,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ContactType {
+  EMAIL
+  PHONE
+}
+
 model UserSubscription {
   id          String    @id @default(uuid())
   name        String
   description String?
   price       Float
-  duration    Int // Duration in days
+  duration    Int
   features    String[]
-  users       User[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+  users       User[]
 }
 
 model User {
   id                  String            @id @default(uuid())
   name                String
-  email               String            @unique
+  slug                String?           @unique
   password            String
   salt                String
-  isVerified          Boolean           @default(false)
-  phone               String?
+  contacts            UserContact[]
   hideDetails         Boolean           @default(true)
   otp                 String?
   otpExpiresAt        DateTime?
   avatar              String?
   addressId           String?           @unique
-  address             Address?          @relation()
-  reviews             Review[]
-  bookings            Booking[]
   subscriptionId      String?
-  subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
   subscriptionExpire  DateTime?
   paymentVerification Boolean?          @default(false)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   deletedAt           DateTime?
+  address             Address?
+  bookings            Booking[]
+  chats               Chat[]
+  reviews             Review[]
+  subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
+}
+
+model UserContact {
+  id           String      @id @default(uuid())
+  userId       String
+  type         ContactType
+  value        String      @unique
+  isVerified   Boolean     @default(false)
+  isPrimary    Boolean     @default(false)
+  verifiedAt   DateTime?
+  otp          String?
+  otpExpiresAt DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+  user         User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type, isPrimary])
+  @@index([type])
+  @@index([value])
 }
 
 model BusinessSubscription {
-  id          String     @id @default(uuid())
+  id          String       @id @default(uuid())
   name        String
   description String?
+  type        BusinessType
   price       Float
-  duration    Int // Duration in days
+  duration    Int
   features    String[]
-  businesses  Business[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  tierLevel   Int          @default(1)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
+  businesses  Business[]
 }
 
 model Business {
   id                  String                @id @default(uuid())
   name                String
-  email               String                @unique
+  slug                String?               @unique
+  contacts            BusinessContact[]
   password            String
   salt                String
-  isVerified          Boolean               @default(false)
-  phone               String?
-  type                String?
+  isBusinessVerified  Boolean               @default(false)
+  type                BusinessType
+  description         String?
   website             String?
   otp                 String?
   otpExpiresAt        DateTime?
@@ -75,18 +104,48 @@ model Business {
   latitude            Float?
   longitude           Float?
   addressId           String?               @unique
-  address             Address?              @relation()
-  services            Service[]
-  reviews             Review[]
-  averageRating       Float?
   subscriptionId      String?
-  subscription        BusinessSubscription? @relation(fields: [subscriptionId], references: [id])
   subscriptionExpire  DateTime?
-  paymentVerification Boolean?              @default(false)
+  averageRating       Float?
+  reviewCount         Int                   @default(0)
+  isListed            Boolean               @default(false)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   deletedAt           DateTime?
-  gstNumber           Int?
+  paymentVerification Boolean?              @default(false)
+  gstNumber           String?
+  licenceNumber       String?
+  address             Address?
+  subscription        BusinessSubscription? @relation(fields: [subscriptionId], references: [id])
+  chats               Chat[]
+  reviews             Review[]
+  services            Service[]
+
+  @@index([name])
+  @@index([isListed])
+  @@index([averageRating])
+  @@index([isBusinessVerified])
+  @@index([reviewCount])
+}
+
+model BusinessContact {
+  id           String      @id @default(uuid())
+  businessId   String
+  type         ContactType
+  value        String      @unique
+  isVerified   Boolean     @default(false)
+  isPrimary    Boolean     @default(false)
+  verifiedAt   DateTime?
+  otp          String?
+  otpExpiresAt DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+  business     Business    @relation(fields: [businessId], references: [id])
+
+  @@unique([businessId, type, isPrimary])
+  @@index([type])
+  @@index([value])
 }
 
 model Admin {
@@ -102,111 +161,153 @@ model Admin {
 model Service {
   id              String      @id @default(uuid())
   name            String
+  slug            String?     @unique
   overview        String?
   price           Float
   discountedPrice Float?
-  serviceImages   String[]
   businessId      String
-  business        Business    @relation(fields: [businessId], references: [id])
   subcategoryId   String
-  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
-  tags            Tag[]       @relation()
-  facilities      Facility[]  @relation()
-  bookings        Booking[]
-  offers          Offer[]
-  reviews         Review[]
   averageRating   Float?
+  description     String?
+  reviewCount     Int         @default(0)
   addressId       String?     @unique
-  address         Address?    @relation()
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   deletedAt       DateTime?
+  isListed        Boolean     @default(false)
+  serviceImages   String[]
+  address         Address?
+  bookings        Booking[]
+  offers          Offer[]
+  reviews         Review[]
+  business        Business    @relation(fields: [businessId], references: [id])
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
+  facilities      Facility[]  @relation("FacilityToService")
+  tags            Tag[]       @relation("ServiceToTag")
+
+  @@index([name])
+  @@index([isListed])
+  @@index([averageRating])
+  @@index([price])
+  @@index([updatedAt])
+  @@index([reviewCount])
 }
 
 model Address {
   id         String    @id @default(uuid())
-  street     Street[]
-  city       City[]
-  state      State[]
-  country    Country[]
-  pincode    Pincode[]
   userId     String?   @unique
-  user       User?     @relation(fields: [userId], references: [id])
   businessId String?   @unique
-  business   Business? @relation(fields: [businessId], references: [id])
   serviceId  String?   @unique
-  service    Service?  @relation(fields: [serviceId], references: [id])
   createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
+  updatedAt  DateTime  @updatedAt
+  business   Business? @relation(fields: [businessId], references: [id])
+  service    Service?  @relation(fields: [serviceId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id])
+  city       City      @relation(fields: [cityId], references: [id])
+  country    Country   @relation(fields: [countryId], references: [id])
+  pincode    Pincode   @relation(fields: [pincodeId], references: [id])
+  state      State     @relation(fields: [stateId], references: [id])
+  street     Street    @relation(fields: [streetId], references: [id])
+  streetId   String
+  cityId     String
+  countryId  String
+  pincodeId  String
+  stateId    String
+
+  @@index([cityId])
+  @@index([countryId])
+  @@index([pincodeId])
+  @@index([stateId])
 }
 
 model Street {
-  id      Int       @id @default(autoincrement())
-  name    String    @unique
-  address Address[]
-}
-
-model City {
-  id      Int       @id @default(autoincrement())
-  name    String    @unique
-  address Address[]
-}
-
-model State {
-  id      Int       @id @default(autoincrement())
-  name    String    @unique
-  address Address[]
-}
-
-model Country {
-  id      Int       @id @default(autoincrement())
-  name    String    @unique
-  address Address[]
+  id        String    @id @default(uuid())
+  name      String
+  slug      String?   @unique
+  pincodeId String
+  pincode   Pincode   @relation(fields: [pincodeId], references: [id])
+  address   Address[]
 }
 
 model Pincode {
-  id      Int       @id @default(autoincrement())
-  code    String    @unique
-  address Address[]
+  id        String    @id @default(uuid())
+  code      String    @unique
+  slug      String?   @unique
+  cityId    String
+  city      City      @relation(fields: [cityId], references: [id])
+  streets   Street[]
+  addresses Address[]
+}
+
+model City {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String?   @unique
+  stateId   String
+  state     State     @relation(fields: [stateId], references: [id])
+  pincodes  Pincode[]
+  addresses Address[]
+}
+
+model State {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String?   @unique
+  countryId String
+  country   Country   @relation(fields: [countryId], references: [id])
+  cities    City[]
+  addresses Address[]
+}
+
+model Country {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String?   @unique
+  state     State[]
+  addresses Address[]
 }
 
 model Category {
   id            String        @id @default(uuid())
   name          String        @unique
-  subcategories Subcategory[]
+  slug          String?       @unique
   createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
   deletedAt     DateTime?
+  categoryImage String?
+  updatedAt     DateTime      @updatedAt
+  subcategories Subcategory[]
 }
 
 model Subcategory {
-  id         String    @id @default(uuid())
-  name       String    @unique
-  categoryId String
-  category   Category  @relation(fields: [categoryId], references: [id])
-  services   Service[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
+  id               String    @id @default(uuid())
+  name             String    @unique
+  slug             String?   @unique
+  categoryId       String
+  createdAt        DateTime  @default(now())
+  deletedAt        DateTime?
+  updatedAt        DateTime  @updatedAt
+  subcategoryImage String?
+  services         Service[]
+  category         Category  @relation(fields: [categoryId], references: [id])
 }
 
 model Tag {
   id        String    @id @default(uuid())
   name      String    @unique
-  services  Service[] @relation()
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+  updatedAt DateTime  @updatedAt
+  services  Service[] @relation("ServiceToTag")
 }
 
 model Facility {
   id        String    @id @default(uuid())
   name      String    @unique
-  services  Service[] @relation()
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+  updatedAt DateTime  @updatedAt
+  services  Service[] @relation("FacilityToService")
 }
 
 model Review {
@@ -214,26 +315,26 @@ model Review {
   rating     Int
   comment    String?
   serviceId  String
-  service    Service   @relation(fields: [serviceId], references: [id])
   businessId String?
-  business   Business? @relation(fields: [businessId], references: [id])
   userId     String
-  user       User      @relation(fields: [userId], references: [id])
   createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
+  updatedAt  DateTime  @updatedAt
+  business   Business? @relation(fields: [businessId], references: [id])
+  service    Service?  @relation(fields: [serviceId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id])
 }
 
 model Booking {
   id        String    @id @default(uuid())
   date      DateTime
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
   serviceId String
-  service   Service   @relation(fields: [serviceId], references: [id])
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+  updatedAt DateTime  @updatedAt
+  service   Service   @relation(fields: [serviceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 model Offer {
@@ -244,8 +345,44 @@ model Offer {
   startDate    DateTime
   endDate      DateTime
   serviceId    String
-  service      Service   @relation(fields: [serviceId], references: [id])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
+  service      Service   @relation(fields: [serviceId], references: [id])
+}
+
+model Chat {
+  id         String    @id @default(uuid())
+  userId     String
+  businessId String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+  deletedAt  DateTime?
+  Business   Business  @relation(fields: [businessId], references: [id])
+  User       User      @relation(fields: [userId], references: [id])
+  Message    Message[]
+
+  @@unique([userId, businessId])
+}
+
+model Message {
+  id         String     @id @default(uuid())
+  content    String
+  senderType SenderType
+  chatId     String
+  createdAt  DateTime   @default(now())
+  readAt     DateTime?
+  fileType   String?
+  fileUrl    String?
+  chats      Chat       @relation(fields: [chatId], references: [id])
+}
+
+enum SenderType {
+  USER
+  BUSINESS
+}
+
+enum BusinessType {
+  INDIVIDUAL
+  FIRM
 }
