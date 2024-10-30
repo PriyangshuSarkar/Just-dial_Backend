@@ -1,5 +1,4 @@
 import gql from "graphql-tag";
-
 export const typeDefs = gql`
   scalar Date
 
@@ -17,8 +16,10 @@ export const typeDefs = gql`
   type User {
     id: ID
     name: String
+    slug: String
     email: String
-    isVerified: String
+    isEmailVerified: Boolean
+    isPhoneVerified: Boolean
     phone: String
     hideDetails: Boolean
     avatar: String
@@ -38,8 +39,10 @@ export const typeDefs = gql`
     id: ID
     name: String
     description: String
+    type: String
     price: Float
     duration: Int
+    tierLevel: Int
     features: [String]
     businesses: [Business]
     message: String
@@ -47,13 +50,17 @@ export const typeDefs = gql`
 
   type Business {
     id: ID
+    name: String
+    slug: String
     website: String
     rating: Float
-    isVerified: Boolean
+    isEmailVerified: Boolean
+    isPhoneVerified: Boolean
+    isBusinessVerified: Boolean
     email: String
-    name: String
     phone: String
     type: String
+    addressId: String
     address: [Address]
     latitude: Float
     longitude: Float
@@ -61,12 +68,17 @@ export const typeDefs = gql`
     companyImages: [String]
     message: String
     token: String
-    service: Service
+    services: [Service]
     reviews: [Review]
-    averageRating: Float
     subscriptionId: ID
+    subscriptionExpire: Date
     subscription: BusinessSubscription
     paymentVerification: Boolean
+    averageRating: Float
+    reviewCount: Int
+    isListed: Boolean
+    gstNumber: String
+    licenceNumber: String
   }
 
   type Admin {
@@ -80,6 +92,7 @@ export const typeDefs = gql`
   type Service {
     id: ID
     name: String
+    slug: String
     message: String
     overview: String
     price: Float
@@ -90,20 +103,28 @@ export const typeDefs = gql`
     tags: [Tag]
     facilities: [Facility]
     address: [Address]
+    addressId: ID
     subcategoryId: String
     subcategory: Subcategory
     offer: [Offer]
     booking: [Booking]
     reviews: [Review]
     averageRating: Float
+    reviewCount: Int
+    isListed: Boolean
   }
 
   type Address {
     id: ID
+    streetId: ID
     street: Street
+    cityId: ID
     city: City
+    stateId: ID
     state: State
+    countryId: ID
     country: Country
+    pincodeId: ID
     pincode: Pincode
     userId: ID
     user: User
@@ -117,27 +138,9 @@ export const typeDefs = gql`
   type Street {
     id: ID
     name: String
-    address: [Address]
-    message: String
-  }
-
-  type City {
-    id: ID
-    name: String
-    address: [Address]
-    message: String
-  }
-
-  type State {
-    id: ID
-    name: String
-    address: [Address]
-    message: String
-  }
-
-  type Country {
-    id: ID
-    name: String
+    slug: String
+    pincodeId: ID
+    pincode: [Pincode]
     address: [Address]
     message: String
   }
@@ -145,6 +148,41 @@ export const typeDefs = gql`
   type Pincode {
     id: ID
     code: String
+    slug: String
+    cityId: ID
+    city: City
+    streets: [Street]
+    address: [Address]
+    message: String
+  }
+
+  type City {
+    id: ID
+    name: String
+    slug: String
+    stateId: ID
+    state: State
+    pincodes: [Pincode]
+    address: [Address]
+    message: String
+  }
+
+  type State {
+    id: ID
+    name: String
+    slug: String
+    countryId: ID
+    country: Country
+    cities: [City]
+    address: [Address]
+    message: String
+  }
+
+  type Country {
+    id: ID
+    name: String
+    slug: String
+    state: [State]
     address: [Address]
     message: String
   }
@@ -152,6 +190,8 @@ export const typeDefs = gql`
   type Category {
     id: ID
     name: String
+    slug: String
+    companyImages: String
     subcategories: [Subcategory]
     message: String
   }
@@ -159,6 +199,8 @@ export const typeDefs = gql`
   type Subcategory {
     id: ID
     name: String
+    slug: String
+    subcategoryImage: String
     categoryId: ID
     category: Category
     services: [Service]
@@ -168,7 +210,6 @@ export const typeDefs = gql`
   type Tag {
     id: ID
     name: String
-    serviceId: ID
     service: [Service]
     message: String
   }
@@ -176,7 +217,6 @@ export const typeDefs = gql`
   type Facility {
     id: ID
     name: String
-    serviceId: ID
     service: [Service]
     message: String
   }

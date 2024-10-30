@@ -21,6 +21,16 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     await transporter.sendMail(mailOptions);
   } catch (error) {
     console.error("Error sending email:", error);
-    throw new Error("Failed to send verification email");
+    throw new Error("Failed to send email");
   }
+};
+
+export const sendOtpEmail = async (
+  userName: string,
+  email: string,
+  otp: string
+): Promise<void> => {
+  const emailSubject = "Confirm Your Email Address";
+  const emailText = `Hello ${userName},\n\nThank you for signing up! Please confirm your email address by entering the following OTP:\n\n${otp}\n\nBest regards,\nYour Company Name`;
+  await sendEmail(email, emailSubject, emailText);
 };

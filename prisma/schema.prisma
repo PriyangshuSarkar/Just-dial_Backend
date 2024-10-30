@@ -204,68 +204,44 @@ model Address {
   business   Business? @relation(fields: [businessId], references: [id])
   service    Service?  @relation(fields: [serviceId], references: [id])
   user       User?     @relation(fields: [userId], references: [id])
-  city       City      @relation(fields: [cityId], references: [id])
-  country    Country   @relation(fields: [countryId], references: [id])
-  pincode    Pincode   @relation(fields: [pincodeId], references: [id])
-  state      State     @relation(fields: [stateId], references: [id])
-  street     Street    @relation(fields: [streetId], references: [id])
-  streetId   String
-  cityId     String
-  countryId  String
-  pincodeId  String
-  stateId    String
-
-  @@index([cityId])
-  @@index([countryId])
-  @@index([pincodeId])
-  @@index([stateId])
-}
-
-model Street {
-  id        String    @id @default(uuid())
-  name      String
-  slug      String?   @unique
-  pincodeId String
-  pincode   Pincode   @relation(fields: [pincodeId], references: [id])
-  address   Address[]
+  street     String
+  city       String
+  country    String
+  pincode    String
+  state      String
 }
 
 model Pincode {
-  id        String    @id @default(uuid())
-  code      String    @unique
-  slug      String?   @unique
-  cityId    String
-  city      City      @relation(fields: [cityId], references: [id])
-  streets   Street[]
-  addresses Address[]
+  id     String  @id @default(uuid())
+  code   String  @unique
+  slug   String? @unique
+  cityId String
+  city   City    @relation(fields: [cityId], references: [id])
 }
 
 model City {
-  id        String    @id @default(uuid())
-  name      String
-  slug      String?   @unique
-  stateId   String
-  state     State     @relation(fields: [stateId], references: [id])
-  pincodes  Pincode[]
-  addresses Address[]
+  id       String    @id @default(uuid())
+  name     String
+  slug     String?   @unique
+  stateId  String
+  state    State     @relation(fields: [stateId], references: [id])
+  pincodes Pincode[]
 }
 
 model State {
-  id        String    @id @default(uuid())
+  id        String  @id @default(uuid())
   name      String
-  slug      String?   @unique
+  slug      String? @unique
   countryId String
-  country   Country   @relation(fields: [countryId], references: [id])
+  country   Country @relation(fields: [countryId], references: [id])
   cities    City[]
-  addresses Address[]
 }
 
 model Country {
-  id        String    @id @default(uuid())
-  name      String
-  slug      String?   @unique
-  state     State[]
-  addresses Address[]
+  id    String  @id @default(uuid())
+  name  String
+  slug  String? @unique
+  state State[]
 }
 
 model Category {

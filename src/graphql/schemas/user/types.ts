@@ -16,7 +16,6 @@ export const typeDefs = gql`
     changeUserPassword(email: String!, password: String!, otp: String!): User
     updateUserDetails(
       name: String
-      phone: String
       hideDetails: Boolean
       token: String
       avatar: Upload

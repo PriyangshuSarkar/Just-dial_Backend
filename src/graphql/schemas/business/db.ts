@@ -1,4 +1,11 @@
-import { object, string, infer as infer_, any, number } from "zod";
+import {
+  object,
+  string,
+  infer as infer_,
+  any,
+  number,
+  enum as enum_,
+} from "zod";
 
 export const BusinessMeSchema = object({
   token: string(),
@@ -9,6 +16,7 @@ export const BusinessSignupSchema = object({
   name: string().min(2).max(50),
   email: string().email(),
   password: string().min(6).max(100),
+  type: enum_(["INDIVIDUAL", "FIRM"]),
 });
 export type BusinessSignupInput = infer_<typeof BusinessSignupSchema>;
 
@@ -17,6 +25,19 @@ export const VerifyBusinessEmailSchema = object({
   otp: string(),
 });
 export type VerifyBusinessEmailInput = infer_<typeof VerifyBusinessEmailSchema>;
+
+export const AddBusinessPhoneSchema = object({
+  token: string(),
+  phone: string(),
+});
+export type AddBusinessPhoneInput = infer_<typeof AddBusinessPhoneSchema>;
+
+export const VerifyBusinessPhoneSchema = object({
+  token: string(),
+  phone: string(),
+  otp: string(),
+});
+export type VerifyBusinessPhoneInput = infer_<typeof VerifyBusinessPhoneSchema>;
 
 export const BusinessLoginSchema = object({
   email: string(),
@@ -44,8 +65,7 @@ export const UpdateBusinessDetailsSchema = object({
   token: string(),
   name: string().optional(),
   website: string().url().optional(),
-  phone: string().optional(),
-  type: string().optional(),
+  type: enum_(["INDIVIDUAL", "FIRM"]).optional(),
   companyLogo: any().optional(), // Handle single logo upload
   companyImages: any().array().optional(), // Handle multiple image uploads
   companyImagesToDelete: string().array().optional(), // New field
@@ -70,6 +90,7 @@ export type AddServiceInput = infer_<typeof AddServiceSchema>;
 export const UpdateServiceSchema = object({
   token: string(),
   serviceId: string(),
+  subcategoryId: string().optional(),
   name: string().optional(),
   overview: string().optional(),
   price: number().optional(),

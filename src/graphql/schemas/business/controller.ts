@@ -20,28 +20,35 @@ import {
   RemoveServiceSchema,
   BusinessMeInput,
   BusinessMeSchema,
+  VerifyBusinessPhoneInput,
+  VerifyBusinessPhoneSchema,
+  AddBusinessPhoneSchema,
+  AddBusinessPhoneInput,
 } from "./db";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
-import { sendEmail } from "../../../utils/emailService";
+import { sendEmail, sendOtpEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
 import { verifyToken } from "../../../utils/verifyToken";
 import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from "../../../utils/cloudinary";
+import { v4 } from "uuid";
+import slugify from "slugify";
+import { sendOtpPhone } from "../../../utils/smsService";
 
 export const businessMe = async (_: unknown, args: BusinessMeInput) => {
   const validatedData = BusinessMeSchema.parse(args);
 
   const owner: any = verifyToken(validatedData.token);
 
-  if (!owner || typeof owner.userId !== "string") {
+  if (!owner || typeof owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
   const business = await prisma.business.findFirst({
-    where: { id: owner.id, isVerified: true, deletedAt: null },
+    where: { id: owner.id, isEmailVerified: true, deletedAt: null },
     include: {
       address: {
         include: {
@@ -78,7 +85,7 @@ export const businessMe = async (_: unknown, args: BusinessMeInput) => {
   });
 
   if (!business) {
-    throw new Error("User not found!");
+    throw new Error("Business not found!");
   }
 
   return {
@@ -90,12 +97,20 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
   // Validate input
   const validatedData = BusinessSignupSchema.parse(args);
   const existingBusiness = await prisma.business.findFirst({
-    where: { email: validatedData.email, isVerified: true, deletedAt: null },
+    where: {
+      email: validatedData.email,
+      isEmailVerified: true,
+      deletedAt: null,
+    },
   });
 
   if (existingBusiness) {
     throw new Error("Business already exists and email is verified!");
   }
+
+  const baseSlug = slugify(validatedData.name, { lower: true, strict: true });
+  const uuid = v4();
+  const slug = `${baseSlug}-${uuid}`;
 
   const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
     .toString()
@@ -105,7 +120,9 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
   const newBusiness = await prisma.business.upsert({
     where: { email: validatedData.email },
     update: {
+      id: uuid,
       name: validatedData.name,
+      slug: slug,
       password: hash,
       salt,
       deletedAt: null,
@@ -113,24 +130,17 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
       otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
     },
     create: {
+      id: uuid,
       name: validatedData.name,
+      slug: slug,
       email: validatedData.email,
       password: hash,
+      type: validatedData.type,
       salt,
       otp,
       otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
     },
   });
-
-  const sendOtpEmail = async (
-    businessName: string,
-    email: string,
-    otp: string
-  ): Promise<void> => {
-    const emailSubject = "Confirm Your Email Address";
-    const emailText = `Hello ${businessName},\n\nThank you for signing up! Please confirm your email address by entering the following OTP:\n\n${otp}\n\nBest regards,\nYour Company Name`;
-    await sendEmail(email, emailSubject, emailText);
-  };
 
   await sendOtpEmail(newBusiness.name, newBusiness.email, otp);
 
@@ -168,10 +178,12 @@ export const verifyBusinessEmail = async (
 
   const validatedBusiness = await prisma.business.update({
     where: {
-      email: business.email,
+      id: business.id,
     },
     data: {
-      isVerified: true,
+      isEmailVerified: true,
+      otp: null,
+      otpExpiresAt: null,
     },
     include: {
       address: {
@@ -207,7 +219,11 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
   const validatedData = BusinessLoginSchema.parse(args);
 
   const business = await prisma.business.findFirst({
-    where: { email: validatedData.email, isVerified: true, deletedAt: null },
+    where: {
+      email: validatedData.email,
+      isEmailVerified: true,
+      deletedAt: null,
+    },
     include: {
       address: {
         where: { deletedAt: null },
@@ -248,6 +264,124 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
   }
 };
 
+export const addBusinessPhone = async (
+  _: unknown,
+  args: AddBusinessPhoneInput
+) => {
+  const validatedData = AddBusinessPhoneSchema.parse(args);
+
+  const existingPhone = await prisma.business.findFirst({
+    where: { phone: validatedData.phone },
+  });
+
+  if (existingPhone) {
+    throw new Error("Phone number already exist!");
+  }
+
+  const owner: any = verifyToken(validatedData.token);
+
+  if (!owner || typeof owner.businessId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { id: owner.businessId, isEmailVerified: true, deletedAt: null },
+  });
+
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+
+  const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
+    .toString()
+    .padStart(6, "0");
+
+  const updatedBusiness = await prisma.business.update({
+    where: { id: business.id, isEmailVerified: true, deletedAt: null },
+    data: {
+      otp,
+      otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    },
+    include: {
+      address: {
+        include: {
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
+    },
+  });
+
+  await sendOtpPhone(updatedBusiness.name, updatedBusiness.email, otp);
+
+  return {
+    ...updatedBusiness,
+    message: "Business created! Please verify your email.",
+  };
+};
+
+export const verifyBusinessPhone = async (
+  _: unknown,
+  args: VerifyBusinessPhoneInput
+) => {
+  const validatedData = VerifyBusinessPhoneSchema.parse(args);
+
+  const owner: any = verifyToken(validatedData.token);
+
+  if (!owner || typeof owner.businessId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { id: owner.businessId, isEmailVerified: true, deletedAt: null },
+  });
+
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+
+  const currentTime = new Date();
+
+  if (business.otpExpiresAt! < currentTime) {
+    throw new Error("OTP has expired.");
+  }
+
+  if (business.otp! !== validatedData.otp) {
+    throw new Error("OTP doesn't match!");
+  }
+
+  const validatedBusinessPhone = await prisma.business.update({
+    where: {
+      id: business.id,
+    },
+    data: {
+      phone: validatedData.phone,
+      isPhoneVerified: true,
+      otp: null,
+      otpExpiresAt: null,
+    },
+    include: {
+      address: {
+        include: {
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
+    },
+  });
+
+  return {
+    ...validatedBusinessPhone,
+    message: "Business Phone OTP verified!",
+  };
+};
+
 export const forgetBusinessPassword = async (
   _: unknown,
   args: ForgetBusinessPasswordInput
@@ -270,7 +404,11 @@ export const forgetBusinessPassword = async (
     .padStart(6, "0");
 
   const business = await prisma.business.update({
-    where: { email: validatedData.email, isVerified: true, deletedAt: null }, // Find the business by email
+    where: {
+      email: validatedData.email,
+      isEmailVerified: true,
+      deletedAt: null,
+    }, // Find the business by email
     data: {
       otp: otp,
       otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -293,7 +431,7 @@ export const changeBusinessPassword = async (
   const business = await prisma.business.findFirst({
     where: {
       email: validatedData.email,
-      isVerified: true,
+      isEmailVerified: true,
       deletedAt: null,
     },
   });
@@ -324,7 +462,7 @@ export const changeBusinessPassword = async (
   const { salt, hash } = hashPassword(validatedData.password);
 
   const updatedPassword = await prisma.business.update({
-    where: { email: business.email, isVerified: true, deletedAt: null },
+    where: { email: business.email, isEmailVerified: true, deletedAt: null },
     data: {
       password: hash,
       salt: salt,
@@ -358,12 +496,12 @@ export const updateBusinessDetails = async (
 
   const owner: any = verifyToken(validatedData.token);
 
-  if (!owner || typeof owner.userId !== "string") {
+  if (!owner || typeof owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
   const business = await prisma.business.findUnique({
-    where: { id: owner.businessId, isVerified: true, deletedAt: null },
+    where: { id: owner.businessId, isEmailVerified: true, deletedAt: null },
   });
 
   if (!business) {
@@ -408,11 +546,10 @@ export const updateBusinessDetails = async (
 
   // Update business details
   const updatedBusiness = await prisma.business.update({
-    where: { id: business.id, isVerified: true, deletedAt: null },
+    where: { id: business.id, isEmailVerified: true, deletedAt: null },
     data: {
       website: validatedData.website || business.website,
       name: validatedData.name || business.name,
-      phone: validatedData.phone || business.phone,
       type: validatedData.type || business.type,
       companyLogo: logoUrl || business.companyLogo, // Store logo URL
       companyImages: imagesUrls
@@ -452,7 +589,7 @@ export const addService = async (_: unknown, args: AddServiceInput) => {
 
   // Check if the business exists
   const business = await prisma.business.findUnique({
-    where: { id: owner.businessId, isVerified: true, deletedAt: null },
+    where: { id: owner.businessId, isEmailVerified: true, deletedAt: null },
   });
   if (!business) {
     throw new Error("Business not found!");
@@ -481,10 +618,16 @@ export const addService = async (_: unknown, args: AddServiceInput) => {
       create: { name: facility }, // Create new facility if it doesn't exist
     })) || [];
 
+  const baseSlug = slugify(validatedData.name, { lower: true, strict: true });
+  const uuid = v4();
+  const slug = `${baseSlug}-${uuid}`;
+
   // Create the service
   const newService = await prisma.service.create({
     data: {
+      id: uuid,
       name: validatedData.name,
+      slug: slug,
       overview: validatedData.overview,
       price: validatedData.price,
       discountedPrice: validatedData.discountedPrice,
@@ -577,11 +720,19 @@ export const updateService = async (_: unknown, args: UpdateServiceInput) => {
     service.serviceImages = remainingImages;
   }
 
+  const baseSlug = slugify(validatedData.name || service.name, {
+    lower: true,
+    strict: true,
+  });
+  const uuid = service.id;
+  const slug = `${baseSlug}-${uuid}`;
+
   // Update service data
   const updatedService = await prisma.service.update({
     where: { id: validatedData.serviceId, deletedAt: null },
     data: {
       name: validatedData.name || service.name,
+      slug: slug,
       overview: validatedData.overview || service.overview,
       price: validatedData.price || service.price,
       discountedPrice: validatedData.discountedPrice || service.discountedPrice,

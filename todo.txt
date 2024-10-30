@@ -13,3 +13,26 @@ Add Cloundinary✅
 9. delete user
 10. delete service
 11. service get
+
+Order
+! first search will be location based
+! next all the results will be overall
+0. is Featured or not(package priority)
+1. rating
+2. updated at 
+
+Filter
+1. Alpha
+2. rating
+3. popular(Featured and no of review)
+4. pricing 
+5. verified and non verified
+
+
+1.description (business, services)
+2.email, mobile (array)
+3.mobile verification 
+4.address
+5.auto suggestions
+6.google auth 
+7.payment gateway

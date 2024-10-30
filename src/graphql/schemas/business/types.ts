@@ -9,7 +9,12 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    businessSignup(name: String!, email: String!, password: String!): Business
+    businessSignup(
+      name: String!
+      email: String!
+      password: String!
+      type: String!
+    ): Business
     verifyBusinessEmail(email: String!, otp: String!): Business
     businessLogin(email: String!, password: String!): Business
     forgetBusinessPassword(email: String!): Business
@@ -22,11 +27,9 @@ export const typeDefs = gql`
       token: String!
       name: String
       website: String
-      phone: String
       type: String
       companyLogo: Upload
       companyImages: [Upload]
-      addressesToDelete: [String]
       companyImagesToDelete: [String]
     ): Business
     addService(

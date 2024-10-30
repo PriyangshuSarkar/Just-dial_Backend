@@ -12,6 +12,9 @@ export default [
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "off", // Disable warnings for `any` type
+      "no-unused-vars": "off", // Disable no-unused-vars rule from ESLint core
+      "@typescript-eslint/no-unused-vars": ["off"], // Disable no-unused-vars rule for TypeScript
+      "unused-imports/no-unused-imports": "off", // Disable unused imports rule if using `eslint-plugin-unused-imports`
     },
   },
 ];
