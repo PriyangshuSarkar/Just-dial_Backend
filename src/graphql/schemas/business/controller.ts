@@ -1,4 +1,3 @@
-import { randomBytes } from "crypto";
 import {
   ChangeBusinessPasswordInput,
   ChangeBusinessPasswordSchema,
@@ -8,79 +7,217 @@ import {
   BusinessLoginSchema,
   BusinessSignupInput,
   BusinessSignupSchema,
-  VerifyBusinessEmailInput,
-  VerifyBusinessEmailSchema,
   UpdateBusinessDetailsInput,
   UpdateBusinessDetailsSchema,
-  AddServiceInput,
-  AddServiceSchema,
-  UpdateServiceInput,
-  UpdateServiceSchema,
-  RemoveServiceInput,
-  RemoveServiceSchema,
   BusinessMeInput,
   BusinessMeSchema,
-  VerifyBusinessPhoneInput,
-  VerifyBusinessPhoneSchema,
-  AddBusinessPhoneSchema,
-  AddBusinessPhoneInput,
+  DeleteBusinessAccountInput,
+  DeleteBusinessAccountSchema,
+  ManageBusinessAddressInput,
+  ManageBusinessAddressSchema,
+  VerifyBusinessPrimaryContactInput,
+  VerifyBusinessPrimaryContactSchema,
+  ManageBusinessWebsiteInput,
+  ManageBusinessWebsiteSchema,
+  ManageBusinessImageInput,
+  ManageBusinessImageSchema,
+  AddBusinessPrimaryContactInput,
+  AddBusinessPrimaryContactSchema,
+  ManageBusinessSupportingDocumentsInput,
+  ManageBusinessSupportingDocumentsSchema,
 } from "./db";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
-import { sendEmail, sendOtpEmail } from "../../../utils/emailService";
+import { sendOtpEmail } from "../../../utils/emailService";
 import { sign } from "jsonwebtoken";
-import { verifyToken } from "../../../utils/verifyToken";
+import { generateToken, verifyToken } from "../../../utils/verifyToken";
+import slugify from "slugify";
+import { sendOtpPhone } from "../../../utils/smsService";
+import { ContactType, Prisma } from "@prisma/client";
+import { createOtpData } from "../../../utils/generateOtp";
 import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from "../../../utils/cloudinary";
-import { v4 } from "uuid";
-import slugify from "slugify";
-import { sendOtpPhone } from "../../../utils/smsService";
 
-export const businessMe = async (_: unknown, args: BusinessMeInput) => {
+const MAX_CONTACTS_PER_TYPE = 1;
+const MAX_DAILY_VERIFICATION_ATTEMPTS = 5;
+
+const ensurePrimaryContact = async (
+  tx: Prisma.TransactionClient,
+  businessId: string
+): Promise<void> => {
+  const hasAnyPrimary = await tx.businessPrimaryContact.findFirst({
+    where: {
+      businessId,
+      isPrimary: true,
+      isVerified: true,
+      deletedAt: null,
+    },
+  });
+
+  if (!hasAnyPrimary) {
+    const mostRecentVerified = await tx.businessPrimaryContact.findFirst({
+      where: {
+        businessId,
+        isVerified: true,
+        deletedAt: null,
+      },
+      orderBy: { verifiedAt: "desc" },
+    });
+
+    if (mostRecentVerified) {
+      await tx.businessPrimaryContact.update({
+        where: { id: mostRecentVerified.id },
+        data: { isPrimary: true },
+      });
+    }
+  }
+};
+
+const cleanupUnverifiedContacts = async (
+  tx: Prisma.TransactionClient,
+  value: string,
+  type: ContactType
+): Promise<void> => {
+  await tx.businessPrimaryContact.deleteMany({
+    where: {
+      value,
+      type,
+      isVerified: false,
+      OR: [{ deletedAt: null }, { deletedAt: { not: null } }],
+    },
+  });
+};
+
+const checkVerificationAttempts = async (
+  tx: Prisma.TransactionClient,
+  contactValue: string,
+  type: ContactType
+): Promise<void> => {
+  const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const attempts = await tx.businessPrimaryContact.count({
+    where: {
+      value: contactValue,
+      type,
+      updatedAt: { gte: last24Hours },
+      otp: { not: null },
+    },
+  });
+
+  if (attempts >= MAX_DAILY_VERIFICATION_ATTEMPTS) {
+    throw new Error(
+      `Maximum verification attempts exceeded for this ${type.toLowerCase()}. Please try again in 24 hours.`
+    );
+  }
+};
+
+export const businessMe = async (
+  _: unknown,
+  args: BusinessMeInput,
+  context: any
+) => {
   const validatedData = BusinessMeSchema.parse(args);
 
-  const owner: any = verifyToken(validatedData.token);
-
-  if (!owner || typeof owner.businessId !== "string") {
+  if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
   const business = await prisma.business.findFirst({
-    where: { id: owner.id, isEmailVerified: true, deletedAt: null },
+    where: {
+      id: context.owner.id,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
     include: {
-      address: {
+      primaryContacts: true,
+      businessDetails: {
         include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
-        },
-      },
-      services: {
-        include: {
-          address: {
-            include: {
-              street: true,
-              city: true,
-              state: true,
-              country: true,
-              pincode: true,
+          addresses: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
             },
           },
-          subcategory: {
-            include: {
-              category: true,
+          websites: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
             },
           },
-          tags: true,
-          facilities: true,
+          images: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          court: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          proficiency: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          tags: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
         },
       },
-      reviews: true,
-      subscription: true,
+      businessSupportingDocuments: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      reviews: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      subscription: {
+        where: {
+          deletedAt: null,
+        },
+      },
+      bookings: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
     },
   });
 
@@ -94,148 +231,374 @@ export const businessMe = async (_: unknown, args: BusinessMeInput) => {
 };
 
 export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
-  // Validate input
   const validatedData = BusinessSignupSchema.parse(args);
-  const existingBusiness = await prisma.business.findFirst({
-    where: {
-      email: validatedData.email,
-      isEmailVerified: true,
-      deletedAt: null,
-    },
+
+  return await prisma.$transaction(async (tx) => {
+    const existingContact = await tx.businessPrimaryContact.findFirst({
+      where: {
+        OR: [
+          {
+            value: validatedData.email,
+            type: "EMAIL",
+            isVerified: true,
+            deletedAt: null,
+          },
+          {
+            value: validatedData.email,
+            type: "PHONE",
+            isVerified: true,
+            deletedAt: null,
+          },
+        ],
+      },
+    });
+
+    if (existingContact) {
+      throw new Error(
+        `A verified business with this ${existingContact.type.toLowerCase()} already exists!`
+      );
+    }
+
+    if (validatedData.email) {
+      cleanupUnverifiedContacts(tx, validatedData.email, "EMAIL");
+    }
+    if (validatedData.phone) {
+      cleanupUnverifiedContacts(tx, validatedData.phone, "PHONE");
+    }
+
+    // Generate OTPs
+    const emailOtpData = validatedData.email ? createOtpData() : null;
+    const phoneOtpData = validatedData.phone ? createOtpData() : null;
+
+    const business = await tx.business.create({
+      data: {},
+    });
+
+    // Create contacts
+    if (validatedData.email) {
+      await tx.businessPrimaryContact.create({
+        data: {
+          business: {
+            connect: { id: business.id },
+          },
+          type: "EMAIL",
+          value: validatedData.email,
+          isPrimary: true,
+          ...emailOtpData,
+        },
+      });
+    }
+
+    if (validatedData.phone) {
+      await tx.businessPrimaryContact.create({
+        data: {
+          businessId: business.id,
+          type: "PHONE",
+          value: validatedData.phone,
+          isPrimary: !validatedData.email,
+          ...phoneOtpData,
+        },
+      });
+    }
+
+    // Send verification codes
+    try {
+      if (validatedData.email && emailOtpData) {
+        await sendOtpEmail(null, validatedData.email, emailOtpData.otp);
+      }
+      if (validatedData.phone && phoneOtpData) {
+        await sendOtpPhone(null, validatedData.phone, phoneOtpData.otp);
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
+
+    return {
+      value: [validatedData.email, validatedData.phone]
+        .filter(Boolean)
+        .join(" and "),
+      message: `Verification code sent to your ${
+        validatedData.email && validatedData.phone
+          ? "email and phone"
+          : validatedData.email
+          ? "email"
+          : "phone"
+      }.`,
+    };
   });
-
-  if (existingBusiness) {
-    throw new Error("Business already exists and email is verified!");
-  }
-
-  const baseSlug = slugify(validatedData.name, { lower: true, strict: true });
-  const uuid = v4();
-  const slug = `${baseSlug}-${uuid}`;
-
-  const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
-    .toString()
-    .padStart(6, "0");
-  const { salt, hash } = hashPassword(validatedData.password);
-
-  const newBusiness = await prisma.business.upsert({
-    where: { email: validatedData.email },
-    update: {
-      id: uuid,
-      name: validatedData.name,
-      slug: slug,
-      password: hash,
-      salt,
-      deletedAt: null,
-      otp,
-      otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    },
-    create: {
-      id: uuid,
-      name: validatedData.name,
-      slug: slug,
-      email: validatedData.email,
-      password: hash,
-      type: validatedData.type,
-      salt,
-      otp,
-      otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    },
-  });
-
-  await sendOtpEmail(newBusiness.name, newBusiness.email, otp);
-
-  return {
-    email: newBusiness.email,
-    message: "Business created! Please verify your email.",
-  };
 };
 
-export const verifyBusinessEmail = async (
+export const verifyBusinessPrimaryContact = async (
   _: unknown,
-  args: VerifyBusinessEmailInput
+  args: VerifyBusinessPrimaryContactInput
 ) => {
-  const validatedData = VerifyBusinessEmailSchema.parse(args);
+  const validatedData = VerifyBusinessPrimaryContactSchema.parse(args);
 
-  const business = await prisma.business.findFirst({
-    where: {
-      email: validatedData.email,
-    },
-  });
+  return await prisma.$transaction(async (tx) => {
+    const value = validatedData.email || validatedData.phone;
+    const type = validatedData.email ? "EMAIL" : "PHONE";
 
-  if (!business) {
-    throw new Error("Email doesn't exist!");
-  }
+    const contact = await tx.businessPrimaryContact.findFirst({
+      where: {
+        value,
+        type,
+        deletedAt: null,
+      },
+    });
 
-  const currentTime = new Date();
+    if (!contact) {
+      throw new Error("Contact not found");
+    }
 
-  if (business.otpExpiresAt! < currentTime) {
-    throw new Error("OTP has expired.");
-  }
+    if (!contact.otp || !contact.otpExpiresAt) {
+      throw new Error("No verification code found. Please request a new one.");
+    }
 
-  if (business.otp! !== validatedData.otp) {
-    throw new Error("OTP doesn't match!");
-  }
+    if (contact.otpExpiresAt < new Date()) {
+      throw new Error(
+        "Verification code has expired. Please request a new one."
+      );
+    }
 
-  const validatedBusiness = await prisma.business.update({
-    where: {
-      id: business.id,
-    },
-    data: {
-      isEmailVerified: true,
-      otp: null,
-      otpExpiresAt: null,
-    },
-    include: {
-      address: {
-        where: { deletedAt: null },
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
+    if (contact.otp !== validatedData.otp) {
+      throw new Error("Invalid verification code");
+    }
+
+    const business = await tx.business.findUnique({
+      where: { id: contact.businessId },
+    });
+
+    let passwordUpdate = {};
+    if (!business?.password && validatedData.password) {
+      const { salt, hash } = hashPassword(validatedData.password);
+      passwordUpdate = { password: hash, salt };
+    }
+
+    // Verify the contact
+    const verifiedContact = await tx.businessPrimaryContact.update({
+      where: { id: contact.id, value },
+      data: {
+        isVerified: true,
+        verifiedAt: new Date(),
+        otp: null,
+        otpExpiresAt: null,
+        business: {
+          update: passwordUpdate,
         },
       },
-      services: true,
-    },
+      include: {
+        business: {
+          include: {
+            primaryContacts: true,
+            businessDetails: {
+              include: {
+                addresses: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    createdAt: "desc",
+                  },
+                },
+                websites: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    createdAt: "desc",
+                  },
+                },
+                images: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    createdAt: "desc",
+                  },
+                },
+                court: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    createdAt: "desc",
+                  },
+                },
+                proficiency: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    createdAt: "desc",
+                  },
+                },
+                tags: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    createdAt: "desc",
+                  },
+                },
+              },
+            },
+            businessSupportingDocuments: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            reviews: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            subscription: {
+              where: {
+                deletedAt: null,
+              },
+            },
+            bookings: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Ensure there's a primary contact
+    await ensurePrimaryContact(tx, contact.businessId);
+    const token = generateToken(verifiedContact.businessId, "BUSINESS");
+
+    return {
+      ...verifiedContact.business,
+      token,
+      message: `${type === "EMAIL" ? "Email" : "Phone"} verified successfully!`,
+    };
   });
-
-  const token = sign(
-    { businessId: validatedBusiness.id },
-    process.env.JWT_SECRET!,
-    {
-      expiresIn: process.env.JWT_EXPIRATION_TIME!,
-    }
-  );
-
-  return {
-    ...validatedBusiness,
-    message: "Business OTP verified!",
-    token: token,
-  };
 };
 
 export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
   const validatedData = BusinessLoginSchema.parse(args);
 
-  const business = await prisma.business.findFirst({
+  const value = validatedData.email || validatedData.phone;
+
+  const existingContact = await prisma.businessPrimaryContact.findFirst({
     where: {
-      email: validatedData.email,
-      isEmailVerified: true,
+      value,
+      isVerified: true,
       deletedAt: null,
     },
-    include: {
-      address: {
-        where: { deletedAt: null },
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
+  });
+  if (!existingContact) {
+    throw new Error(`${value} doesn't exit!`);
+  }
+
+  const business = await prisma.business.findFirst({
+    where: {
+      id: existingContact.businessId,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
         },
       },
-      services: true,
+    },
+    include: {
+      primaryContacts: true,
+      businessDetails: {
+        include: {
+          addresses: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          websites: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          images: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          court: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          proficiency: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          tags: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
+      },
+      businessSupportingDocuments: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      reviews: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      subscription: {
+        where: {
+          deletedAt: null,
+        },
+      },
+      bookings: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
     },
   });
 
@@ -245,8 +608,8 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
 
   const verify = verifyPassword(
     validatedData.password,
-    business.salt,
-    business.password
+    business.salt!,
+    business.password!
   );
 
   if (verify) {
@@ -264,122 +627,111 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
   }
 };
 
-export const addBusinessPhone = async (
+export const addBusinessPrimaryContact = async (
   _: unknown,
-  args: AddBusinessPhoneInput
+  args: AddBusinessPrimaryContactInput,
+  context: any
 ) => {
-  const validatedData = AddBusinessPhoneSchema.parse(args);
+  const validatedData = AddBusinessPrimaryContactSchema.parse(args);
 
-  const existingPhone = await prisma.business.findFirst({
-    where: { phone: validatedData.phone },
-  });
-
-  if (existingPhone) {
-    throw new Error("Phone number already exist!");
-  }
-
-  const owner: any = verifyToken(validatedData.token);
-
-  if (!owner || typeof owner.businessId !== "string") {
+  if (
+    !context.owner?.businessId ||
+    typeof context.owner.businessId !== "string"
+  ) {
     throw new Error("Invalid or missing token");
   }
 
-  const business = await prisma.business.findUnique({
-    where: { id: owner.businessId, isEmailVerified: true, deletedAt: null },
-  });
-
-  if (!business) {
-    throw new Error("Business not found!");
-  }
-
-  const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
-    .toString()
-    .padStart(6, "0");
-
-  const updatedBusiness = await prisma.business.update({
-    where: { id: business.id, isEmailVerified: true, deletedAt: null },
-    data: {
-      otp,
-      otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    },
-    include: {
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
-        },
+  return await prisma.$transaction(async (tx) => {
+    // Verify business exists and is not deleted
+    const business = await tx.business.findFirst({
+      where: {
+        id: context.owner.businessId,
+        deletedAt: null,
       },
-    },
-  });
+    });
 
-  await sendOtpPhone(updatedBusiness.name, updatedBusiness.email, otp);
+    if (!business) {
+      throw new Error("Business not found");
+    }
 
-  return {
-    ...updatedBusiness,
-    message: "Business created! Please verify your email.",
-  };
-};
+    const value = validatedData.email || validatedData.phone;
+    const type = validatedData.email ? "EMAIL" : "PHONE";
 
-export const verifyBusinessPhone = async (
-  _: unknown,
-  args: VerifyBusinessPhoneInput
-) => {
-  const validatedData = VerifyBusinessPhoneSchema.parse(args);
-
-  const owner: any = verifyToken(validatedData.token);
-
-  if (!owner || typeof owner.businessId !== "string") {
-    throw new Error("Invalid or missing token");
-  }
-
-  const business = await prisma.business.findUnique({
-    where: { id: owner.businessId, isEmailVerified: true, deletedAt: null },
-  });
-
-  if (!business) {
-    throw new Error("Business not found!");
-  }
-
-  const currentTime = new Date();
-
-  if (business.otpExpiresAt! < currentTime) {
-    throw new Error("OTP has expired.");
-  }
-
-  if (business.otp! !== validatedData.otp) {
-    throw new Error("OTP doesn't match!");
-  }
-
-  const validatedBusinessPhone = await prisma.business.update({
-    where: {
-      id: business.id,
-    },
-    data: {
-      phone: validatedData.phone,
-      isPhoneVerified: true,
-      otp: null,
-      otpExpiresAt: null,
-    },
-    include: {
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
-        },
+    // Check for existing contact
+    const existingContact = await tx.businessPrimaryContact.findFirst({
+      where: {
+        value,
+        type,
+        isVerified: true,
+        deletedAt: null,
       },
-    },
-  });
+    });
 
-  return {
-    ...validatedBusinessPhone,
-    message: "Business Phone OTP verified!",
-  };
+    if (existingContact) {
+      throw new Error(
+        `This ${type.toLowerCase()} is already registered and verified by a business!`
+      );
+    }
+
+    cleanupUnverifiedContacts(tx, value!, type);
+
+    // Check contact limit for the current business
+    const existingContactsCount = await tx.businessPrimaryContact.count({
+      where: {
+        businessId: context.owner.businessId,
+        type,
+        deletedAt: null,
+      },
+    });
+
+    if (existingContactsCount >= MAX_CONTACTS_PER_TYPE) {
+      throw new Error(
+        `Maximum number of ${type.toLowerCase()} contacts (${MAX_CONTACTS_PER_TYPE}) reached`
+      );
+    }
+
+    // Check verification attempts
+    await checkVerificationAttempts(tx, value!, type);
+
+    // Create new contact
+    const otpData = createOtpData();
+    const newContact = await tx.businessPrimaryContact.create({
+      data: {
+        business: {
+          connect: { id: context.owner.businessId },
+        },
+        type,
+        value: value!,
+        ...otpData,
+      },
+      include: {
+        business: true,
+      },
+    });
+
+    // Send OTP
+    try {
+      if (type === "EMAIL") {
+        await sendOtpEmail(newContact.business.name, value!, otpData.otp);
+      } else {
+        await sendOtpPhone(newContact.business.name, value!, otpData.otp);
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      // Delete the contact if OTP sending fails
+      await tx.businessPrimaryContact.delete({
+        where: { id: newContact.id },
+      });
+      throw new Error(
+        `Failed to send verification code to ${type.toLowerCase()}`
+      );
+    }
+
+    return {
+      value,
+      message: `Verification code sent to your ${type.toLowerCase()}`,
+    };
+  });
 };
 
 export const forgetBusinessPassword = async (
@@ -388,38 +740,64 @@ export const forgetBusinessPassword = async (
 ) => {
   const validatedData = ForgetBusinessPasswordSchema.parse(args);
 
-  const sendOtpEmail = async (
-    businessName: string,
-    email: string,
-    otp: string
-  ) => {
-    const emailSubject = "Password Reset OTP";
-    const emailText = `Hello ${businessName},\n\nThe OTP (expires in 10 minutes) to change the password for you account is:\n\n${otp}\n\nBest regards,\nYour Company Name`;
+  return await prisma.$transaction(async (tx) => {
+    const value = validatedData.email || validatedData.phone;
+    const type = validatedData.email ? "EMAIL" : "PHONE";
 
-    await sendEmail(email, emailSubject, emailText);
-  };
+    const existingContact = await tx.businessPrimaryContact.findFirst({
+      where: {
+        value,
+        isVerified: true,
+        deletedAt: null,
+      },
+    });
 
-  const otp = (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)
-    .toString()
-    .padStart(6, "0");
+    if (!existingContact) {
+      throw new Error(
+        `${
+          validatedData.email ? validatedData.email : validatedData.phone
+        } doesn't exit!`
+      );
+    }
+    // Check verification attempts
+    await checkVerificationAttempts(tx, value!, type);
 
-  const business = await prisma.business.update({
-    where: {
-      email: validatedData.email,
-      isEmailVerified: true,
-      deletedAt: null,
-    }, // Find the business by email
-    data: {
-      otp: otp,
-      otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    },
+    // Create new contact
+    const otpData = createOtpData();
+    const newContact = await tx.businessPrimaryContact.create({
+      data: {
+        businessId: existingContact.businessId,
+        type,
+        value: value!,
+        ...otpData,
+      },
+      include: {
+        business: true,
+      },
+    });
+
+    // Send OTP
+    try {
+      if (type === "EMAIL") {
+        await sendOtpEmail(newContact.business.name, value!, otpData.otp);
+      } else {
+        await sendOtpPhone(newContact.business.name, value!, otpData.otp);
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      // Delete the contact if OTP sending fails
+      await tx.businessPrimaryContact.delete({
+        where: { id: newContact.id },
+      });
+      throw new Error(
+        `Failed to send verification code to ${type.toLowerCase()}`
+      );
+    }
+    return {
+      value: value,
+      message: `Verification code sent to your ${type.toLowerCase()}`,
+    };
   });
-
-  await sendOtpEmail(business.name, business.email, otp);
-
-  return {
-    message: `The password reset otp is sent at ${business.email}`,
-  };
 };
 
 export const changeBusinessPassword = async (
@@ -428,146 +806,423 @@ export const changeBusinessPassword = async (
 ) => {
   const validatedData = ChangeBusinessPasswordSchema.parse(args);
 
-  const business = await prisma.business.findFirst({
-    where: {
-      email: validatedData.email,
-      isEmailVerified: true,
-      deletedAt: null,
-    },
-  });
-  if (!business) {
-    throw new Error("Email doesn't exit!");
-  }
+  return await prisma.$transaction(async (tx) => {
+    const value = validatedData.email || validatedData.phone;
+    const type = validatedData.email ? "EMAIL" : "PHONE";
 
-  const currentTime = new Date();
+    const existingContact = await tx.businessPrimaryContact.findFirst({
+      where: {
+        value,
+        type,
+        isVerified: true,
+        deletedAt: null,
+      },
+    });
 
-  if (business.otpExpiresAt! < currentTime) {
-    throw new Error("OTP has expired.");
-  }
+    if (!existingContact) {
+      throw new Error(
+        `${
+          validatedData.email ? validatedData.email : validatedData.phone
+        } doesn't exit!`
+      );
+    }
 
-  if (business.otp! !== validatedData.otp) {
-    throw new Error("OTP doesn't match!");
-  }
+    if (!existingContact) {
+      throw new Error("Contact not found");
+    }
 
-  const verify = verifyPassword(
-    validatedData.password,
-    business.salt,
-    business.password
-  );
+    if (!existingContact.otp || !existingContact.otpExpiresAt) {
+      throw new Error("No verification code found. Please request a new one.");
+    }
 
-  if (verify) {
-    throw new Error("Password can't me same as last password.");
-  }
+    if (existingContact.otpExpiresAt < new Date()) {
+      throw new Error(
+        "Verification code has expired. Please request a new one."
+      );
+    }
 
-  const { salt, hash } = hashPassword(validatedData.password);
+    if (existingContact.otp !== validatedData.otp) {
+      throw new Error("Invalid verification code");
+    }
 
-  const updatedPassword = await prisma.business.update({
-    where: { email: business.email, isEmailVerified: true, deletedAt: null },
-    data: {
-      password: hash,
-      salt: salt,
-    },
-    include: {
-      address: {
-        where: { deletedAt: null },
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
+    const { salt, hash } = hashPassword(validatedData.password);
+
+    const updatedPassword = await tx.business.update({
+      where: {
+        id: existingContact.businessId,
+        deletedAt: null,
+      },
+      data: {
+        password: hash,
+        salt,
+      },
+      include: {
+        primaryContacts: true,
+        businessDetails: {
+          include: {
+            addresses: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            websites: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            images: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            court: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            proficiency: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            tags: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+          },
+        },
+        businessSupportingDocuments: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        reviews: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        subscription: {
+          where: {
+            deletedAt: null,
+          },
+        },
+        bookings: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
         },
       },
-      services: true,
-    },
-  });
+    });
 
-  return {
-    ...updatedPassword,
-    massage: "Password updated successfully.",
-  };
+    return {
+      ...updatedPassword,
+      massage: "Password updated successfully.",
+    };
+  });
 };
 
 export const updateBusinessDetails = async (
   _: unknown,
-  args: UpdateBusinessDetailsInput
+  args: UpdateBusinessDetailsInput,
+  context: any
 ) => {
   const validatedData = UpdateBusinessDetailsSchema.parse(args);
 
-  const owner: any = verifyToken(validatedData.token);
-
-  if (!owner || typeof owner.businessId !== "string") {
+  if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
   const business = await prisma.business.findUnique({
-    where: { id: owner.businessId, isEmailVerified: true, deletedAt: null },
+    where: {
+      id: context.owner.id,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      businessDetails: true,
+    },
   });
 
   if (!business) {
     throw new Error("Business not found!");
   }
 
-  // Upload logo if provided
-  let logoUrl: string | undefined;
-  if (validatedData.companyLogo) {
-    logoUrl = (await uploadToCloudinary(
-      validatedData.companyLogo,
-      "business_logos"
-    )) as string;
-  }
+  let slug = validatedData.slug;
 
-  // Upload images if provided
-  let imagesUrls: string[] | undefined;
-  if (validatedData.companyImages) {
-    imagesUrls = (await uploadToCloudinary(
-      validatedData.companyImages,
-      "business_images"
-    )) as string[];
-  }
+  if (!slug && !business.slug && validatedData.name) {
+    slug = slugify(validatedData.name, { lower: true, strict: true });
+    let uniqueSuffixLength = 2;
+    let existingSlug = await prisma.business.findFirst({ where: { slug } });
 
-  // Handle image deletion if any images are marked for deletion
-  if (
-    validatedData.companyImagesToDelete &&
-    validatedData.companyImagesToDelete.length > 0
-  ) {
-    const companyImagesToDelete = validatedData.companyImagesToDelete;
-    const remainingImages = business.companyImages?.filter(
-      (imgUrl: string) => !companyImagesToDelete.includes(imgUrl)
-    );
-
-    // Delete images from Cloudinary
-    for (const imageUrl of companyImagesToDelete) {
-      await deleteFromCloudinary(imageUrl); // Implement this function
+    while (existingSlug) {
+      const uniqueSuffix = Math.random()
+        .toString(16)
+        .slice(2, 2 + uniqueSuffixLength);
+      slug = `${slugify(validatedData.name, {
+        lower: true,
+        strict: true,
+      })}-${uniqueSuffix}`;
+      existingSlug = await prisma.business.findFirst({ where: { slug } });
+      uniqueSuffixLength += 1;
     }
-
-    business.companyImages = remainingImages; // Update the company's image list
   }
+
+  // Handle logo update if provided
+  if (validatedData.logo) {
+    const logoUrl = await uploadToCloudinary(
+      validatedData.logo,
+      "business_logos"
+    );
+    await prisma.businessDetails.update({
+      where: { id: business.id },
+      data: {
+        logo: logoUrl,
+      },
+    });
+  }
+
+  const updatedBusinessDetails = await prisma.businessDetails.upsert({
+    where: { id: business.id },
+    update: {
+      registrationNumber:
+        validatedData.registrationNumber ||
+        business.businessDetails?.registrationNumber,
+      license: validatedData.license || business.businessDetails?.license,
+      experience:
+        validatedData.experience || business.businessDetails?.experience,
+      teamSize: validatedData.teamSize || business.businessDetails?.teamSize,
+      description:
+        validatedData.description || business.businessDetails?.description,
+      latitude: validatedData.latitude || business.businessDetails?.latitude,
+      longitude: validatedData.latitude || business.businessDetails?.longitude,
+      gstNumber: validatedData.gstNumber || business.businessDetails?.gstNumber,
+      category: validatedData.categoryId
+        ? { connect: { id: validatedData.categoryId } }
+        : undefined,
+      degree: validatedData.degrees || business.businessDetails?.degree,
+      language:
+        validatedData.languages && validatedData.languages.length
+          ? {
+              connectOrCreate: validatedData.languages.map(
+                (language: string) => ({
+                  where: { name: language }, // Check if the language with this name exists
+                  create: { name: language }, // If it doesn't exist, create it
+                })
+              ),
+            }
+          : undefined,
+      proficiency:
+        validatedData.proficiencies && validatedData.proficiencies.length
+          ? {
+              connectOrCreate: validatedData.proficiencies.map(
+                (proficiency: string) => ({
+                  where: { name: proficiency }, // Check if the language with this name exists
+                  create: { name: proficiency }, // If it doesn't exist, create it
+                })
+              ),
+            }
+          : undefined,
+      court:
+        validatedData.courts && validatedData.courts.length
+          ? {
+              connectOrCreate: validatedData.courts.map((court: string) => ({
+                where: { name: court }, // Check if the language with this name exists
+                create: { name: court }, // If it doesn't exist, create it
+              })),
+            }
+          : undefined,
+      tags:
+        validatedData.tags && validatedData.tags.length
+          ? {
+              connectOrCreate: validatedData.tags.map((tag: string) => ({
+                where: { name: tag }, // Check if the language with this name exists
+                create: { name: tag }, // If it doesn't exist, create it
+              })),
+            }
+          : undefined,
+    },
+    create: {
+      business: { connect: { id: business.id } },
+      registrationNumber: validatedData.registrationNumber,
+      license: validatedData.license,
+      experience: validatedData.experience,
+      teamSize: validatedData.teamSize,
+      description: validatedData.description,
+      latitude: validatedData.latitude,
+      longitude: validatedData.longitude,
+      gstNumber: validatedData.gstNumber,
+      category: validatedData.categoryId
+        ? { connect: { id: validatedData.categoryId } }
+        : undefined,
+      degree: validatedData.degrees,
+      language:
+        validatedData.languages && validatedData.languages.length
+          ? {
+              connect: validatedData.languages.map((languageId: string) => ({
+                id: languageId,
+              })),
+            }
+          : undefined,
+      proficiency:
+        validatedData.proficiencies && validatedData.proficiencies.length
+          ? {
+              connectOrCreate: validatedData.proficiencies.map(
+                (proficiency: string) => ({
+                  where: { name: proficiency }, // Check if the language with this name exists
+                  create: { name: proficiency }, // If it doesn't exist, create it
+                })
+              ),
+            }
+          : undefined,
+      court:
+        validatedData.courts && validatedData.courts.length
+          ? {
+              connectOrCreate: validatedData.courts.map((court: string) => ({
+                where: { name: court }, // Check if the language with this name exists
+                create: { name: court }, // If it doesn't exist, create it
+              })),
+            }
+          : undefined,
+      tags:
+        validatedData.tags && validatedData.tags.length
+          ? {
+              connectOrCreate: validatedData.tags.map((tag: string) => ({
+                where: { name: tag }, // Check if the language with this name exists
+                create: { name: tag }, // If it doesn't exist, create it
+              })),
+            }
+          : undefined,
+    },
+  });
 
   // Update business details
   const updatedBusiness = await prisma.business.update({
-    where: { id: business.id, isEmailVerified: true, deletedAt: null },
+    where: { id: business.id, deletedAt: null },
     data: {
-      website: validatedData.website || business.website,
       name: validatedData.name || business.name,
       type: validatedData.type || business.type,
-      companyLogo: logoUrl || business.companyLogo, // Store logo URL
-      companyImages: imagesUrls
-        ? [...(business.companyImages || []), ...imagesUrls]
-        : business.companyImages,
+      slug: slug || business.slug,
+      isListed: validatedData.isListed || business.isListed,
+      additionalContacts:
+        validatedData.additionalContacts || business.additionalContacts,
+      businessDetails: { connect: { id: updatedBusinessDetails.id } },
     },
     include: {
-      address: {
-        where: { deletedAt: null },
+      primaryContacts: true,
+      businessDetails: {
         include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
+          addresses: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          websites: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          images: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          court: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          proficiency: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          tags: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
         },
       },
-      services: true,
+      businessSupportingDocuments: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      reviews: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      subscription: {
+        where: {
+          deletedAt: null,
+        },
+      },
+      bookings: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
     },
   });
 
@@ -577,234 +1232,619 @@ export const updateBusinessDetails = async (
   };
 };
 
-export const addService = async (_: unknown, args: AddServiceInput) => {
-  // Validate input
-  const validatedData = AddServiceSchema.parse(args);
+export const deleteBusinessAccount = async (
+  _: unknown,
+  args: DeleteBusinessAccountInput,
+  context: any
+) => {
+  const validatedData = DeleteBusinessAccountSchema.parse(args);
 
-  // Token validation
-  const owner: any = verifyToken(validatedData.token);
-  if (!owner || typeof owner.businessId !== "string") {
+  if (
+    !context.owner?.businessId ||
+    typeof context.owner.businessId !== "string"
+  ) {
     throw new Error("Invalid or missing token");
   }
 
-  // Check if the business exists
-  const business = await prisma.business.findUnique({
-    where: { id: owner.businessId, isEmailVerified: true, deletedAt: null },
+  return await prisma.$transaction(async (tx) => {
+    // Check if business exists
+    const business = await tx.business.findFirst({
+      where: {
+        id: context.owner.businessId,
+        deletedAt: null,
+      },
+      include: {
+        primaryContacts: true,
+        businessDetails: {
+          include: {
+            websites: true,
+            images: true,
+            addresses: true,
+          },
+        },
+      },
+    });
+
+    if (!business) {
+      throw new Error("Business not found");
+    }
+
+    // Soft delete business contacts
+    await tx.businessPrimaryContact.updateMany({
+      where: {
+        businessId: context.owner.businessId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+        isVerified: false,
+        isPrimary: false,
+      },
+    });
+
+    // Soft delete business address if exists
+    if (business.businessDetails?.addresses) {
+      await tx.businessAddress.updateMany({
+        where: {
+          businessDetailsId: context.owner.businessId,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+    }
+
+    if (business.businessDetails?.websites) {
+      await tx.businessWebsite.updateMany({
+        where: {
+          businessDetailsId: context.owner.businessId,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+    }
+
+    if (business.businessDetails?.images) {
+      await tx.businessImage.updateMany({
+        where: {
+          businessDetailsId: context.owner.businessId,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+    }
+
+    // Soft delete the business
+    const deletedBusiness = await tx.business.update({
+      where: {
+        id: context.owner.businessId,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+      include: {
+        primaryContacts: true,
+        businessDetails: {
+          include: {
+            addresses: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            websites: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            images: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            court: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            proficiency: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            tags: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+          },
+        },
+        businessSupportingDocuments: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        reviews: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        subscription: {
+          where: {
+            deletedAt: null,
+          },
+        },
+        bookings: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
+    });
+
+    return {
+      ...deletedBusiness,
+      message: "Account deleted successfully",
+    };
   });
+};
+
+export const manageBusinessAddress = async (
+  _: unknown,
+  args: ManageBusinessAddressInput,
+  context: any
+) => {
+  // Validate input data using Zod
+  const validatedData = ManageBusinessAddressSchema.parse(args);
+
+  // Verify the token and get the business ID
+
+  if (!context.owner || typeof context.owner.businessId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  // Find the business, ensuring they have a verified contact
+  const business = await prisma.business.findUnique({
+    where: {
+      id: context.owner.id,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      businessDetails: {
+        include: {
+          addresses: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
+      },
+    },
+  });
+
   if (!business) {
     throw new Error("Business not found!");
   }
 
-  // Upload images if provided
-  let imagesUrls: string[] | undefined;
-  if (validatedData.serviceImages) {
-    imagesUrls = (await uploadToCloudinary(
-      validatedData.serviceImages,
-      "service_images"
-    )) as string[];
-  }
+  const updatedAddresses = [];
 
-  // Handle tags: check if the tag exists, if not, create it
-  const tagConnectOrCreate =
-    validatedData.tags?.map((tag) => ({
-      where: { name: tag }, // Condition to find the existing tag
-      create: { name: tag }, // Create new tag if it doesn't exist
-    })) || [];
+  for (const addressData of validatedData.addresses) {
+    const existingAddress = addressData.addressId
+      ? business.businessDetails?.addresses.find(
+          (address) => address.id === addressData.addressId
+        )
+      : null;
 
-  // Handle facilities: check if the facility exists, if not, create it
-  const facilityConnectOrCreate =
-    validatedData.facilities?.map((facility) => ({
-      where: { name: facility }, // Condition to find the existing facility
-      create: { name: facility }, // Create new facility if it doesn't exist
-    })) || [];
+    if (addressData.toDelete) {
+      // If toDelete is true, delete the address
+      if (existingAddress) {
+        await prisma.businessAddress.delete({
+          where: { id: existingAddress.id },
+        });
 
-  const baseSlug = slugify(validatedData.name, { lower: true, strict: true });
-  const uuid = v4();
-  const slug = `${baseSlug}-${uuid}`;
-
-  // Create the service
-  const newService = await prisma.service.create({
-    data: {
-      id: uuid,
-      name: validatedData.name,
-      slug: slug,
-      overview: validatedData.overview,
-      price: validatedData.price,
-      discountedPrice: validatedData.discountedPrice,
-      business: { connect: { id: business.id } },
-      subcategory: { connect: { id: validatedData.subcategoryId } },
-      tags: {
-        connectOrCreate: tagConnectOrCreate,
-      },
-      facilities: {
-        connectOrCreate: facilityConnectOrCreate,
-      },
-      serviceImages: imagesUrls || [],
-    },
-    include: {
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
+        updatedAddresses.push({
+          message: `Business address with id ${existingAddress.id} deleted successfully.`,
+        });
+      } else {
+        updatedAddresses.push({
+          message: "Address not found to delete.",
+        });
+      }
+    } else if (existingAddress) {
+      // If the address exists and toDelete is not true, update it
+      const updatedAddress = await prisma.businessAddress.update({
+        where: { id: existingAddress.id },
+        data: {
+          order: addressData.order || existingAddress.order,
+          street: addressData.street || existingAddress.street,
+          city: addressData.city || existingAddress.city,
+          state: addressData.state || existingAddress.state,
+          country: addressData.country || existingAddress.country,
+          pincode: addressData.pincode || existingAddress.pincode,
         },
-      },
-      subcategory: {
-        include: {
-          category: true,
+      });
+
+      updatedAddresses.push({
+        ...updatedAddress,
+        message: "Business address updated successfully.",
+      });
+    } else {
+      // If the address does not exist, create a new one
+      const newAddress = await prisma.businessAddress.create({
+        data: {
+          order: addressData.order!,
+          street: addressData.street!,
+          city: addressData.city!,
+          state: addressData.state!,
+          country: addressData.country!,
+          pincode: addressData.pincode!,
+          businessDetails: {
+            connect: { id: business.id },
+          },
         },
-      },
-      tags: true,
-      facilities: true,
-    },
-  });
+      });
 
-  return {
-    ...newService,
-    message: "Service added successfully.",
-  };
-};
-
-export const updateService = async (_: unknown, args: UpdateServiceInput) => {
-  const validatedData = UpdateServiceSchema.parse(args);
-
-  const owner: any = verifyToken(validatedData.token);
-  if (!owner || typeof owner.businessId !== "string") {
-    throw new Error("Invalid or missing token");
-  }
-
-  const service = await prisma.service.findFirst({
-    where: {
-      id: validatedData.serviceId,
-      businessId: owner.id,
-      deletedAt: null,
-    },
-  });
-  if (!service) {
-    throw new Error("Service not found!");
-  }
-
-  // Handle tags: check if the tag exists, if not, create it
-  const tagConnectOrCreate =
-    validatedData.tags?.map((tag) => ({
-      where: { name: tag }, // Condition to find the existing tag
-      create: { name: tag }, // Create new tag if it doesn't exist
-    })) || [];
-
-  // Handle facilities: check if the facility exists, if not, create it
-  const facilityConnectOrCreate =
-    validatedData.facilities?.map((facility) => ({
-      where: { name: facility }, // Condition to find the existing facility
-      create: { name: facility }, // Create new facility if it doesn't exist
-    })) || [];
-
-  // Upload new images
-  let imagesUrls: string[] | undefined;
-  if (validatedData.serviceImages) {
-    imagesUrls = (await uploadToCloudinary(
-      validatedData.serviceImages,
-      "service_images"
-    )) as string[];
-  }
-
-  // Handle image deletions
-  if (validatedData.serviceImagesToDelete) {
-    const remainingImages = service.serviceImages?.filter((img) =>
-      validatedData.serviceImagesToDelete?.includes(img)
-    );
-    for (const img of validatedData.serviceImagesToDelete) {
-      await deleteFromCloudinary(img);
+      updatedAddresses.push({
+        ...newAddress,
+        message: "Business address added successfully.",
+      });
     }
-    service.serviceImages = remainingImages;
   }
-
-  const baseSlug = slugify(validatedData.name || service.name, {
-    lower: true,
-    strict: true,
-  });
-  const uuid = service.id;
-  const slug = `${baseSlug}-${uuid}`;
-
-  // Update service data
-  const updatedService = await prisma.service.update({
-    where: { id: validatedData.serviceId, deletedAt: null },
-    data: {
-      name: validatedData.name || service.name,
-      slug: slug,
-      overview: validatedData.overview || service.overview,
-      price: validatedData.price || service.price,
-      discountedPrice: validatedData.discountedPrice || service.discountedPrice,
-      tags: {
-        connectOrCreate: tagConnectOrCreate, // Add or update tags
-        disconnect:
-          validatedData.tagsToDelete?.map((tagId) => ({ id: tagId })) || [], // Handle deletions
-      },
-      facilities: {
-        connectOrCreate: facilityConnectOrCreate, // Add or update facilities
-        disconnect:
-          validatedData.facilitiesToDelete?.map((facilityId) => ({
-            id: facilityId,
-          })) || [], // Handle deletions
-      },
-      serviceImages: imagesUrls
-        ? [...(service.serviceImages || []), ...imagesUrls]
-        : service.serviceImages,
-    },
-    include: {
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
-        },
-      },
-      subcategory: {
-        include: {
-          category: true,
-        },
-      },
-      tags: true,
-      facilities: true,
-    },
-  });
-
-  return {
-    ...updatedService,
-    message: "Service updated successfully.",
-  };
+  return updatedAddresses;
 };
 
-export const removeService = async (_: unknown, args: RemoveServiceInput) => {
-  const validatedData = RemoveServiceSchema.parse(args);
+export const manageBusinessWebsite = async (
+  _: unknown,
+  args: ManageBusinessWebsiteInput,
+  context: any
+) => {
+  // Validate input data using Zod
+  const validatedData = ManageBusinessWebsiteSchema.parse(args);
 
-  const owner: any = verifyToken(validatedData.token);
-  if (!owner || typeof owner.businessId !== "string") {
+  // Verify the token and get the business ID
+  if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
-  const service = await prisma.service.findFirst({
+  // Find the business, ensuring they have a verified contact
+  const business = await prisma.business.findUnique({
     where: {
-      id: validatedData.serviceId,
-      businessId: owner.id,
+      id: context.owner.id,
       deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      businessDetails: {
+        include: {
+          websites: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
+      },
     },
   });
-  if (!service) {
-    throw new Error("Service not found!");
+
+  if (!business) {
+    throw new Error("Business not found!");
   }
 
-  // Soft delete the service by marking it as deleted
-  const removedService = await prisma.service.update({
-    where: { id: validatedData.serviceId },
-    data: { deletedAt: new Date() },
+  const updatedWebsites = [];
+
+  for (const websiteData of validatedData.websites) {
+    const existingWebsite = websiteData.websiteId
+      ? business.businessDetails?.websites.find(
+          (website) => website.id === websiteData.websiteId
+        )
+      : null;
+
+    if (websiteData.toDelete) {
+      // If toDelete is true, delete the address
+      if (existingWebsite) {
+        await prisma.businessWebsite.delete({
+          where: { id: existingWebsite.id },
+        });
+
+        updatedWebsites.push({
+          message: `Business address with id ${existingWebsite.id} deleted successfully.`,
+        });
+      } else {
+        updatedWebsites.push({
+          message: "Address not found to delete.",
+        });
+      }
+    } else if (existingWebsite) {
+      // If the address exists and toDelete is not true, update it
+      const updatedWebsite = await prisma.businessWebsite.update({
+        where: { id: existingWebsite.id },
+        data: {
+          url: websiteData.url || existingWebsite.url,
+          type: websiteData.type || existingWebsite.type,
+        },
+      });
+
+      updatedWebsites.push({
+        ...updatedWebsite,
+        message: "Business address updated successfully.",
+      });
+    } else {
+      // If the address does not exist, create a new one
+      const newWebsite = await prisma.businessWebsite.create({
+        data: {
+          url: websiteData.url!,
+          type: websiteData.type!,
+          businessDetails: {
+            connect: { id: business.id },
+          },
+        },
+      });
+
+      updatedWebsites.push({
+        ...newWebsite,
+        message: "Business address added successfully.",
+      });
+    }
+  }
+  return updatedWebsites;
+};
+
+export const manageBusinessImage = async (
+  _: unknown,
+  args: ManageBusinessImageInput,
+  context: any
+) => {
+  // Validate input data using Zod
+  const validatedData = ManageBusinessImageSchema.parse(args);
+
+  // Verify the token and get the business ID
+  if (!context.owner || typeof context.owner.businessId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  // Find the business, ensuring they have a verified contact
+  const business = await prisma.business.findUnique({
+    where: {
+      id: context.owner.id,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      businessDetails: {
+        include: {
+          images: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              order: "asc",
+            },
+          },
+        },
+      },
+    },
   });
 
-  return {
-    ...removedService,
-    message: "Service removed successfully.",
-  };
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+
+  const updateResults = [];
+
+  for (const imageData of validatedData.images) {
+    const existingImage = imageData.imageId
+      ? business.businessDetails?.images.find(
+          (image) => image.id === imageData.imageId
+        )
+      : null;
+
+    if (imageData.toDelete) {
+      // If toDelete is true, delete the image
+      if (existingImage) {
+        await deleteFromCloudinary(existingImage.url);
+        await prisma.businessImage.delete({
+          where: { id: existingImage.id },
+        });
+
+        updateResults.push({
+          message: `Business image with id ${existingImage.id} deleted successfully.`,
+        });
+      } else {
+        updateResults.push({
+          message: "Image not found to delete.",
+        });
+      }
+    } else if (existingImage) {
+      const updatedUrl = await uploadToCloudinary(
+        imageData.image,
+        "business_images"
+      );
+      // If the image exists and toDelete is not true, update it
+      const updatedImage = await prisma.businessImage.update({
+        where: { id: existingImage.id },
+        data: {
+          url: updatedUrl,
+          order: imageData.order,
+        },
+      });
+
+      updateResults.push({
+        ...updatedImage,
+        message: "Business image updated successfully.",
+      });
+    } else {
+      const newImageUrl = await uploadToCloudinary(
+        imageData.image,
+        "business_images"
+      );
+      // If the address does not exist, create a new one
+      const newImage = await prisma.businessImage.create({
+        data: {
+          url: newImageUrl,
+          order: imageData.order,
+          businessDetails: {
+            connect: { id: business.id },
+          },
+        },
+      });
+
+      updateResults.push({
+        ...newImage,
+        message: "Business image added successfully.",
+      });
+    }
+  }
+  return updateResults;
+};
+
+export const manageBusinessSupportingDocuments = async (
+  _: unknown,
+  args: ManageBusinessSupportingDocumentsInput,
+  context: any
+) => {
+  // Validate input data using Zod
+  const validatedData = ManageBusinessSupportingDocumentsSchema.parse(args);
+
+  // Verify the token and get the business ID
+  if (!context.owner || typeof context.owner.businessId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  // Find the business, ensuring they have a verified contact
+  const business = await prisma.business.findUnique({
+    where: {
+      id: context.owner.id,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      businessSupportingDocuments: true,
+    },
+  });
+
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+
+  const updateResults = [];
+
+  for (const documentData of validatedData.documents) {
+    const existingDocument = documentData.documentId
+      ? business.businessSupportingDocuments.find(
+          (document) => document.id === documentData.documentId
+        )
+      : null;
+
+    if (documentData.toDelete) {
+      // If toDelete is true, delete the image
+      if (existingDocument) {
+        await deleteFromCloudinary(existingDocument.url);
+        await prisma.businessSupportingDocuments.delete({
+          where: { id: existingDocument.id },
+        });
+
+        updateResults.push({
+          message: `Business supporting document with id ${existingDocument.id} deleted successfully.`,
+        });
+      } else {
+        updateResults.push({
+          message: "Document not found to delete.",
+        });
+      }
+    } else if (existingDocument) {
+      const updatedUrl = await uploadToCloudinary(
+        documentData.document,
+        "business_supporting_documents"
+      );
+      // If the image exists and toDelete is not true, update it
+      const updatedDocument = await prisma.businessSupportingDocuments.update({
+        where: { id: existingDocument.id },
+        data: {
+          url: updatedUrl,
+          type: documentData.type || existingDocument.type,
+        },
+      });
+
+      updateResults.push({
+        ...updatedDocument,
+        message: "Business supporting document updated successfully.",
+      });
+    } else {
+      const newDocumentUrl = await uploadToCloudinary(
+        documentData.document,
+        "business_supporting_documents"
+      );
+      // If the address does not exist, create a new one
+      const newDocument = await prisma.businessSupportingDocuments.create({
+        data: {
+          url: newDocumentUrl,
+          type: documentData.type!,
+          business: {
+            connect: { id: business.id },
+          },
+        },
+      });
+
+      updateResults.push({
+        ...newDocument,
+        message: "Business supporting document added successfully.",
+      });
+    }
+  }
+  return updateResults;
 };

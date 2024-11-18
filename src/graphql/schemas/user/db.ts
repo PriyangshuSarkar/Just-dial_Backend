@@ -1,3 +1,4 @@
+import exp from "constants";
 import {
   object,
   string,
@@ -7,9 +8,7 @@ import {
   enum as enum_,
 } from "zod";
 
-export const UserMeSchema = object({
-  token: string(),
-});
+export const UserMeSchema = object({});
 export type UserMeInput = infer_<typeof UserMeSchema>;
 
 export const UserSignupSchema = object({
@@ -24,7 +23,6 @@ export const UserSignupSchema = object({
 export type UserSignupInput = infer_<typeof UserSignupSchema>;
 
 export const AddUserContactSchema = object({
-  token: string(),
   email: string().email().optional(),
   phone: string().optional(),
 }).refine((data) => (data.email ? !data.phone : !!data.phone), {
@@ -74,15 +72,30 @@ export const ChangeUserPasswordSchema = object({
 export type ChangeUserPasswordInput = infer_<typeof ChangeUserPasswordSchema>;
 
 export const UpdateUserDetailsSchema = object({
-  token: string(),
   name: string().optional(),
+  slug: string().optional(),
   hideDetails: boolean().optional(),
   avatar: any().optional(),
-  contactId: string(),
 });
 export type UpdateUserDetailsInput = infer_<typeof UpdateUserDetailsSchema>;
 
-export const DeleteUserAccountSchema = object({
-  token: string(),
-});
+export const DeleteUserAccountSchema = object({});
 export type DeleteUserAccountInput = infer_<typeof DeleteUserAccountSchema>;
+
+export const ManageUserAddressSchema = object({
+  addresses: object({
+    addressId: string().optional(),
+    street: string().optional(),
+    city: string().optional(),
+    state: string().optional(),
+    country: string().optional(),
+    pincode: string().optional(),
+    toDelete: boolean().optional(),
+  }).array(),
+});
+export type ManageUserAddressInput = infer_<typeof ManageUserAddressSchema>;
+
+export const UserGoogleOAuthSchema = object({
+  googleOAuthToke: string(),
+});
+export type UserGoogleOAuthInput = infer_<typeof UserGoogleOAuthSchema>;

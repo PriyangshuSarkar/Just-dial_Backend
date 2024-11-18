@@ -5,21 +5,44 @@ export const typeDefs = gql`
 
   type Query {
     status: String!
-    userMe(token: String): User
+    userMe: User
+    userLogin(email: String, phone: String, password: String!): User
+  }
+
+  input UserAddressInput {
+    addressId: String
+    street: String
+    city: String
+    state: String
+    country: String
+    pincode: String
+    toDelete: Boolean
   }
 
   type Mutation {
-    userSignup(name: String!, email: String!, password: String!): User
-    verifyUserEmail(email: String!, otp: String!): User
-    userLogin(email: String!, password: String!): User
-    forgetUserPassword(email: String!): User
-    changeUserPassword(email: String!, password: String!, otp: String!): User
+    userGoogleOAuth(googleOAuthToke: String!): User
+    userSignup(
+      name: String!
+      email: String
+      phone: String
+      password: String!
+    ): UserContact
+    addUserContact(email: String, phone: String): UserContact
+    verifyUserContact(email: String, phone: String, otp: String!): User
+    forgetUserPassword(email: String, phone: String): UserContact
+    changeUserPassword(
+      email: String
+      phone: String
+      password: String!
+      otp: String!
+    ): User
     updateUserDetails(
       name: String
+      slug: String
       hideDetails: Boolean
-      token: String
       avatar: Upload
-      addressesToDelete: [String]
     ): User
+    deleteUserAccount: User
+    manageUserAddress(addresses: [UserAddressInput!]!): UserAddress
   }
 `;

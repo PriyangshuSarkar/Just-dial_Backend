@@ -20,7 +20,7 @@ export const sendSms = async (to: string, body: string) => {
 };
 
 export const sendOtpPhone = async (
-  userName: string,
+  userName: string | null,
   phone: string,
   otp: string
 ): Promise<void> => {

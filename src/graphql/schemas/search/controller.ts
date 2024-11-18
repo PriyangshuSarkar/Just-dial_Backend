@@ -1,79 +1,35 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../utils/dbConnect";
 import {
-  AllBusinessesInput,
-  AllBusinessesSchema,
   FilterInput,
   LocationPriorityInput,
   SearchInput,
   SearchSchema,
 } from "./db";
 
-export const allBusinesses = async (_: unknown, args: AllBusinessesInput) => {
-  const { page, limit } = AllBusinessesSchema.parse(args);
-
-  const businesses = await prisma.business.findMany({
-    where: { isEmailVerified: true, deletedAt: null },
-    include: {
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
-        },
-      },
-      services: {
-        include: {
-          address: {
-            include: {
-              street: true,
-              city: true,
-              state: true,
-              country: true,
-              pincode: true,
-            },
-          },
-          subcategory: {
-            include: {
-              category: true,
-            },
-          },
-          tags: true,
-          facilities: true,
-        },
-      },
-      reviews: true,
-      subscription: true,
-    },
-    skip: (page - 1) * limit,
-    take: limit,
-  });
-
-  if (!businesses) {
-    throw new Error("Businesses not found!");
-  }
-
-  return businesses;
-};
-
 export const search = async (_: unknown, args: SearchInput) => {
-  const { cityName, serviceName, page, limit, ...filters } =
-    SearchSchema.parse(args);
+  const {
+    cityName,
+    businessName,
+    page = 1,
+    limit = 10,
+    ...filters
+  } = SearchSchema.parse(args);
 
   const locationInfo = await getLocationHierarchy(cityName);
 
-  const baseConditions = {
+  const baseConditions: Prisma.BusinessWhereInput = {
     isListed: true,
     deletedAt: null,
-    name: {
-      contains: serviceName,
-      mode: "insensitive",
-    },
+    ...(businessName && {
+      name: {
+        contains: businessName,
+        mode: "insensitive",
+      },
+    }),
   };
 
-  const services = await getServicesWithPriority(
+  const businesses = await getBusinessWithPriority(
     baseConditions,
     locationInfo,
     filters,
@@ -81,10 +37,12 @@ export const search = async (_: unknown, args: SearchInput) => {
     limit
   );
 
-  return services;
+  return businesses;
 };
 
-const getLocationHierarchy = async (cityName: string) => {
+const getLocationHierarchy = async (
+  cityName: string
+): Promise<LocationPriorityInput> => {
   const city = await prisma.city.findFirst({
     where: {
       name: {
@@ -102,14 +60,14 @@ const getLocationHierarchy = async (cityName: string) => {
   });
 
   return {
-    cityId: city?.id,
-    stateId: city?.state?.id,
-    countryId: city?.state?.country?.id,
+    city: city?.name,
+    state: city?.state?.name,
+    country: city?.state?.country?.name,
   };
 };
 
-const getServicesWithPriority = async (
-  baseConditions: any,
+const getBusinessWithPriority = async (
+  baseConditions: Prisma.BusinessWhereInput,
   location: LocationPriorityInput,
   filters: FilterInput,
   page: number,
@@ -121,40 +79,77 @@ const getServicesWithPriority = async (
   const orderBy = buildOrderByClause(filters);
 
   // Build additional where conditions based on filters
-  const whereConditions = {
+  const whereConditions: Prisma.BusinessWhereInput = {
     ...baseConditions,
     ...(filters.verified && {
-      business: {
-        isBusinessVerified: true,
-      },
+      isBusinessVerified: true,
     }),
     ...(filters.minPrice && { price: { gte: filters.minPrice } }),
     ...(filters.maxPrice && { price: { lte: filters.maxPrice } }),
     ...(filters.minRating && { averageRating: { gte: filters.minRating } }),
-  };
-
-  // Fetch services with their business and address information
-  const services = await prisma.service.findMany({
-    where: whereConditions,
-    include: {
-      business: {
-        include: {
-          subscription: true,
-          address: {
-            include: {
-              city: true,
-              state: true,
-              country: true,
+    ...(filters.categoryId && {
+      businessDetails: {
+        categoryId: filters.categoryId,
+      },
+    }),
+    ...(filters.languages && {
+      businessDetails: {
+        language: {
+          some: {
+            id: {
+              in: filters.languages,
             },
           },
         },
       },
-      address: {
-        include: {
-          city: true,
-          state: true,
-          country: true,
+    }),
+    ...(filters.courts && {
+      businessDetails: {
+        court: {
+          some: {
+            id: {
+              in: filters.courts,
+            },
+          },
         },
+      },
+    }),
+    ...(filters.proficiencies && {
+      businessDetails: {
+        proficiency: {
+          some: {
+            id: {
+              in: filters.proficiencies,
+            },
+          },
+        },
+      },
+    }),
+  };
+
+  // Fetch businesses with their details and addresses
+  const businesses = await prisma.business.findMany({
+    where: whereConditions,
+    include: {
+      subscription: true,
+      businessDetails: {
+        include: {
+          addresses: true,
+          language: true,
+          court: true,
+          proficiency: true,
+          category: true,
+          tags: true,
+        },
+      },
+      reviews: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 5,
       },
     },
     orderBy,
@@ -162,8 +157,8 @@ const getServicesWithPriority = async (
     take: limit,
   });
 
-  // Sort services based on location priority and featured status
-  return services.sort((a, b) => {
+  // Sort businesses based on location priority and featured status
+  return businesses.sort((a, b) => {
     // Location priority scoring
     const scoreA = getLocationScore(a, location);
     const scoreB = getLocationScore(b, location);
@@ -171,8 +166,8 @@ const getServicesWithPriority = async (
     if (scoreA !== scoreB) return scoreB - scoreA;
 
     // Featured status (has active subscription)
-    const isFeatureA = isServiceFeatured(a, now);
-    const isFeatureB = isServiceFeatured(b, now);
+    const isFeatureA = isBusinessFeatured(a, now);
+    const isFeatureB = isBusinessFeatured(b, now);
     if (isFeatureA !== isFeatureB) return isFeatureB ? 1 : -1;
 
     // Rating comparison
@@ -186,35 +181,37 @@ const getServicesWithPriority = async (
 };
 
 const getLocationScore = (
-  service: any,
+  business: any,
   location: LocationPriorityInput
 ): number => {
-  const serviceCity =
-    service.address?.cityId || service.business.address?.cityId;
-  const serviceState =
-    service.address?.stateId || service.business.address?.stateId;
-  const serviceCountry =
-    service.address?.countryId || service.business.address?.countryId;
+  const businessAddresses = business.businessDetails?.addresses || [];
+  if (!businessAddresses.length) return 1;
 
-  if (serviceCity === location.cityId) return 4;
-  if (serviceState === location.stateId) return 3;
-  if (serviceCountry === location.countryId) return 2;
+  // Use the first address for scoring
+  const primaryAddress = businessAddresses[0];
+
+  if (primaryAddress.city.toLowerCase() === location.city?.toLowerCase())
+    return 4;
+  if (primaryAddress.state.toLowerCase() === location.state?.toLowerCase())
+    return 3;
+  if (primaryAddress.country.toLowerCase() === location.country?.toLowerCase())
+    return 2;
   return 1;
 };
 
-const isServiceFeatured = (service: any, currentDate: Date): boolean => {
+const isBusinessFeatured = (business: any, currentDate: Date): boolean => {
   return (
-    service.business?.subscription?.id != null &&
-    service.business?.subscriptionExpire != null &&
-    service.business.subscriptionExpire > currentDate
+    business.subscription?.id != null &&
+    business.subscriptionExpire != null &&
+    business.subscriptionExpire > currentDate
   );
 };
 
 const buildOrderByClause = (
   filters: FilterInput
 ):
-  | Prisma.ServiceOrderByWithRelationInput
-  | Prisma.ServiceOrderByWithRelationInput[] => {
+  | Prisma.BusinessOrderByWithRelationInput
+  | Prisma.BusinessOrderByWithRelationInput[] => {
   switch (filters.sortBy) {
     case "alphabetical":
       return { name: filters.order || "asc" };
@@ -231,49 +228,3 @@ const buildOrderByClause = (
       return [{ updatedAt: "desc" }];
   }
 };
-
-// export const searchFilter = async (_: unknown, args: SearchFilterInput) => {
-//   const { location, name } = SearchFilterSchema.parse(args);
-
-//   // Step 1: Find the city in the City table that matches the user's input
-//   const city = await prisma.city.findFirst({
-//     where: { name: { contains: location, mode: "insensitive" } },
-//   });
-
-//   if (!city) {
-//     throw new Error("City not found!");
-//   }
-
-//   // Step 2: Find services in the found city with a name resembling the service name the user provided
-//   const services = await prisma.service.findMany({
-//     where: {
-//       AND: [
-//         { name: { contains: name, mode: "insensitive" } }, // Service name resembling the user's input
-//         {
-//           address: {
-//             cityId: city.id, // Match the city by its ID
-//           },
-//         },
-//       ],
-//     },
-//     orderBy: [
-//       { averageRating: "desc" }, // Order by highest rating
-//       { updatedAt: "desc" }, // Order by latest update
-//     ],
-//     include: {
-//       business: {
-//         select: {
-//           name: true,
-//           subscription: true,
-//         },
-//       },
-//       address: true,
-//     },
-//   });
-
-//   if (services.length === 0) {
-//     throw new Error("No services found in the specified city!");
-//   }
-
-//   return services;
-// };

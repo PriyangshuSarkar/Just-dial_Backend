@@ -36,3 +36,36 @@ Filter
 5.auto suggestions
 6.google auth 
 7.payment gateway
+
+
+// // Basic Information // //
+// Individual / Firm Name
+// Phone Number
+// Email Address
+// Alternate Contact Numbers
+// Address -  Street Address, Pincode, City, State, Country
+
+// // Professional Details // //
+// Registration Number
+// License/Bar Number (for individual lawyers)
+// Practice Areas (multi-select for specialization areas, e.g., Family Law, Criminal Law, Corporate Law)
+// Practice Courts (multi-select for law courts e.g. Circuit Court, High Court, Supreme Court)
+// Years of Experience
+// Team Size (for Law Firms)
+// Language Proficiency (if relevant, for multi-lingual clients)
+// Academic Degree
+
+// // Additional Information
+// Bio/Description (text area for summary of experience and skills)
+// Website URL
+// Profile Picture
+// Cover Photos (multiple)
+// Social Media Links (optional for LinkedIn, Twitter, etc.)
+
+// // Compliance & Documentation
+// ID Verification Document (file upload for ID proof for individuals)
+// Registration Certificate (file upload for law firms)
+
+// Subscription Packages (if applicable)
+// Desktop adBanners
+// Mobile adBanners

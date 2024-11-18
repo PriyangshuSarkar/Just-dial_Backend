@@ -30,25 +30,24 @@ model User {
   id                  String            @id @default(uuid())
   name                String
   slug                String?           @unique
-  password            String
-  salt                String
+  password            String?
+  salt                String?
   contacts            UserContact[]
   hideDetails         Boolean           @default(true)
-  otp                 String?
-  otpExpiresAt        DateTime?
   avatar              String?
-  addressId           String?           @unique
   subscriptionId      String?
   subscriptionExpire  DateTime?
-  paymentVerification Boolean?          @default(false)
+  paymentVerification Boolean           @default(false)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   deletedAt           DateTime?
-  address             Address?
+  addresses           UserAddress[]
   bookings            Booking[]
   chats               Chat[]
   reviews             Review[]
   subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId])
 }
 
 model UserContact {
@@ -58,6 +57,7 @@ model UserContact {
   value        String      @unique
   isVerified   Boolean     @default(false)
   isPrimary    Boolean     @default(false)
+  order        Int?
   verifiedAt   DateTime?
   otp          String?
   otpExpiresAt DateTime?
@@ -69,6 +69,22 @@ model UserContact {
   @@unique([userId, type, isPrimary])
   @@index([type])
   @@index([value])
+  @@index([userId])
+}
+
+model UserAddress {
+  id        String    @id @default(uuid())
+  userId    String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id])
+  order     Int?
+  street    String
+  city      String
+  country   String
+  pincode   String
+  state     String
 }
 
 model BusinessSubscription {
@@ -86,55 +102,54 @@ model BusinessSubscription {
   businesses  Business[]
 }
 
+enum BusinessType {
+  INDIVIDUAL
+  FIRM
+}
+
 model Business {
-  id                  String                @id @default(uuid())
-  name                String
-  slug                String?               @unique
-  contacts            BusinessContact[]
-  password            String
-  salt                String
-  isBusinessVerified  Boolean               @default(false)
-  type                BusinessType
-  description         String?
-  website             String?
-  otp                 String?
-  otpExpiresAt        DateTime?
-  companyLogo         String?
-  companyImages       String[]
-  latitude            Float?
-  longitude           Float?
-  addressId           String?               @unique
-  subscriptionId      String?
-  subscriptionExpire  DateTime?
-  averageRating       Float?
-  reviewCount         Int                   @default(0)
-  isListed            Boolean               @default(false)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  deletedAt           DateTime?
-  paymentVerification Boolean?              @default(false)
-  gstNumber           String?
-  licenceNumber       String?
-  address             Address?
-  subscription        BusinessSubscription? @relation(fields: [subscriptionId], references: [id])
-  chats               Chat[]
-  reviews             Review[]
-  services            Service[]
+  id                          String                        @id @default(uuid())
+  name                        String?
+  slug                        String?                       @unique
+  primaryContacts             BusinessPrimaryContact[]
+  additionalContacts          String[]
+  password                    String?
+  salt                        String?
+  isBusinessVerified          Boolean                       @default(false)
+  type                        BusinessType                  @default(INDIVIDUAL)
+  subscriptionId              String?
+  subscriptionExpire          DateTime?
+  subscription                BusinessSubscription?         @relation(fields: [subscriptionId], references: [id])
+  averageRating               Float?
+  reviewCount                 Int                           @default(0)
+  isListed                    Boolean                       @default(false)
+  createdAt                   DateTime                      @default(now())
+  updatedAt                   DateTime                      @updatedAt
+  deletedAt                   DateTime?
+  paymentVerification         Boolean                       @default(false)
+  chats                       Chat[]
+  bookings                    Booking[]
+  reviews                     Review[]
+  businessSupportingDocuments BusinessSupportingDocuments[]
+  businessDetails             BusinessDetails?
+  price                       Float?
 
   @@index([name])
   @@index([isListed])
   @@index([averageRating])
   @@index([isBusinessVerified])
   @@index([reviewCount])
+  @@index([subscriptionId])
 }
 
-model BusinessContact {
+model BusinessPrimaryContact {
   id           String      @id @default(uuid())
   businessId   String
   type         ContactType
   value        String      @unique
   isVerified   Boolean     @default(false)
   isPrimary    Boolean     @default(false)
+  order        Int?
   verifiedAt   DateTime?
   otp          String?
   otpExpiresAt DateTime?
@@ -148,6 +163,113 @@ model BusinessContact {
   @@index([value])
 }
 
+model BusinessAddress {
+  id                String           @id @default(uuid())
+  businessDetailsId String?
+  createdAt         DateTime         @default(now())
+  deletedAt         DateTime?
+  updatedAt         DateTime         @updatedAt
+  businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+  order             Int?
+  street            String
+  city              String
+  country           String
+  pincode           String
+  state             String
+}
+
+model BusinessDetails {
+  id                 String            @id
+  business           Business          @relation(fields: [id], references: [id])
+  registrationNumber String?
+  license            String?
+  experience         Int?
+  teamSize           Int?
+  description        String?
+  websites           BusinessWebsite[]
+  images             BusinessImage[]
+  latitude           Float?
+  longitude          Float?
+  degree             String[]
+  language           Language[]
+  proficiency        Proficiency[]
+  court              Court[]
+  gstNumber          String?
+  categoryId         String?
+  category           Category?         @relation(fields: [categoryId], references: [id])
+  tags               Tag[]
+  addresses          BusinessAddress[]
+  logo               String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  deletedAt          DateTime?
+
+  @@index([categoryId])
+}
+
+model BusinessSupportingDocuments {
+  id         String    @id @default(uuid())
+  businessId String
+  type       String
+  url        String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  business   Business  @relation(fields: [businessId], references: [id])
+}
+
+model BusinessImage {
+  id                String           @id @default(uuid())
+  url               String
+  order             Int?
+  createdAt         DateTime         @default(now())
+  deletedAt         DateTime?
+  updatedAt         DateTime         @updatedAt
+  businessDetailsId String?
+  businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+}
+
+model BusinessWebsite {
+  id                String           @id @default(uuid())
+  type              String
+  url               String
+  createdAt         DateTime         @default(now())
+  deletedAt         DateTime?
+  updatedAt         DateTime         @updatedAt
+  businessDetailsId String?
+  businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+}
+
+model Language {
+  id              String            @id @default(uuid())
+  name            String            @unique
+  slug            String?           @unique
+  createdAt       DateTime          @default(now())
+  deletedAt       DateTime?
+  updatedAt       DateTime          @updatedAt
+  businessDetails BusinessDetails[]
+}
+
+model Proficiency {
+  id              String            @id @default(uuid())
+  name            String            @unique
+  slug            String?           @unique
+  createdAt       DateTime          @default(now())
+  deletedAt       DateTime?
+  updatedAt       DateTime          @updatedAt
+  businessDetails BusinessDetails[]
+}
+
+model Court {
+  id              String            @id @default(uuid())
+  name            String            @unique
+  slug            String?           @unique
+  createdAt       DateTime          @default(now())
+  deletedAt       DateTime?
+  updatedAt       DateTime          @updatedAt
+  businessDetails BusinessDetails[]
+}
+
 model Admin {
   id        String    @id @default(uuid())
   name      String
@@ -158,173 +280,49 @@ model Admin {
   deletedAt DateTime?
 }
 
-model Service {
-  id              String      @id @default(uuid())
-  name            String
-  slug            String?     @unique
-  overview        String?
-  price           Float
-  discountedPrice Float?
-  businessId      String
-  subcategoryId   String
-  averageRating   Float?
-  description     String?
-  reviewCount     Int         @default(0)
-  addressId       String?     @unique
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  deletedAt       DateTime?
-  isListed        Boolean     @default(false)
-  serviceImages   String[]
-  address         Address?
-  bookings        Booking[]
-  offers          Offer[]
-  reviews         Review[]
-  business        Business    @relation(fields: [businessId], references: [id])
-  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
-  facilities      Facility[]  @relation("FacilityToService")
-  tags            Tag[]       @relation("ServiceToTag")
-
-  @@index([name])
-  @@index([isListed])
-  @@index([averageRating])
-  @@index([price])
-  @@index([updatedAt])
-  @@index([reviewCount])
-}
-
-model Address {
-  id         String    @id @default(uuid())
-  userId     String?   @unique
-  businessId String?   @unique
-  serviceId  String?   @unique
-  createdAt  DateTime  @default(now())
-  deletedAt  DateTime?
-  updatedAt  DateTime  @updatedAt
-  business   Business? @relation(fields: [businessId], references: [id])
-  service    Service?  @relation(fields: [serviceId], references: [id])
-  user       User?     @relation(fields: [userId], references: [id])
-  street     String
-  city       String
-  country    String
-  pincode    String
-  state      String
-}
-
-model Pincode {
-  id     String  @id @default(uuid())
-  code   String  @unique
-  slug   String? @unique
-  cityId String
-  city   City    @relation(fields: [cityId], references: [id])
-}
-
-model City {
-  id       String    @id @default(uuid())
-  name     String
-  slug     String?   @unique
-  stateId  String
-  state    State     @relation(fields: [stateId], references: [id])
-  pincodes Pincode[]
-}
-
-model State {
-  id        String  @id @default(uuid())
-  name      String
-  slug      String? @unique
-  countryId String
-  country   Country @relation(fields: [countryId], references: [id])
-  cities    City[]
-}
-
-model Country {
-  id    String  @id @default(uuid())
-  name  String
-  slug  String? @unique
-  state State[]
-}
-
 model Category {
-  id            String        @id @default(uuid())
-  name          String        @unique
-  slug          String?       @unique
-  createdAt     DateTime      @default(now())
-  deletedAt     DateTime?
-  categoryImage String?
-  updatedAt     DateTime      @updatedAt
-  subcategories Subcategory[]
-}
-
-model Subcategory {
-  id               String    @id @default(uuid())
-  name             String    @unique
-  slug             String?   @unique
-  categoryId       String
-  createdAt        DateTime  @default(now())
-  deletedAt        DateTime?
-  updatedAt        DateTime  @updatedAt
-  subcategoryImage String?
-  services         Service[]
-  category         Category  @relation(fields: [categoryId], references: [id])
+  id                String            @id @default(uuid())
+  name              String
+  slug              String?           @unique
+  createdAt         DateTime          @default(now())
+  deletedAt         DateTime?
+  categoryImage     String?
+  updatedAt         DateTime          @updatedAt
+  businessesDetails BusinessDetails[]
 }
 
 model Tag {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  createdAt DateTime  @default(now())
-  deletedAt DateTime?
-  updatedAt DateTime  @updatedAt
-  services  Service[] @relation("ServiceToTag")
-}
-
-model Facility {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  createdAt DateTime  @default(now())
-  deletedAt DateTime?
-  updatedAt DateTime  @updatedAt
-  services  Service[] @relation("FacilityToService")
+  id              String            @id @default(uuid())
+  name            String            @unique
+  createdAt       DateTime          @default(now())
+  deletedAt       DateTime?
+  updatedAt       DateTime          @updatedAt
+  BusinessDetails BusinessDetails[]
 }
 
 model Review {
   id         String    @id @default(uuid())
   rating     Int
   comment    String?
-  serviceId  String
   businessId String?
   userId     String
   createdAt  DateTime  @default(now())
   deletedAt  DateTime?
   updatedAt  DateTime  @updatedAt
   business   Business? @relation(fields: [businessId], references: [id])
-  service    Service?  @relation(fields: [serviceId], references: [id])
   user       User?     @relation(fields: [userId], references: [id])
 }
 
 model Booking {
-  id        String    @id @default(uuid())
-  date      DateTime
-  userId    String
-  serviceId String
-  createdAt DateTime  @default(now())
-  deletedAt DateTime?
-  updatedAt DateTime  @updatedAt
-  service   Service   @relation(fields: [serviceId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
-}
-
-model Offer {
-  id           String    @id @default(uuid())
-  title        String
-  description  String?
-  discountRate Float
-  startDate    DateTime
-  endDate      DateTime
-  serviceId    String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
-  service      Service   @relation(fields: [serviceId], references: [id])
+  id         String    @id @default(uuid())
+  date       DateTime
+  userId     String
+  businessId String
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+  updatedAt  DateTime  @updatedAt
+  business   Business  @relation(fields: [businessId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
 }
 
 model Chat {
@@ -358,7 +356,35 @@ enum SenderType {
   BUSINESS
 }
 
-enum BusinessType {
-  INDIVIDUAL
-  FIRM
+model Pincode {
+  id     String  @id @default(uuid())
+  code   String  @unique
+  slug   String? @unique
+  cityId String
+  city   City    @relation(fields: [cityId], references: [id])
+}
+
+model City {
+  id       String    @id @default(uuid())
+  name     String
+  slug     String?   @unique
+  stateId  String
+  state    State     @relation(fields: [stateId], references: [id])
+  pincodes Pincode[]
+}
+
+model State {
+  id        String  @id @default(uuid())
+  name      String
+  slug      String? @unique
+  countryId String
+  country   Country @relation(fields: [countryId], references: [id])
+  cities    City[]
+}
+
+model Country {
+  id    String  @id @default(uuid())
+  name  String
+  slug  String? @unique
+  state State[]
 }

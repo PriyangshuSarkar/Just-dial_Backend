@@ -1,21 +1,23 @@
 import {
-  addService,
-  businessLogin,
+  addBusinessPrimaryContact,
   businessSignup,
   changeBusinessPassword,
+  deleteBusinessAccount,
   forgetBusinessPassword,
-  removeService,
+  manageBusinessAddress,
+  manageBusinessImage,
+  manageBusinessSupportingDocuments,
+  manageBusinessWebsite,
   updateBusinessDetails,
-  updateService,
-  verifyBusinessEmail,
+  verifyBusinessPrimaryContact,
 } from "./controller";
 
 export const Mutation = {
   businessSignup,
 
-  verifyBusinessEmail,
+  verifyBusinessPrimaryContact,
 
-  businessLogin,
+  addBusinessPrimaryContact,
 
   forgetBusinessPassword,
 
@@ -23,9 +25,13 @@ export const Mutation = {
 
   updateBusinessDetails,
 
-  addService,
+  deleteBusinessAccount,
 
-  updateService,
+  manageBusinessAddress,
 
-  removeService,
+  manageBusinessWebsite,
+
+  manageBusinessImage,
+
+  manageBusinessSupportingDocuments,
 };

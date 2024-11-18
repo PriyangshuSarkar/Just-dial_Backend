@@ -7,8 +7,12 @@ import {
   DeleteUserAccountSchema,
   ForgetUserPasswordInput,
   ForgetUserPasswordSchema,
+  ManageUserAddressInput,
+  ManageUserAddressSchema,
   UpdateUserDetailsInput,
   UpdateUserDetailsSchema,
+  UserGoogleOAuthInput,
+  UserGoogleOAuthSchema,
   UserLoginInput,
   UserLoginSchema,
   UserMeInput,
@@ -24,10 +28,10 @@ import { sendOtpEmail } from "../../../utils/emailService";
 import { generateToken, verifyToken } from "../../../utils/verifyToken";
 import { uploadToCloudinary } from "../../../utils/cloudinary";
 import slugify from "slugify";
-import { v4 } from "uuid";
 import { sendOtpPhone } from "../../../utils/smsService";
 import { ContactType, Prisma } from "@prisma/client";
 import { createOtpData } from "../../../utils/generateOtp";
+import { googleOAuth } from "../../../utils/googleOAuth";
 
 const MAX_CONTACTS_PER_TYPE = 1;
 const MAX_DAILY_VERIFICATION_ATTEMPTS = 5;
@@ -102,6 +106,77 @@ const cleanupUnverifiedContacts = async (
   });
 };
 
+export const userGoogleOAuth = async (
+  _: unknown,
+  args: UserGoogleOAuthInput
+) => {
+  const validatedData = UserGoogleOAuthSchema.parse(args);
+
+  const ticket = await googleOAuth.verifyIdToken({
+    idToken: validatedData.googleOAuthToke,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+
+  if (!payload) throw new Error("Invalid Google token");
+
+  const email = payload.email;
+  const name = payload.name;
+
+  if (!email) {
+    throw new Error("Email is required");
+  }
+
+  let user: any = await prisma.user.findFirst({
+    where: { contacts: { some: { value: email, isVerified: true } } },
+    include: { contacts: true },
+  });
+
+  let slug = slugify(name!, { lower: true, strict: true });
+  let uniqueSuffixLength = 2;
+  let existingSlug = await prisma.user.findFirst({ where: { slug } });
+
+  while (existingSlug) {
+    const uniqueSuffix = Math.random()
+      .toString(16)
+      .slice(2, 2 + uniqueSuffixLength);
+    slug = `${slugify(name!, {
+      lower: true,
+      strict: true,
+    })}-${uniqueSuffix}`;
+    existingSlug = await prisma.user.findFirst({ where: { slug } });
+    uniqueSuffixLength += 1;
+  }
+
+  if (!user) {
+    const newUser = await prisma.user.create({
+      data: {
+        name: name!,
+        slug,
+        contacts: {
+          create: {
+            type: "EMAIL",
+            value: email,
+            isPrimary: true,
+            isVerified: true,
+            verifiedAt: new Date(),
+          },
+        },
+      },
+    });
+    user = newUser;
+  }
+
+  const token = generateToken(user.id, "USER");
+
+  return {
+    ...user,
+    token,
+    message: "Google OAuth successful",
+  };
+};
+
 export const userSignup = async (_: unknown, args: UserSignupInput) => {
   const validatedData = UserSignupSchema.parse(args);
 
@@ -144,13 +219,24 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
 
     // Create user
     const { salt, hash } = hashPassword(validatedData.password);
-    const uuid = v4();
-    const baseSlug = slugify(validatedData.name, { lower: true, strict: true });
-    const slug = `${baseSlug}-${uuid}`;
+    let slug = slugify(validatedData.name, { lower: true, strict: true });
+    let uniqueSuffixLength = 2;
+    let existingSlug = await prisma.user.findFirst({ where: { slug } });
+
+    while (existingSlug) {
+      const uniqueSuffix = Math.random()
+        .toString(16)
+        .slice(2, 2 + uniqueSuffixLength);
+      slug = `${slugify(validatedData.name, {
+        lower: true,
+        strict: true,
+      })}-${uniqueSuffix}`;
+      existingSlug = await prisma.user.findFirst({ where: { slug } });
+      uniqueSuffixLength += 1;
+    }
 
     const user = await tx.user.create({
       data: {
-        id: uuid,
         name: validatedData.name,
         slug,
         password: hash,
@@ -162,7 +248,9 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
     if (validatedData.email) {
       await tx.userContact.create({
         data: {
-          userId: user.id,
+          user: {
+            connect: { id: user.id },
+          },
           type: "EMAIL",
           value: validatedData.email,
           isPrimary: true,
@@ -211,11 +299,15 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
   });
 };
 
-export const addUserContact = async (_: unknown, args: AddUserContactInput) => {
+export const addUserContact = async (
+  _: unknown,
+  args: AddUserContactInput,
+  context: any
+) => {
   const validatedData = AddUserContactSchema.parse(args);
 
-  const owner: any = verifyToken(validatedData.token);
-  if (!owner?.userId || typeof owner.userId !== "string") {
+  // const owner: any = verifyToken(validatedData.token);
+  if (!context.owner?.userId || typeof context.owner.userId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
@@ -223,7 +315,7 @@ export const addUserContact = async (_: unknown, args: AddUserContactInput) => {
     // Verify user exists and is not deleted
     const user = await tx.user.findFirst({
       where: {
-        id: owner.userId,
+        id: context.owner.userId,
         deletedAt: null,
       },
     });
@@ -256,7 +348,7 @@ export const addUserContact = async (_: unknown, args: AddUserContactInput) => {
     // Check contact limit for the current user
     const existingContactsCount = await tx.userContact.count({
       where: {
-        userId: owner.userId,
+        userId: context.owner.userId,
         type,
         deletedAt: null,
       },
@@ -275,7 +367,9 @@ export const addUserContact = async (_: unknown, args: AddUserContactInput) => {
     const otpData = createOtpData();
     const newContact = await tx.userContact.create({
       data: {
-        userId: owner.userId,
+        user: {
+          connect: { id: context.owner.userId },
+        },
         type,
         value: value!,
         ...otpData,
@@ -359,7 +453,14 @@ export const verifyUserContact = async (
         user: {
           include: {
             contacts: true,
-            address: true,
+            addresses: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
           },
         },
       },
@@ -377,18 +478,16 @@ export const verifyUserContact = async (
   });
 };
 
-export const userMe = async (_: unknown, args: UserMeInput) => {
+export const userMe = async (_: unknown, args: UserMeInput, context: any) => {
   const validatedData = UserMeSchema.parse(args);
 
-  const owner: any = verifyToken(validatedData.token);
-
-  if (!owner || typeof owner.userId !== "string") {
+  if (!context.owner?.userId || typeof context.owner?.userId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
   const user = await prisma.user.findFirst({
     where: {
-      id: owner.id,
+      id: context.owner.id,
       deletedAt: null,
       contacts: {
         some: {
@@ -406,13 +505,12 @@ export const userMe = async (_: unknown, args: UserMeInput) => {
           createdAt: "asc",
         },
       },
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
+      addresses: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       },
       reviews: {
@@ -462,24 +560,27 @@ export const userLogin = async (_: unknown, args: UserLoginInput) => {
 
   const user = await prisma.user.findFirst({
     where: {
-      id: existingContact?.userId,
+      id: existingContact.userId,
       deletedAt: null,
     },
     include: {
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
+      addresses: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       },
     },
   });
 
   if (!user) {
-    throw new Error(`User not found!`);
+    throw new Error("User not found!");
+  }
+
+  if (!user.salt || !user.password) {
+    throw new Error("User signed in using other Authentication Methods!");
   }
 
   const verify = verifyPassword(
@@ -579,6 +680,7 @@ export const changeUserPassword = async (
     const existingContact = await tx.userContact.findFirst({
       where: {
         value,
+        type,
         isVerified: true,
         deletedAt: null,
       },
@@ -632,19 +734,18 @@ export const changeUserPassword = async (
 
 export const updateUserDetails = async (
   _: unknown,
-  args: UpdateUserDetailsInput
+  args: UpdateUserDetailsInput,
+  context: any
 ) => {
   const validatedData = UpdateUserDetailsSchema.parse(args);
 
-  const owner: any = verifyToken(validatedData.token);
-
-  if (!owner || typeof owner.userId !== "string") {
+  if (!context.owner || typeof context.owner.userId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
   const user = await prisma.user.findUnique({
     where: {
-      id: owner.id,
+      id: context.owner.id,
       deletedAt: null,
       contacts: {
         some: {
@@ -659,48 +760,18 @@ export const updateUserDetails = async (
     throw new Error("User not found!");
   }
 
-  await prisma.$transaction(async (tx) => {
-    const newPrimaryContact = await tx.userContact.findFirst({
-      where: {
-        id: validatedData.contactId,
-        userId: user.id,
-        isVerified: true,
-        deletedAt: null,
-      },
-    });
-
-    if (!newPrimaryContact) {
-      throw new Error("Contact not found or not verified");
-    }
-
-    await tx.userContact.updateMany({
-      where: {
-        userId: user.id,
-        type: newPrimaryContact.type,
-        isPrimary: true,
-        deletedAt: null,
-      },
-      data: {
-        isPrimary: false,
-      },
-    });
-    await tx.userContact.update({
-      where: {
-        id: validatedData.contactId,
-      },
-      data: {
-        isPrimary: true,
-      },
-    });
-  });
   let avatarUrl: string | undefined;
 
   // Handle avatar upload if provided
   if (validatedData.avatar) {
-    avatarUrl = (await uploadToCloudinary(
-      [validatedData.avatar],
-      "avatars"
-    )) as string;
+    avatarUrl = await uploadToCloudinary(validatedData.avatar, "avatars");
+  }
+
+  if (validatedData.slug) {
+    const existingSlug = await prisma.user.findFirst({
+      where: { slug: validatedData.slug },
+    });
+    if (existingSlug) throw new Error("Slug already exists.");
   }
 
   // Update user name and phone
@@ -708,6 +779,7 @@ export const updateUserDetails = async (
     where: { id: user.id, deletedAt: null },
     data: {
       name: validatedData.name || user.name,
+      slug: validatedData.slug || user.slug,
       avatar: avatarUrl || user.avatar,
       hideDetails: validatedData.hideDetails || user.hideDetails,
     },
@@ -720,13 +792,12 @@ export const updateUserDetails = async (
           createdAt: "asc",
         },
       },
-      address: {
-        include: {
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          pincode: true,
+      addresses: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       },
       reviews: {
@@ -756,11 +827,12 @@ export const updateUserDetails = async (
 
 export const deleteUserAccount = async (
   _: unknown,
-  args: DeleteUserAccountInput
+  args: DeleteUserAccountInput,
+  context: any
 ) => {
   const validatedData = DeleteUserAccountSchema.parse(args);
-  const owner: any = verifyToken(validatedData.token);
-  if (!owner?.userId || typeof owner.userId !== "string") {
+
+  if (!context.owner?.userId || typeof context.owner.userId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
@@ -768,8 +840,12 @@ export const deleteUserAccount = async (
     // Check if user exists
     const user = await tx.user.findFirst({
       where: {
-        id: owner.userId,
+        id: context.owner.userId,
         deletedAt: null,
+      },
+      include: {
+        addresses: true,
+        contacts: true,
       },
     });
 
@@ -780,7 +856,7 @@ export const deleteUserAccount = async (
     // Soft delete user contacts
     await tx.userContact.updateMany({
       where: {
-        userId: owner.userId,
+        userId: context.owner.userId,
         deletedAt: null,
       },
       data: {
@@ -791,10 +867,10 @@ export const deleteUserAccount = async (
     });
 
     // Soft delete user address if exists
-    if (user.addressId) {
-      await tx.address.update({
+    if (user.addresses) {
+      await tx.userAddress.updateMany({
         where: {
-          id: user.addressId,
+          userId: context.owner.userId,
         },
         data: {
           deletedAt: new Date(),
@@ -805,7 +881,7 @@ export const deleteUserAccount = async (
     // Soft delete the user
     const deletedUser = await tx.user.update({
       where: {
-        id: owner.userId,
+        id: context.owner.userId,
       },
       data: {
         deletedAt: new Date(),
@@ -817,4 +893,107 @@ export const deleteUserAccount = async (
       message: "Account deleted successfully",
     };
   });
+};
+
+export const manageUserAddress = async (
+  _: unknown,
+  args: ManageUserAddressInput,
+  context: any
+) => {
+  // Validate input data using Zod
+  const validatedData = ManageUserAddressSchema.parse(args);
+
+  if (!context.owner || typeof context.owner.userId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  // Find the user, ensuring they have a verified contact
+  const user = await prisma.user.findUnique({
+    where: {
+      id: context.owner.id,
+      deletedAt: null,
+      contacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      addresses: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found!");
+  }
+
+  const updatedAddresses = [];
+
+  for (const addressData of validatedData.addresses) {
+    const existingAddress = addressData.addressId
+      ? user.addresses.find((address) => address.id === addressData.addressId)
+      : null;
+
+    if (addressData.toDelete) {
+      // If toDelete is true, delete the address
+      if (existingAddress) {
+        await prisma.userAddress.delete({
+          where: { id: existingAddress.id },
+        });
+
+        updatedAddresses.push({
+          message: `User address with id ${existingAddress.id} deleted successfully.`,
+        });
+      } else {
+        updatedAddresses.push({
+          message: "Address not found to delete.",
+        });
+      }
+    } else if (existingAddress) {
+      // If the address exists and toDelete is not true, update it
+      const updatedAddress = await prisma.userAddress.update({
+        where: { id: existingAddress.id },
+        data: {
+          street: addressData.street || existingAddress.street,
+          city: addressData.city || existingAddress.city,
+          state: addressData.state || existingAddress.state,
+          country: addressData.country || existingAddress.country,
+          pincode: addressData.pincode || existingAddress.pincode,
+        },
+      });
+
+      updatedAddresses.push({
+        ...updatedAddress,
+        message: "User address updated successfully.",
+      });
+    } else {
+      // If the address does not exist, create a new one
+      const newAddress = await prisma.userAddress.create({
+        data: {
+          street: addressData.street!,
+          city: addressData.city!,
+          state: addressData.state!,
+          country: addressData.country!,
+          pincode: addressData.pincode!,
+          user: {
+            connect: { id: user.id },
+          },
+        },
+      });
+
+      updatedAddresses.push({
+        ...newAddress,
+        message: "User address added successfully.",
+      });
+    }
+  }
+  return updatedAddresses;
 };

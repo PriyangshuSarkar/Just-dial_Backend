@@ -26,7 +26,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
 };
 
 export const sendOtpEmail = async (
-  userName: string,
+  userName: string | null,
   email: string,
   otp: string
 ): Promise<void> => {

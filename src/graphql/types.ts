@@ -9,7 +9,10 @@ export const typeDefs = gql`
     price: Float
     duration: Int
     features: [String]
-    users: User
+    users: [User]
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
     message: String
   }
 
@@ -17,20 +20,58 @@ export const typeDefs = gql`
     id: ID
     name: String
     slug: String
-    email: String
-    isEmailVerified: Boolean
-    isPhoneVerified: Boolean
-    phone: String
+    contacts: [UserContact]
     hideDetails: Boolean
     avatar: String
-    addressId: ID
-    address: [Address]
-    reviews: [Review]
-    bookings: [Booking]
     subscriptionId: ID
-    subscription: UserSubscription
     subscriptionExpire: Date
     paymentVerification: Boolean
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
+    addresses: [UserAddress]
+    bookings: [Booking]
+    reviews: [Review]
+    subscription: UserSubscription
+    message: String
+    token: String
+  }
+
+  type UserContact {
+    id: ID
+    userId: ID
+    type: ContactType
+    value: String
+    isVerified: Boolean
+    isPrimary: Boolean
+    order: Int
+    verifiedAt: Date
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
+    user: User
+    message: String
+    token: String
+  }
+
+  enum ContactType {
+    EMAIL
+    PHONE
+  }
+
+  type UserAddress {
+    id: ID
+    userId: ID
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    user: User
+    order: Int
+    street: String
+    city: String
+    country: String
+    pincode: String
+    state: String
     message: String
     token: String
   }
@@ -39,110 +80,249 @@ export const typeDefs = gql`
     id: ID
     name: String
     description: String
-    type: String
+    type: BusinessType
     price: Float
     duration: Int
-    tierLevel: Int
     features: [String]
+    tierLevel: Int
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
     businesses: [Business]
     message: String
+    token: String
+  }
+
+  enum BusinessType {
+    INDIVIDUAL
+    FIRM
   }
 
   type Business {
     id: ID
     name: String
     slug: String
-    website: String
-    rating: Float
-    isEmailVerified: Boolean
-    isPhoneVerified: Boolean
+    primaryContacts: [BusinessPrimaryContact]
+    additionalContacts: [String]
     isBusinessVerified: Boolean
-    email: String
-    phone: String
-    type: String
-    addressId: String
-    address: [Address]
-    latitude: Float
-    longitude: Float
-    companyLogo: String
-    companyImages: [String]
-    message: String
-    token: String
-    services: [Service]
-    reviews: [Review]
+    type: BusinessType
     subscriptionId: ID
     subscriptionExpire: Date
     subscription: BusinessSubscription
-    paymentVerification: Boolean
     averageRating: Float
     reviewCount: Int
     isListed: Boolean
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
+    paymentVerification: Boolean
+    bookings: [Booking]
+    reviews: [Review]
+    businessSupportingDocuments: [BusinessSupportingDocuments]
+    businessDetails: BusinessDetails
+    price: Float
+    message: String
+    token: String
+  }
+
+  type BusinessPrimaryContact {
+    id: ID
+    businessId: ID
+    type: ContactType
+    value: String
+    isVerified: Boolean
+    isPrimary: Boolean
+    order: Int
+    verifiedAt: Date
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
+    business: Business
+    message: String
+    token: String
+  }
+
+  type BusinessAddress {
+    id: ID
+    businessDetailsId: ID
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetails: BusinessDetails
+    order: Int
+    street: String
+    city: String
+    country: String
+    pincode: String
+    state: String
+    message: String
+    token: String
+  }
+
+  type BusinessDetails {
+    id: ID
+    businessId: ID
+    registrationNumber: String
+    license: String
+    experience: Int
+    teamSize: Int
+    description: String
+    websites: [BusinessWebsite]
+    images: [BusinessImage]
+    latitude: Float
+    longitude: Float
+    degree: [String]
+    language: [Language]
+    proficiency: [Proficiency]
+    court: [Court]
     gstNumber: String
-    licenceNumber: String
+    categoryId: ID
+    category: Category
+    tags: [Tag]
+    addresses: [BusinessAddress]
+    logo: String
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
+    message: String
+    token: String
+  }
+
+  type BusinessSupportingDocuments {
+    id: ID
+    businessId: ID
+    type: String
+    url: String
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
+    business: Business
+  }
+
+  type BusinessImage {
+    id: ID
+    url: String
+    order: Int
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetailsId: ID
+    businessDetails: BusinessDetails
+    message: String
+    token: String
+  }
+
+  type BusinessWebsite {
+    id: ID
+    type: String
+    url: String
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetailsId: ID
+    businessDetails: BusinessDetails
+    message: String
+    token: String
+  }
+
+  type Language {
+    id: ID
+    name: String
+    slug: String
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetails: [BusinessDetails]
+    message: String
+    token: String
+  }
+
+  type Proficiency {
+    id: ID
+    name: String
+    slug: String
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetails: [BusinessDetails]
+    message: String
+    token: String
+  }
+
+  type Court {
+    id: ID
+    name: String
+    slug: String
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetails: [BusinessDetails]
+    message: String
+    token: String
   }
 
   type Admin {
     id: ID
     name: String
     email: String
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
     message: String
     token: String
   }
 
-  type Service {
+  type Category {
     id: ID
     name: String
     slug: String
+    createdAt: Date
+    deletedAt: Date
+    categoryImage: String
+    updatedAt: Date
+    businessesDetails: [BusinessDetails]
     message: String
-    overview: String
-    price: Float
-    businessId: ID
-    business: Business
-    discountedPrice: Float
-    serviceImages: [String]
-    tags: [Tag]
-    facilities: [Facility]
-    address: [Address]
-    addressId: ID
-    subcategoryId: String
-    subcategory: Subcategory
-    offer: [Offer]
-    booking: [Booking]
-    reviews: [Review]
-    averageRating: Float
-    reviewCount: Int
-    isListed: Boolean
+    token: String
   }
 
-  type Address {
+  type Tag {
     id: ID
-    streetId: ID
-    street: Street
-    cityId: ID
-    city: City
-    stateId: ID
-    state: State
-    countryId: ID
-    country: Country
-    pincodeId: ID
-    pincode: Pincode
+    name: String
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetails: [BusinessDetails]
+    message: String
+    token: String
+  }
+
+  type Review {
+    id: ID
+    rating: Int
+    comment: String
+    businessId: ID
+    business: Business
     userId: ID
     user: User
-    businessId: ID
-    business: Business
-    serviceId: ID
-    service: Service
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
     message: String
+    token: String
   }
 
-  type Street {
+  type Booking {
     id: ID
-    name: String
-    slug: String
-    pincodeId: ID
-    pincode: [Pincode]
-    address: [Address]
+    date: Date
+    businessId: ID
+    business: Business
+    userId: ID
+    user: User
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
     message: String
+    token: String
   }
 
   type Pincode {
@@ -151,9 +331,11 @@ export const typeDefs = gql`
     slug: String
     cityId: ID
     city: City
-    streets: [Street]
-    address: [Address]
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
     message: String
+    token: String
   }
 
   type City {
@@ -162,9 +344,12 @@ export const typeDefs = gql`
     slug: String
     stateId: ID
     state: State
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
     pincodes: [Pincode]
-    address: [Address]
     message: String
+    token: String
   }
 
   type State {
@@ -173,84 +358,23 @@ export const typeDefs = gql`
     slug: String
     countryId: ID
     country: Country
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
     cities: [City]
-    address: [Address]
     message: String
+    token: String
   }
 
   type Country {
     id: ID
     name: String
     slug: String
-    state: [State]
-    address: [Address]
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    states: [State]
     message: String
-  }
-
-  type Category {
-    id: ID
-    name: String
-    slug: String
-    companyImages: String
-    subcategories: [Subcategory]
-    message: String
-  }
-
-  type Subcategory {
-    id: ID
-    name: String
-    slug: String
-    subcategoryImage: String
-    categoryId: ID
-    category: Category
-    services: [Service]
-    message: String
-  }
-
-  type Tag {
-    id: ID
-    name: String
-    service: [Service]
-    message: String
-  }
-
-  type Facility {
-    id: ID
-    name: String
-    service: [Service]
-    message: String
-  }
-
-  type Review {
-    id: ID
-    rating: Int
-    comment: String
-    serviceId: ID
-    service: Service
-    businessId: ID
-    business: Business
-    userId: ID
-    user: User
-    message: String
-  }
-
-  type Booking {
-    id: ID
-    date: Date
-    userId: ID
-    user: User
-    serviceId: ID
-    service: Service
-    message: String
-  }
-
-  type Offer {
-    id: ID
-    title: String
-    description: String
-    discountRate: Float
-    startDate: Date
-    endDate: Date
-    message: String
+    token: String
   }
 `;

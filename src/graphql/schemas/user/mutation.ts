@@ -1,22 +1,31 @@
 import {
+  addUserContact,
   changeUserPassword,
+  deleteUserAccount,
   forgetUserPassword,
+  manageUserAddress,
   updateUserDetails,
-  userLogin,
+  userGoogleOAuth,
   userSignup,
-  verifyUserEmail,
+  verifyUserContact,
 } from "./controller";
 
 export const Mutation = {
+  userGoogleOAuth,
+
   userSignup,
 
-  verifyUserEmail,
+  addUserContact,
 
-  userLogin,
+  verifyUserContact,
 
   forgetUserPassword,
 
   changeUserPassword,
 
   updateUserDetails,
+
+  deleteUserAccount,
+
+  manageUserAddress,
 };

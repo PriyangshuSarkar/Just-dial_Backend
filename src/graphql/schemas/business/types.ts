@@ -1,62 +1,104 @@
 import { gql } from "graphql-tag";
 
 export const typeDefs = gql`
-  scalar Update
+  scalar Upload
 
   type Query {
     status: String!
-    businessMe(token: String): Business
+    businessMe: Business
+    businessLogin(email: String, phone: String, password: String!): Business
+  }
+
+  enum BusinessType {
+    INDIVIDUAL
+    FIRM
+  }
+
+  input BusinessAddressInput {
+    order: Int
+    addressId: String
+    street: String
+    city: String
+    state: String
+    country: String
+    pincode: String
+    toDelete: Boolean
+  }
+
+  input BusinessWebsiteInput {
+    websiteId: String
+    type: String
+    url: String
+    toDelete: Boolean
+  }
+
+  input BusinessImageInput {
+    imageId: String
+    image: Upload
+    order: Int
+    toDelete: Boolean
+  }
+
+  input BusinessSupportingDocumentInput {
+    documentId: String
+    document: Upload
+    type: String
+    toDelete: Boolean
   }
 
   type Mutation {
     businessSignup(
-      name: String!
-      email: String!
-      password: String!
-      type: String!
-    ): Business
-    verifyBusinessEmail(email: String!, otp: String!): Business
-    businessLogin(email: String!, password: String!): Business
-    forgetBusinessPassword(email: String!): Business
+      email: String
+      phone: String
+      type: BusinessType!
+    ): BusinessPrimaryContact
+    verifyBusinessPrimaryContact(
+      email: String
+      phone: String
+      otp: String!
+      password: String
+    ): BusinessPrimaryContact
+    addBusinessPrimaryContact(
+      email: String
+      phone: String
+    ): BusinessPrimaryContact
+    forgetBusinessPassword(email: String, phone: String): BusinessPrimaryContact
     changeBusinessPassword(
-      email: String!
+      email: String
+      phone: String
       password: String!
       otp: String!
     ): Business
     updateBusinessDetails(
-      token: String!
       name: String
-      website: String
-      type: String
-      companyLogo: Upload
-      companyImages: [Upload]
-      companyImagesToDelete: [String]
+      slug: String
+      type: BusinessType
+      isListed: Boolean
+      registrationNumber: String
+      license: String
+      experience: Int
+      teamSize: Int
+      description: String
+      degrees: [String!]
+      gstNumber: String
+      categoryId: String
+      languages: [String!]
+      proficiencies: [String!]
+      courts: [String!]
+      tags: [String!]
+      latitude: Float
+      longitude: Float
+      additionalContacts: [String!]
+      logo: Upload
     ): Business
-    addService(
-      token: String!
-      name: String!
-      overview: String!
-      price: Float!
-      discountedPrice: Float
-      serviceImages: [Upload]
-      tags: [String]
-      facilities: [String]
-      subcategoryId: ID!
-    ): Service
-    updateService(
-      token: String!
-      serviceId: ID!
-      name: String
-      overview: String
-      price: Float
-      discountedPrice: Float
-      tags: [String]
-      facilities: [String]
-      tagsToDelete: [String]
-      facilitiesToDelete: [String]
-      serviceImages: [Upload]
-      serviceImagesToDelete: [String]
-    ): Service
-    removeService(token: String!, serviceId: ID!): Service
+    deleteBusinessAccount: Business
+    manageBusinessAddress(
+      addresses: [BusinessAddressInput!]!
+    ): [BusinessAddress]
+    manageBusinessWebsite(websites: [BusinessWebsiteInput!]!): [BusinessWebsite]
+    manageBusinessImage(images: [BusinessImageInput!]!): [BusinessImage]
+    manageBusinessSupportingDocuments(
+      image: [BusinessSupportingDocumentInput!]!
+    ): [BusinessSupportingDocuments]
   }
 `;
