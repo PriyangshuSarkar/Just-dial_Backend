@@ -1,5 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
-import { FileUpload } from "graphql-upload/Upload";
+import { FileUpload, Upload } from "graphql-upload-ts";
 import { v4 as uuid } from "uuid";
 
 // Configure Cloudinary with environment variables
@@ -12,10 +12,10 @@ cloudinary.config({
 export default cloudinary;
 
 export const uploadToCloudinary = async (
-  file: FileUpload, // Single file
+  upload: any, // Single file
   folder: string // Dynamic folder name
 ): Promise<string> => {
-  const { createReadStream } = await file;
+  const createReadStream = await upload[0].file.createReadStream;
 
   const uniqueFileName = uuid(); // Generate UUID for the file name
 

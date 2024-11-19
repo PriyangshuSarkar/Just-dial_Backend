@@ -743,7 +743,7 @@ export const updateUserDetails = async (
     throw new Error("Invalid or missing token");
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.user.findFirst({
     where: {
       id: context.owner.id,
       deletedAt: null,

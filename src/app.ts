@@ -4,11 +4,13 @@ import { dbConnect } from "./utils/dbConnect";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { schema } from "./graphql";
-import graphqlUploadExpress from "graphql-upload/graphqlUploadExpress.js";
+import { graphqlUploadExpress } from "graphql-upload-ts";
 import { auth } from "./middlewares/auth";
+import morgan from "morgan";
 
 async function startServer() {
   const app: Express = express();
+  app.use(morgan("dev"));
   app.use(cookieParser());
   app.use(json());
   app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
@@ -16,6 +18,7 @@ async function startServer() {
   const server = new ApolloServer({
     typeDefs: schema.typeDefs,
     resolvers: schema.resolvers,
+    csrfPrevention: false,
   });
   await server.start();
 
@@ -41,7 +44,7 @@ async function startServer() {
 
   try {
     app.listen(port, () => {
-      console.log(`🚀 Server ready at http://localhost:${port}/graphql`);
+      console.log(`🚀 Server ready at http://127.0.0.1:${port}/graphql`);
     });
   } catch (error) {
     console.error(`Server failed to start with the error:\n${error}`);
