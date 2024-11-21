@@ -33,12 +33,12 @@ import { sign } from "jsonwebtoken";
 import { generateToken, verifyToken } from "../../../utils/verifyToken";
 import slugify from "slugify";
 import { sendOtpPhone } from "../../../utils/smsService";
-import { ContactType, Prisma } from "@prisma/client";
 import { createOtpData } from "../../../utils/generateOtp";
 import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from "../../../utils/cloudinary";
+import { ContactType, Prisma } from "../../../../prisma/generated/client1";
 
 const MAX_CONTACTS_PER_TYPE = 1;
 const MAX_DAILY_VERIFICATION_ATTEMPTS = 5;

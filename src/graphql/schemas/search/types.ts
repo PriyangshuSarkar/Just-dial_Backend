@@ -12,6 +12,14 @@ export const typeDefs = gql`
     ASC
     DESC
   }
+
+  type SearchResult {
+    businesses: [Business]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
   type Query {
     status: String!
 
@@ -30,6 +38,6 @@ export const typeDefs = gql`
       businessName: String
       page: Int = 1
       limit: Int = 10
-    ): [Business]
+    ): SearchResult
   }
 `;

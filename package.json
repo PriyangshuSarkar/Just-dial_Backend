@@ -2,6 +2,10 @@
   "name": "backend",
   "module": "src/app.ts",
   "type": "module",
+  "scripts": {
+    "prisma": "bunx prisma db push --schema prisma/schemaBackup.prisma & bunx prisma db push --schema prisma/schemaPrimary.prisma",
+    "dev": "bun --watch run src/app.ts"
+  },
   "devDependencies": {
     "@apollo/server": "^4.11.2",
     "@eslint/eslintrc": "^3.1.0",

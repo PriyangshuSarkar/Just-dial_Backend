@@ -29,9 +29,9 @@ import { generateToken, verifyToken } from "../../../utils/verifyToken";
 import { uploadToCloudinary } from "../../../utils/cloudinary";
 import slugify from "slugify";
 import { sendOtpPhone } from "../../../utils/smsService";
-import { ContactType, Prisma } from "@prisma/client";
 import { createOtpData } from "../../../utils/generateOtp";
 import { googleOAuth } from "../../../utils/googleOAuth";
+import { ContactType, Prisma } from "../../../../prisma/generated/client1";
 
 const MAX_CONTACTS_PER_TYPE = 1;
 const MAX_DAILY_VERIFICATION_ATTEMPTS = 5;
