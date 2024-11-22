@@ -9,10 +9,6 @@ import {
   BusinessSignupSchema,
   UpdateBusinessDetailsInput,
   UpdateBusinessDetailsSchema,
-  BusinessMeInput,
-  BusinessMeSchema,
-  DeleteBusinessAccountInput,
-  DeleteBusinessAccountSchema,
   ManageBusinessAddressInput,
   ManageBusinessAddressSchema,
   VerifyBusinessPrimaryContactInput,
@@ -34,11 +30,9 @@ import { generateToken, verifyToken } from "../../../utils/verifyToken";
 import slugify from "slugify";
 import { sendOtpPhone } from "../../../utils/smsService";
 import { createOtpData } from "../../../utils/generateOtp";
-import {
-  deleteFromCloudinary,
-  uploadToCloudinary,
-} from "../../../utils/cloudinary";
-import { ContactType, Prisma } from "../../../../prisma/generated/client1";
+
+import { ContactType, Prisma } from "@prisma/client";
+import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
 
 const MAX_CONTACTS_PER_TYPE = 1;
 const MAX_DAILY_VERIFICATION_ATTEMPTS = 5;
@@ -113,13 +107,7 @@ const checkVerificationAttempts = async (
   }
 };
 
-export const businessMe = async (
-  _: unknown,
-  args: BusinessMeInput,
-  context: any
-) => {
-  const validatedData = BusinessMeSchema.parse(args);
-
+export const businessMe = async (_: unknown, args: unknown, context: any) => {
   if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
   }
@@ -163,7 +151,7 @@ export const businessMe = async (
               createdAt: "desc",
             },
           },
-          court: {
+          courts: {
             where: {
               deletedAt: null,
             },
@@ -171,7 +159,15 @@ export const businessMe = async (
               createdAt: "desc",
             },
           },
-          proficiency: {
+          proficiencies: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          languages: {
             where: {
               deletedAt: null,
             },
@@ -284,7 +280,8 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
           type: "EMAIL",
           value: validatedData.email,
           isPrimary: true,
-          ...emailOtpData,
+          otp: emailOtpData?.otp,
+          otpExpiresAt: emailOtpData?.otpExpiresAt,
         },
       });
     }
@@ -296,7 +293,8 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
           type: "PHONE",
           value: validatedData.phone,
           isPrimary: !validatedData.email,
-          ...phoneOtpData,
+          otp: phoneOtpData?.otp,
+          otpExpiresAt: phoneOtpData?.otpExpiresAt,
         },
       });
     }
@@ -417,7 +415,7 @@ export const verifyBusinessPrimaryContact = async (
                     createdAt: "desc",
                   },
                 },
-                court: {
+                courts: {
                   where: {
                     deletedAt: null,
                   },
@@ -425,7 +423,7 @@ export const verifyBusinessPrimaryContact = async (
                     createdAt: "desc",
                   },
                 },
-                proficiency: {
+                proficiencies: {
                   where: {
                     deletedAt: null,
                   },
@@ -544,7 +542,7 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
               createdAt: "desc",
             },
           },
-          court: {
+          courts: {
             where: {
               deletedAt: null,
             },
@@ -552,7 +550,7 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
               createdAt: "desc",
             },
           },
-          proficiency: {
+          proficiencies: {
             where: {
               deletedAt: null,
             },
@@ -884,7 +882,7 @@ export const changeBusinessPassword = async (
                 createdAt: "desc",
               },
             },
-            court: {
+            courts: {
               where: {
                 deletedAt: null,
               },
@@ -892,7 +890,7 @@ export const changeBusinessPassword = async (
                 createdAt: "desc",
               },
             },
-            proficiency: {
+            proficiencies: {
               where: {
                 deletedAt: null,
               },
@@ -960,7 +958,7 @@ export const updateBusinessDetails = async (
     throw new Error("Invalid or missing token");
   }
 
-  const business = await prisma.business.findUnique({
+  const business = await prisma.business.findFirst({
     where: {
       id: context.owner.id,
       deletedAt: null,
@@ -999,13 +997,9 @@ export const updateBusinessDetails = async (
       uniqueSuffixLength += 1;
     }
   }
-
   // Handle logo update if provided
   if (validatedData.logo) {
-    const logoUrl = await uploadToCloudinary(
-      validatedData.logo,
-      "business_logos"
-    );
+    const logoUrl = await uploadToSpaces(validatedData.logo, "business_logos");
     await prisma.businessDetails.update({
       where: { id: business.id },
       data: {
@@ -1033,7 +1027,7 @@ export const updateBusinessDetails = async (
         ? { connect: { id: validatedData.categoryId } }
         : undefined,
       degree: validatedData.degrees || business.businessDetails?.degree,
-      language:
+      languages:
         validatedData.languages && validatedData.languages.length
           ? {
               connectOrCreate: validatedData.languages.map(
@@ -1044,7 +1038,7 @@ export const updateBusinessDetails = async (
               ),
             }
           : undefined,
-      proficiency:
+      proficiencies:
         validatedData.proficiencies && validatedData.proficiencies.length
           ? {
               connectOrCreate: validatedData.proficiencies.map(
@@ -1055,7 +1049,7 @@ export const updateBusinessDetails = async (
               ),
             }
           : undefined,
-      court:
+      courts:
         validatedData.courts && validatedData.courts.length
           ? {
               connectOrCreate: validatedData.courts.map((court: string) => ({
@@ -1088,7 +1082,7 @@ export const updateBusinessDetails = async (
         ? { connect: { id: validatedData.categoryId } }
         : undefined,
       degree: validatedData.degrees,
-      language:
+      languages:
         validatedData.languages && validatedData.languages.length
           ? {
               connect: validatedData.languages.map((languageId: string) => ({
@@ -1096,7 +1090,7 @@ export const updateBusinessDetails = async (
               })),
             }
           : undefined,
-      proficiency:
+      proficiencies:
         validatedData.proficiencies && validatedData.proficiencies.length
           ? {
               connectOrCreate: validatedData.proficiencies.map(
@@ -1107,7 +1101,7 @@ export const updateBusinessDetails = async (
               ),
             }
           : undefined,
-      court:
+      courts:
         validatedData.courts && validatedData.courts.length
           ? {
               connectOrCreate: validatedData.courts.map((court: string) => ({
@@ -1168,7 +1162,7 @@ export const updateBusinessDetails = async (
               createdAt: "desc",
             },
           },
-          court: {
+          courts: {
             where: {
               deletedAt: null,
             },
@@ -1176,7 +1170,7 @@ export const updateBusinessDetails = async (
               createdAt: "desc",
             },
           },
-          proficiency: {
+          proficiencies: {
             where: {
               deletedAt: null,
             },
@@ -1234,11 +1228,9 @@ export const updateBusinessDetails = async (
 
 export const deleteBusinessAccount = async (
   _: unknown,
-  args: DeleteBusinessAccountInput,
+  args: unknown,
   context: any
 ) => {
-  const validatedData = DeleteBusinessAccountSchema.parse(args);
-
   if (
     !context.owner?.businessId ||
     typeof context.owner.businessId !== "string"
@@ -1345,30 +1337,6 @@ export const deleteBusinessAccount = async (
               },
             },
             images: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "desc",
-              },
-            },
-            court: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "desc",
-              },
-            },
-            proficiency: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "desc",
-              },
-            },
-            tags: {
               where: {
                 deletedAt: null,
               },
@@ -1691,7 +1659,7 @@ export const manageBusinessImage = async (
     if (imageData.toDelete) {
       // If toDelete is true, delete the image
       if (existingImage) {
-        await deleteFromCloudinary(existingImage.url);
+        await deleteFromSpaces(existingImage.url);
         await prisma.businessImage.delete({
           where: { id: existingImage.id },
         });
@@ -1705,7 +1673,7 @@ export const manageBusinessImage = async (
         });
       }
     } else if (existingImage) {
-      const updatedUrl = await uploadToCloudinary(
+      const updatedUrl = await uploadToSpaces(
         imageData.image,
         "business_images"
       );
@@ -1723,7 +1691,7 @@ export const manageBusinessImage = async (
         message: "Business image updated successfully.",
       });
     } else {
-      const newImageUrl = await uploadToCloudinary(
+      const newImageUrl = await uploadToSpaces(
         imageData.image,
         "business_images"
       );
@@ -1793,7 +1761,7 @@ export const manageBusinessSupportingDocuments = async (
     if (documentData.toDelete) {
       // If toDelete is true, delete the image
       if (existingDocument) {
-        await deleteFromCloudinary(existingDocument.url);
+        await deleteFromSpaces(existingDocument.url);
         await prisma.businessSupportingDocuments.delete({
           where: { id: existingDocument.id },
         });
@@ -1807,7 +1775,7 @@ export const manageBusinessSupportingDocuments = async (
         });
       }
     } else if (existingDocument) {
-      const updatedUrl = await uploadToCloudinary(
+      const updatedUrl = await uploadToSpaces(
         documentData.document,
         "business_supporting_documents"
       );
@@ -1825,7 +1793,7 @@ export const manageBusinessSupportingDocuments = async (
         message: "Business supporting document updated successfully.",
       });
     } else {
-      const newDocumentUrl = await uploadToCloudinary(
+      const newDocumentUrl = await uploadToSpaces(
         documentData.document,
         "business_supporting_documents"
       );

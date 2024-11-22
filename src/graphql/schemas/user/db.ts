@@ -8,9 +8,6 @@ import {
   enum as enum_,
 } from "zod";
 
-export const UserMeSchema = object({});
-export type UserMeInput = infer_<typeof UserMeSchema>;
-
 export const UserSignupSchema = object({
   name: string().min(2).max(50),
   email: string().email().optional(),
@@ -78,9 +75,6 @@ export const UpdateUserDetailsSchema = object({
   avatar: any().optional(),
 });
 export type UpdateUserDetailsInput = infer_<typeof UpdateUserDetailsSchema>;
-
-export const DeleteUserAccountSchema = object({});
-export type DeleteUserAccountInput = infer_<typeof DeleteUserAccountSchema>;
 
 export const ManageUserAddressSchema = object({
   addresses: object({

@@ -5,6 +5,7 @@ import {
   boolean,
   number,
   string,
+  any,
 } from "zod";
 
 export const FilterSchema = object({
@@ -35,3 +36,8 @@ export const LocationPrioritySchema = object({
   country: string().optional(),
 });
 export type LocationPriorityInput = infer_<typeof LocationPrioritySchema>;
+
+export const AreaSchema = object({
+  search: string(),
+});
+export type AreaInput = infer_<typeof AreaSchema>;

@@ -1,3 +1,4 @@
+import { prisma } from "../../../utils/dbConnect";
 import {
   AdminLoginInput,
   AdminLoginSchema,
@@ -5,8 +6,13 @@ import {
   AllBusinessesSchema,
   AllUserInput,
   AllUsersSchema,
+  BlockBusinessesInput,
+  BlockBusinessesSchema,
+  BlockUserInput,
+  BlockUserSchema,
+  VerifyBusinessesInput,
+  VerifyBusinessesSchema,
 } from "./db";
-import { prisma, prismaBackup } from "../../../utils/dbConnect";
 import { sign } from "jsonwebtoken";
 
 export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
@@ -224,5 +230,66 @@ export const allBusinesses = async (_: unknown, args: AllBusinessesInput) => {
     page: validatedData.page,
     limit: validatedData.limit,
     totalPages,
+  };
+};
+
+export const blockUsers = async (_: unknown, args: BlockUserInput) => {
+  const { userIds } = BlockUserSchema.parse(args);
+
+  const blockedUsers = await prisma.user.updateMany({
+    where: {
+      id: {
+        in: userIds,
+      },
+    },
+    data: {
+      isBlocked: true,
+    },
+  });
+
+  return {
+    ...blockedUsers,
+  };
+};
+
+export const blockBusinesses = async (
+  _: unknown,
+  args: BlockBusinessesInput
+) => {
+  const { businessIds } = BlockBusinessesSchema.parse(args);
+
+  const blockedBusinesses = await prisma.business.updateMany({
+    where: {
+      id: {
+        in: businessIds,
+      },
+    },
+    data: {
+      isBlocked: true,
+    },
+  });
+
+  return {
+    ...blockedBusinesses,
+  };
+};
+
+export const verifyBusinesses = async (
+  _: unknown,
+  args: VerifyBusinessesInput
+) => {
+  const validatedData = VerifyBusinessesSchema.parse(args);
+
+  const verifiedBusinesses = await prisma.business.updateMany({
+    where: {
+      id: { in: validatedData.businessIds },
+    },
+    data: {
+      isBusinessVerified: true,
+    },
+  });
+
+  return {
+    ...verifiedBusinesses,
   };
 };

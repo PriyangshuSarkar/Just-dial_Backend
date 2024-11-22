@@ -3,8 +3,6 @@ import {
   AddUserContactSchema,
   ChangeUserPasswordInput,
   ChangeUserPasswordSchema,
-  DeleteUserAccountInput,
-  DeleteUserAccountSchema,
   ForgetUserPasswordInput,
   ForgetUserPasswordSchema,
   ManageUserAddressInput,
@@ -15,8 +13,6 @@ import {
   UserGoogleOAuthSchema,
   UserLoginInput,
   UserLoginSchema,
-  UserMeInput,
-  UserMeSchema,
   UserSignupInput,
   UserSignupSchema,
   VerifyUserContactInput,
@@ -26,12 +22,12 @@ import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendOtpEmail } from "../../../utils/emailService";
 import { generateToken, verifyToken } from "../../../utils/verifyToken";
-import { uploadToCloudinary } from "../../../utils/cloudinary";
 import slugify from "slugify";
 import { sendOtpPhone } from "../../../utils/smsService";
 import { createOtpData } from "../../../utils/generateOtp";
 import { googleOAuth } from "../../../utils/googleOAuth";
-import { ContactType, Prisma } from "../../../../prisma/generated/client1";
+import { ContactType, Prisma } from "@prisma/client";
+import { uploadToSpaces } from "../../../utils/bucket";
 
 const MAX_CONTACTS_PER_TYPE = 1;
 const MAX_DAILY_VERIFICATION_ATTEMPTS = 5;
@@ -478,9 +474,7 @@ export const verifyUserContact = async (
   });
 };
 
-export const userMe = async (_: unknown, args: UserMeInput, context: any) => {
-  const validatedData = UserMeSchema.parse(args);
-
+export const userMe = async (_: unknown, args: unknown, context: any) => {
   if (!context.owner?.userId || typeof context.owner?.userId !== "string") {
     throw new Error("Invalid or missing token");
   }
@@ -764,7 +758,7 @@ export const updateUserDetails = async (
 
   // Handle avatar upload if provided
   if (validatedData.avatar) {
-    avatarUrl = await uploadToCloudinary(validatedData.avatar, "avatars");
+    avatarUrl = await uploadToSpaces(validatedData.avatar, "avatars");
   }
 
   if (validatedData.slug) {
@@ -827,11 +821,9 @@ export const updateUserDetails = async (
 
 export const deleteUserAccount = async (
   _: unknown,
-  args: DeleteUserAccountInput,
+  args: unknown,
   context: any
 ) => {
-  const validatedData = DeleteUserAccountSchema.parse(args);
-
   if (!context.owner?.userId || typeof context.owner.userId !== "string") {
     throw new Error("Invalid or missing token");
   }

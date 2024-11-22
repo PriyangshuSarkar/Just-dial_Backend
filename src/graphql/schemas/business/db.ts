@@ -10,9 +10,6 @@ import {
   boolean,
 } from "zod";
 
-export const BusinessMeSchema = object({});
-export type BusinessMeInput = infer_<typeof BusinessMeSchema>;
-
 export const BusinessSignupSchema = object({
   email: string().email().optional(),
   phone: string().optional(),
@@ -105,11 +102,6 @@ export const UpdateBusinessDetailsSchema = object({
 });
 export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema
->;
-
-export const DeleteBusinessAccountSchema = object({});
-export type DeleteBusinessAccountInput = infer_<
-  typeof DeleteBusinessAccountSchema
 >;
 
 export const ManageBusinessAddressSchema = object({

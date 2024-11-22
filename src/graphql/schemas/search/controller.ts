@@ -1,6 +1,8 @@
-import { Prisma } from "../../../../prisma/generated/client1";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../../utils/dbConnect";
 import {
+  AreaInput,
+  AreaSchema,
   FilterInput,
   LocationPriorityInput,
   SearchInput,
@@ -21,6 +23,7 @@ export const search = async (_: unknown, args: SearchInput) => {
   const baseConditions: Prisma.BusinessWhereInput = {
     isListed: true,
     deletedAt: null,
+    isBlocked: false,
     ...(businessName && {
       name: {
         contains: businessName,
@@ -92,9 +95,9 @@ const getBusinessWithPriority = async (
         businessDetails: {
           include: {
             addresses: true,
-            language: true,
-            court: true,
-            proficiency: true,
+            languages: true,
+            courts: true,
+            proficiencies: true,
             category: true,
             tags: true,
           },
@@ -192,4 +195,115 @@ const buildOrderByClause = (
     default:
       return [{ updatedAt: "desc" }];
   }
+};
+
+export const allLanguages = async () => {
+  const allLanguages = prisma.language.findMany({
+    where: {
+      deletedAt: null,
+    },
+  });
+
+  return {
+    ...allLanguages,
+  };
+};
+
+export const allProficiencies = async () => {
+  const allProficiency = prisma.proficiency.findMany({
+    where: {
+      deletedAt: null,
+    },
+  });
+
+  return {
+    ...allProficiency,
+  };
+};
+
+export const allCourts = async () => {
+  const allCourt = prisma.court.findMany({
+    where: {
+      deletedAt: null,
+    },
+  });
+
+  return {
+    ...allCourt,
+  };
+};
+
+export const allCategories = async () => {
+  const allCategory = prisma.category.findMany({
+    where: {
+      deletedAt: null,
+    },
+  });
+
+  return {
+    ...allCategory,
+  };
+};
+
+export const allTags = async () => {
+  const allTag = prisma.tag.findMany({
+    where: {
+      deletedAt: null,
+    },
+  });
+
+  return {
+    ...allTag,
+  };
+};
+
+export const areas = async (_: unknown, args: AreaInput) => {
+  const { search } = AreaSchema.parse(args);
+  const results = await prisma.pincode.findMany({
+    where: {
+      OR: [
+        { code: { contains: search, mode: "insensitive" } },
+        { slug: { contains: search, mode: "insensitive" } },
+        {
+          city: {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { slug: { contains: search, mode: "insensitive" } },
+              {
+                state: {
+                  OR: [
+                    { name: { contains: search, mode: "insensitive" } },
+                    { slug: { contains: search, mode: "insensitive" } },
+                    {
+                      country: {
+                        OR: [
+                          { name: { contains: search, mode: "insensitive" } },
+                          { slug: { contains: search, mode: "insensitive" } },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+    include: {
+      city: {
+        include: {
+          state: {
+            include: {
+              country: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return {
+    ...results,
+  };
 };

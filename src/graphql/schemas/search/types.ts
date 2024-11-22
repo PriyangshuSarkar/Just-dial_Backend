@@ -39,5 +39,17 @@ export const typeDefs = gql`
       page: Int = 1
       limit: Int = 10
     ): SearchResult
+
+    allLanguages: [Language]
+
+    allProficiencies: [Proficiency]
+
+    allCourts: [Court]
+
+    allCategories: [Category]
+
+    allTags: [Tag]
+
+    areas(search: String!): [Pincode]
   }
 `;

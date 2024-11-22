@@ -57,3 +57,18 @@ export const AllBusinessesSchema = object({
   sortOrder: enum_(["asc", "desc"]).default("desc"),
 });
 export type AllBusinessesInput = infer_<typeof AllBusinessesSchema>;
+
+export const VerifyBusinessesSchema = object({
+  businessIds: string().array(),
+});
+export type VerifyBusinessesInput = infer_<typeof VerifyBusinessesSchema>;
+
+export const BlockBusinessesSchema = object({
+  businessIds: string().array(),
+});
+export type BlockBusinessesInput = infer_<typeof BlockBusinessesSchema>;
+
+export const BlockUserSchema = object({
+  userIds: string().array(),
+});
+export type BlockUserInput = infer_<typeof BlockUserSchema>;

@@ -22,6 +22,7 @@ export const typeDefs = gql`
     slug: String
     contacts: [UserContact]
     hideDetails: Boolean
+    isBlocked: Boolean
     avatar: String
     subscriptionId: ID
     subscriptionExpire: Date
@@ -40,7 +41,7 @@ export const typeDefs = gql`
   type UserContact {
     id: ID
     userId: ID
-    type: ContactType
+    type: String
     value: String
     isVerified: Boolean
     isPrimary: Boolean
@@ -52,11 +53,6 @@ export const typeDefs = gql`
     user: User
     message: String
     token: String
-  }
-
-  enum ContactType {
-    EMAIL
-    PHONE
   }
 
   type UserAddress {
@@ -80,7 +76,7 @@ export const typeDefs = gql`
     id: ID
     name: String
     description: String
-    type: BusinessType
+    type: String
     price: Float
     duration: Int
     features: [String]
@@ -93,11 +89,6 @@ export const typeDefs = gql`
     token: String
   }
 
-  enum BusinessType {
-    INDIVIDUAL
-    FIRM
-  }
-
   type Business {
     id: ID
     name: String
@@ -105,13 +96,14 @@ export const typeDefs = gql`
     primaryContacts: [BusinessPrimaryContact]
     additionalContacts: [String]
     isBusinessVerified: Boolean
-    type: BusinessType
+    type: String
     subscriptionId: ID
     subscriptionExpire: Date
     subscription: BusinessSubscription
     averageRating: Float
     reviewCount: Int
     isListed: Boolean
+    isBlocked: Boolean
     createdAt: Date
     updatedAt: Date
     deletedAt: Date
@@ -128,7 +120,7 @@ export const typeDefs = gql`
   type BusinessPrimaryContact {
     id: ID
     businessId: ID
-    type: ContactType
+    type: String
     value: String
     isVerified: Boolean
     isPrimary: Boolean
@@ -172,9 +164,9 @@ export const typeDefs = gql`
     latitude: Float
     longitude: Float
     degree: [String]
-    language: [Language]
-    proficiency: [Proficiency]
-    court: [Court]
+    languages: [Language]
+    proficiencies: [Proficiency]
+    courts: [Court]
     gstNumber: String
     categoryId: ID
     category: Category
