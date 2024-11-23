@@ -6,7 +6,7 @@
     "dev": "bun run --watch src/app.ts || npm run --watch src/app.ts",
     "build": "bun build || npm run build:default",
     "build:default": "tsc",
-    "start": "node dist/app.js"
+    "start": "bun dist/app.js || node dist/app.js"
   },
   "devDependencies": {
     "@apollo/server": "^4.11.2",

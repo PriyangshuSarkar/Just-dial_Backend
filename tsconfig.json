@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "node", // Ensure lowercase "node"
+    "module": "ESNext", // Changed to CommonJS for better compatibility
+    "moduleResolution": "node",
     "rootDir": "./src",
     "outDir": "./dist",
     "removeComments": true,
@@ -21,7 +21,9 @@
     "strictBindCallApply": true,
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
-    "noEmit": true // No JS output needed as Bun handles execution
+    "noEmit": false, // Changed to false to enable emission of compiled files
+    "declaration": true, // Added to generate .d.ts files
+    "sourceMap": true // Added to generate source maps for debugging
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "un_Used_Code"],
