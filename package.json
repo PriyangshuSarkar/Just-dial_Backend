@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "module": "src/app.ts",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "bun run --watch src/app.ts || npm run --watch src/app.ts",
     "build": "bun build || npm run build:default",
