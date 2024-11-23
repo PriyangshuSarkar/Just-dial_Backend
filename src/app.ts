@@ -19,6 +19,7 @@ async function startServer() {
     typeDefs: schema.typeDefs,
     resolvers: schema.resolvers,
     csrfPrevention: false,
+    introspection: true,
   });
   await server.start();
 
