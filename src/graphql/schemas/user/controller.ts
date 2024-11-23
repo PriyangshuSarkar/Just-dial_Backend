@@ -9,8 +9,6 @@ import {
   ManageUserAddressSchema,
   UpdateUserDetailsInput,
   UpdateUserDetailsSchema,
-  UserGoogleOAuthInput,
-  UserGoogleOAuthSchema,
   UserLoginInput,
   UserLoginSchema,
   UserSignupInput,
@@ -21,11 +19,10 @@ import {
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendOtpEmail } from "../../../utils/emailService";
-import { generateToken, verifyToken } from "../../../utils/verifyToken";
+import { generateToken } from "../../../utils/verifyToken";
 import slugify from "slugify";
 import { sendOtpPhone } from "../../../utils/smsService";
 import { createOtpData } from "../../../utils/generateOtp";
-import { googleOAuth } from "../../../utils/googleOAuth";
 import { ContactType, Prisma } from "@prisma/client";
 import { uploadToSpaces } from "../../../utils/bucket";
 
@@ -104,18 +101,14 @@ const cleanupUnverifiedContacts = async (
 
 export const userGoogleOAuth = async (
   _: unknown,
-  args: UserGoogleOAuthInput
+  args: unknown,
+  context: any
 ) => {
-  const validatedData = UserGoogleOAuthSchema.parse(args);
+  if (!context) {
+    throw new Error("GoogleOAuth payload missing!");
+  }
 
-  const ticket = await googleOAuth.verifyIdToken({
-    idToken: validatedData.googleOAuthToke,
-    audience: process.env.GOOGLE_CLIENT_ID,
-  });
-
-  const payload = ticket.getPayload();
-
-  if (!payload) throw new Error("Invalid Google token");
+  const payload = context;
 
   const email = payload.email;
   const name = payload.name;

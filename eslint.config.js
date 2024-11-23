@@ -15,6 +15,7 @@ export default [
       "no-unused-vars": "off", // Disable no-unused-vars rule from ESLint core
       "@typescript-eslint/no-unused-vars": ["off"], // Disable no-unused-vars rule for TypeScript
       "unused-imports/no-unused-imports": "off", // Disable unused imports rule if using `eslint-plugin-unused-imports`
+      "@typescript-eslint/no-require-imports": "off", // Disable warnings for `require()`
     },
   },
 ];

@@ -88,8 +88,3 @@ export const ManageUserAddressSchema = object({
   }).array(),
 });
 export type ManageUserAddressInput = infer_<typeof ManageUserAddressSchema>;
-
-export const UserGoogleOAuthSchema = object({
-  googleOAuthToke: string(),
-});
-export type UserGoogleOAuthInput = infer_<typeof UserGoogleOAuthSchema>;

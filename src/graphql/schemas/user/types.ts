@@ -20,7 +20,7 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    userGoogleOAuth(googleOAuthToke: String!): User
+    userGoogleOAuth(googleOAuthToken: String!): User
     userSignup(
       name: String!
       email: String
