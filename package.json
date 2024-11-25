@@ -3,9 +3,9 @@
   "module": "src/app.ts",
   "type": "commonjs",
   "scripts": {
-    "dev": "concurrently \"bun run --watch src/app.ts\" \"bun run watch:build\" || concurrently \"npm run --watch src/app.ts\" \"node run watch:build\"",
+    "dev": "concurrently \"bun run --watch src/app.ts\" \"bun run watch:build\" || concurrently \"pnpm run --watch src/app.ts\" \"pnpm run watch:build\"",
     "watch:build": "tsc --watch",
-    "build": "bun build || npm run build:default",
+    "build": "bun build || pnpm run build:default",
     "build:default": "tsc",
     "start": "bun dist/app.js || node dist/app.js"
   },
