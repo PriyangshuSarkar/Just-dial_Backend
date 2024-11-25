@@ -18,7 +18,10 @@ export const search = async (_: unknown, args: SearchInput) => {
     ...filters
   } = SearchSchema.parse(args);
 
-  const locationInfo = await getLocationHierarchy(cityName);
+  // Get location info only if cityName is provided
+  const locationInfo = cityName
+    ? await getLocationHierarchy(cityName)
+    : { city: null, state: null, country: null };
 
   const baseConditions: Prisma.BusinessWhereInput = {
     isListed: true,
@@ -121,10 +124,11 @@ const getBusinessWithPriority = async (
 
   // Sort businesses based on location priority and featured status
   const sortedBusinesses = businesses.sort((a, b) => {
-    const scoreA = getLocationScore(a, location);
-    const scoreB = getLocationScore(b, location);
-
-    if (scoreA !== scoreB) return scoreB - scoreA;
+    if (location.city || location.state || location.country) {
+      const scoreA = getLocationScore(a, location);
+      const scoreB = getLocationScore(b, location);
+      if (scoreA !== scoreB) return scoreB - scoreA;
+    }
 
     const isFeatureA = isBusinessFeatured(a, now);
     const isFeatureB = isBusinessFeatured(b, now);
@@ -137,15 +141,13 @@ const getBusinessWithPriority = async (
     return b.updatedAt.getTime() - a.updatedAt.getTime();
   });
 
-  return [
-    {
-      businesses: sortedBusinesses,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    },
-  ];
+  return {
+    businesses: sortedBusinesses,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 };
 
 const getLocationScore = (

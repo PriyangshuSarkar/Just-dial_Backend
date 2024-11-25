@@ -34,7 +34,7 @@ export const typeDefs = gql`
       languages: [String!]
       courts: [String!]
       proficiencies: [String!]
-      cityName: String!
+      cityName: String
       businessName: String
       page: Int = 1
       limit: Int = 10

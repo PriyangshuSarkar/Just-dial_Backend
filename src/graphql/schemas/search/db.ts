@@ -6,6 +6,9 @@ import {
   number,
   string,
   any,
+  union,
+  undefined,
+  null as null_,
 } from "zod";
 
 export const FilterSchema = object({
@@ -23,18 +26,25 @@ export const FilterSchema = object({
 export type FilterInput = infer_<typeof FilterSchema>;
 
 export const SearchSchema = FilterSchema.extend({
-  cityName: string(),
+  cityName: string().optional(),
   businessName: string().optional(),
   page: number().optional().default(1),
   limit: number().optional().default(10),
 });
 export type SearchInput = infer_<typeof FilterSchema>;
 
-export const LocationPrioritySchema = object({
-  city: string().optional(),
-  state: string().optional(),
-  country: string().optional(),
-});
+export const LocationPrioritySchema = union([
+  object({
+    city: string().optional(),
+    state: string().optional(),
+    country: string().optional(),
+  }),
+  object({
+    city: null_(),
+    state: null_(),
+    country: null_(),
+  }),
+]);
 export type LocationPriorityInput = infer_<typeof LocationPrioritySchema>;
 
 export const AreaSchema = object({
