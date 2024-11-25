@@ -88,3 +88,15 @@ export const ManageUserAddressSchema = object({
   }).array(),
 });
 export type ManageUserAddressInput = infer_<typeof ManageUserAddressSchema>;
+
+export const UserSubscriptionSchema = object({
+  subscriptionId: string(),
+});
+export type UserSubscriptionInput = infer_<typeof UserSubscriptionSchema>;
+
+export const UserVerifyPaymentSchema = object({
+  razorpay_order_id: string(),
+  razorpay_payment_id: string(),
+  razorpay_signature: string(),
+});
+export type UserVerifyPaymentInput = infer_<typeof UserVerifyPaymentSchema>;

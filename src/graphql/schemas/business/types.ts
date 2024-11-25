@@ -100,5 +100,11 @@ export const typeDefs = gql`
     manageBusinessSupportingDocuments(
       image: [BusinessSupportingDocumentInput!]!
     ): [BusinessSupportingDocuments]
+    businessSubscription(subscriptionId: String!): Razorpay!
+    businessVerifyPayment(
+      razorpay_order_id: String!
+      razorpay_payment_id: String!
+      razorpay_signature: String!
+    ): Business
   }
 `;

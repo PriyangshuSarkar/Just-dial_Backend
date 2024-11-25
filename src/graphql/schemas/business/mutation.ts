@@ -1,6 +1,8 @@
 import {
   addBusinessPrimaryContact,
   businessSignup,
+  businessSubscription,
+  businessVerifyPayment,
   changeBusinessPassword,
   deleteBusinessAccount,
   forgetBusinessPassword,
@@ -34,4 +36,8 @@ export const Mutation = {
   manageBusinessImage,
 
   manageBusinessSupportingDocuments,
+
+  businessSubscription,
+
+  businessVerifyPayment,
 };

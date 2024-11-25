@@ -27,6 +27,7 @@ export const typeDefs = gql`
     subscriptionId: ID
     subscriptionExpire: Date
     paymentVerification: Boolean
+    razorpay_order_id: String
     createdAt: Date
     updatedAt: Date
     deletedAt: Date
@@ -108,6 +109,7 @@ export const typeDefs = gql`
     updatedAt: Date
     deletedAt: Date
     paymentVerification: Boolean
+    razorpay_order_id: String
     bookings: [Booking]
     reviews: [Review]
     businessSupportingDocuments: [BusinessSupportingDocuments]
@@ -368,5 +370,14 @@ export const typeDefs = gql`
     states: [State]
     message: String
     token: String
+  }
+
+  type Razorpay {
+    id: String!
+    amount: Float!
+    currency: String!
+    status: String!
+    receipt: String!
+    created_at: Date!
   }
 `;

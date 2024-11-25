@@ -44,5 +44,11 @@ export const typeDefs = gql`
     ): User
     deleteUserAccount: User
     manageUserAddress(addresses: [UserAddressInput!]!): UserAddress
+    userSubscription(subscriptionId: String!): Razorpay!
+    userVerifyPayment(
+      razorpay_order_id: String!
+      razorpay_payment_id: String!
+      razorpay_signature: String!
+    ): User
   }
 `;

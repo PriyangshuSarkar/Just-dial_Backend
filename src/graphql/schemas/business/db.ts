@@ -1,5 +1,3 @@
-import { password } from "bun";
-import { url } from "inspector";
 import {
   object,
   string,
@@ -152,4 +150,20 @@ export const ManageBusinessSupportingDocumentsSchema = object({
 });
 export type ManageBusinessSupportingDocumentsInput = infer_<
   typeof ManageBusinessSupportingDocumentsSchema
+>;
+
+export const BusinessSubscriptionSchema = object({
+  subscriptionId: string(),
+});
+export type BusinessSubscriptionInput = infer_<
+  typeof BusinessSubscriptionSchema
+>;
+
+export const BusinessVerifyPaymentSchema = object({
+  razorpay_order_id: string(),
+  razorpay_payment_id: string(),
+  razorpay_signature: string(),
+});
+export type BusinessVerifyPaymentInput = infer_<
+  typeof BusinessVerifyPaymentSchema
 >;

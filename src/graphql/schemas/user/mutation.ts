@@ -7,6 +7,8 @@ import {
   updateUserDetails,
   userGoogleOAuth,
   userSignup,
+  userSubscription,
+  userVerifyPayment,
   verifyUserContact,
 } from "./controller";
 
@@ -28,4 +30,8 @@ export const Mutation = {
   deleteUserAccount,
 
   manageUserAddress,
+
+  userSubscription,
+
+  userVerifyPayment,
 };
