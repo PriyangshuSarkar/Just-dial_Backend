@@ -1,5 +1,3 @@
-import exp from "constants";
-import slugify from "slugify";
 import {
   object,
   string,
@@ -7,10 +5,7 @@ import {
   enum as enum_,
   number,
   boolean,
-  array,
-  date,
   any,
-  isValid,
 } from "zod";
 
 export const AdminLoginSchema = object({
@@ -72,3 +67,101 @@ export const BlockUserSchema = object({
   userIds: string().array(),
 });
 export type BlockUserInput = infer_<typeof BlockUserSchema>;
+
+export const ManageUserSubscriptionSchema = object({
+  id: string().optional(),
+  name: string(),
+  description: string().optional(),
+  price: number(),
+  duration: number(),
+  features: string().array(),
+  toDelete: boolean().optional().default(false),
+});
+export type ManageUserSubscriptionInput = infer_<
+  typeof ManageUserSubscriptionSchema
+>;
+
+export const ManageBusinessSubscriptionSchema = object({
+  id: string().optional(),
+  name: string(),
+  description: string().optional(),
+  type: enum_(["INDIVIDUAL", "FIRM"]),
+  price: number(),
+  duration: number(),
+  features: string().array(),
+  tierLevel: number().optional(),
+  toDelete: boolean().optional().default(false),
+});
+export type ManageBusinessSubscriptionInput = infer_<
+  typeof ManageBusinessSubscriptionSchema
+>;
+
+export const ManageLanguageSchema = object({
+  id: string().optional(),
+  name: string(),
+  slug: string().optional(),
+  toDelete: boolean().optional().default(false),
+});
+export type ManageLanguageInput = infer_<typeof ManageLanguageSchema>;
+
+export const ManageProficiencySchema = object({
+  id: string().optional(),
+  name: string(),
+  slug: string().optional(),
+  toDelete: boolean().optional().default(false),
+});
+export type ManageProficiencyInput = infer_<typeof ManageProficiencySchema>;
+
+export const ManageCourtSchema = object({
+  id: string().optional(),
+  name: string(),
+  slug: string().optional(),
+  toDelete: boolean().optional().default(false),
+});
+export type ManageCourtInput = infer_<typeof ManageCourtSchema>;
+
+export const ManageCategorySchema = object({
+  id: string().optional(),
+  name: string(),
+  slug: string().optional(),
+  categoryImage: any().optional(),
+  toDelete: boolean().optional().default(false),
+});
+export type ManageCategoryInput = infer_<typeof ManageCategorySchema>;
+
+export const ManageTagSchema = object({
+  id: string().optional(),
+  name: string(),
+});
+export type ManageTagInput = infer_<typeof ManageTagSchema>;
+
+export const ManageCountrySchema = object({
+  id: string().optional(),
+  name: string(),
+  slug: string().optional(),
+});
+export type ManageCountryInput = infer_<typeof ManageCountrySchema>;
+
+export const ManageStateSchema = object({
+  id: string().optional(),
+  name: string(),
+  slug: string().optional(),
+  countryId: string(),
+});
+export type ManageStateInput = infer_<typeof ManageStateSchema>;
+
+export const ManageCitySchema = object({
+  id: string().optional(),
+  name: string(),
+  slug: string().optional(),
+  stateId: string(),
+});
+export type ManageCityInput = infer_<typeof ManageCitySchema>;
+
+export const ManagePincodeSchema = object({
+  id: string().optional(),
+  code: string(),
+  slug: string().optional(),
+  cityId: string(),
+});
+export type ManagePincodeInput = infer_<typeof ManagePincodeSchema>;

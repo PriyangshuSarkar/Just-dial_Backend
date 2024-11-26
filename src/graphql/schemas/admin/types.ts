@@ -1,6 +1,7 @@
 import { gql } from "graphql-tag";
 
 export const typeDefs = gql`
+  scalar Upload
   # Enums
   enum AllUsersSortBy {
     NAME
@@ -69,8 +70,58 @@ export const typeDefs = gql`
 
   # Mutation Type Definitions
   type Mutation {
-    verifyBusinesses(businessIds: [String!]!): [Business]
-    blockBusinesses(businessIds: [String!]!): [Business]
     blockUsers(userIds: [String!]!): [User]
+    blockBusinesses(businessIds: [String!]!): [Business]
+    verifyBusinesses(businessIds: [String!]!): [Business]
+    manageUserSubscription(
+      id: String
+      name: String!
+      description: String
+      price: Float!
+      duration: Int!
+      features: [String!]!
+      toDelete: Boolean
+    ): UserSubscription
+    manageBusinessSubscription(
+      id: String
+      name: String!
+      description: String
+      type: BusinessType!
+      price: Float!
+      duration: Int!
+      features: [String!]!
+      tierLevel: Int
+      toDelete: Boolean
+    ): BusinessSubscription
+    manageLanguage(
+      id: String
+      name: String!
+      slug: String
+      toDelete: Boolean
+    ): Language
+    manageProficiency(
+      id: String
+      name: String!
+      slug: String
+      toDelete: Boolean
+    ): Proficiency
+    manageCourt(
+      id: String
+      name: String!
+      slug: String
+      toDelete: Boolean
+    ): Court
+    manageCategory(
+      id: String
+      name: String!
+      slug: String
+      categoryImage: Upload
+      toDelete: Boolean
+    ): Category
+    manageTag(id: String, name: String!, toDelete: Boolean): Tag
+    manageCountry(id: ID, name: String!, slug: String): Country
+    manageState(id: ID, name: String!, slug: String, countryId: ID!): State
+    manageCity(id: ID, name: String!, slug: String, stateId: ID!): City
+    managePincode(id: ID, code: String!, slug: String, cityId: ID!): Pincode
   }
 `;

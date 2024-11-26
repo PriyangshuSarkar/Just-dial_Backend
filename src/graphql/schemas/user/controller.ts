@@ -13,10 +13,10 @@ import {
   UserLoginSchema,
   UserSignupInput,
   UserSignupSchema,
-  UserSubscriptionInput,
-  UserSubscriptionSchema,
-  UserVerifyPaymentInput,
-  UserVerifyPaymentSchema,
+  // UserSubscriptionInput,
+  // UserSubscriptionSchema,
+  // UserVerifyPaymentInput,
+  // UserVerifyPaymentSchema,
   VerifyUserContactInput,
   VerifyUserContactSchema,
 } from "./db";
@@ -29,8 +29,8 @@ import { sendOtpPhone } from "../../../utils/smsService";
 import { createOtpData } from "../../../utils/generateOtp";
 import { ContactType, Prisma } from "@prisma/client";
 import { uploadToSpaces } from "../../../utils/bucket";
-import { razorpay } from "../../../utils/razorpay";
-import crypto from "crypto";
+// import { razorpay } from "../../../utils/razorpay";
+// import crypto from "crypto";
 
 const MAX_CONTACTS_PER_TYPE = 1;
 const MAX_DAILY_VERIFICATION_ATTEMPTS = 5;
@@ -989,116 +989,123 @@ export const manageUserAddress = async (
   return updatedAddresses;
 };
 
-export const userSubscription = async (
-  _: unknown,
-  args: UserSubscriptionInput,
-  context: any
-) => {
-  if (!context.owner.userId || typeof context.owner.userId !== "string") {
-    throw new Error("Invalid or missing token");
-  }
+export const userSubscription = async () =>
+  // _: unknown,
+  // args: UserSubscriptionInput,
+  // context: any
+  {
+    // if (!context.owner.userId || typeof context.owner.userId !== "string") {
+    //   throw new Error("Invalid or missing token");
+    // }
 
-  const user = await prisma.user.findFirstOrThrow({
-    where: {
-      id: context.owner.id,
-      deletedAt: null,
-      isBlocked: false,
-      contacts: {
-        some: {
-          isVerified: true,
-          deletedAt: null,
-        },
-      },
-    },
-    include: {
-      subscription: true,
-    },
-  });
+    // const user = await prisma.user.findFirstOrThrow({
+    //   where: {
+    //     id: context.owner.id,
+    //     deletedAt: null,
+    //     isBlocked: false,
+    //     contacts: {
+    //       some: {
+    //         isVerified: true,
+    //         deletedAt: null,
+    //       },
+    //     },
+    //   },
+    //   include: {
+    //     subscription: true,
+    //   },
+    // });
 
-  const validatedData = UserSubscriptionSchema.parse(args);
+    // const validatedData = UserSubscriptionSchema.parse(args);
 
-  const plan = await prisma.userSubscription.findFirst({
-    where: {
-      id: validatedData.subscriptionId,
-      deletedAt: null,
-    },
-  });
+    // const plan = await prisma.userSubscription.findFirst({
+    //   where: {
+    //     id: validatedData.subscriptionId,
+    //     deletedAt: null,
+    //   },
+    // });
 
-  if (!plan?.price || !plan?.duration) {
-    throw new Error("Invalid Plan");
-  }
+    // if (!plan?.price || !plan?.duration) {
+    //   throw new Error("Invalid Plan");
+    // }
 
-  const order = await razorpay.orders.create({
-    amount: plan.price * 100,
-    currency: "INR",
-    receipt: user.id,
-  });
+    // const order = await razorpay.orders.create({
+    //   amount: plan.price * 100,
+    //   currency: "INR",
+    //   receipt: user.id,
+    // });
 
-  const updateUser = await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      subscriptionId: plan.id,
-      razorpay_order_id: order.id,
-    },
-  });
+    // const updateUser = await prisma.user.update({
+    //   where: {
+    //     id: user.id,
+    //   },
+    //   data: {
+    //     subscriptionId: plan.id,
+    //     razorpay_order_id: order.id,
+    //   },
+    // });
 
-  return {
-    ...order,
+    // return {
+    //   ...order,
+    // };
+
+    return {
+      message: "This route is not functional yet.",
+    };
   };
-};
 
-export const userVerifyPayment = async (
-  _: unknown,
-  args: UserVerifyPaymentInput
-) => {
-  const validatedData = UserVerifyPaymentSchema.parse(args);
+export const userVerifyPayment = async () =>
+  // _: unknown,
+  // args: UserVerifyPaymentInput
+  {
+    // const validatedData = UserVerifyPaymentSchema.parse(args);
 
-  const body = `${validatedData.razorpay_order_id}|${validatedData.razorpay_payment_id}`;
+    // const body = `${validatedData.razorpay_order_id}|${validatedData.razorpay_payment_id}`;
 
-  const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_API_SECRETS!)
-    .update(body.toString())
-    .digest("hex");
+    // const generatedSignature = crypto
+    //   .createHmac("sha256", process.env.RAZORPAY_API_SECRETS!)
+    //   .update(body.toString())
+    //   .digest("hex");
 
-  if (generatedSignature !== validatedData.razorpay_signature) {
-    throw new Error("Incorrect razorpay signature. Validation failed!");
-  }
+    // if (generatedSignature !== validatedData.razorpay_signature) {
+    //   throw new Error("Incorrect razorpay signature. Validation failed!");
+    // }
 
-  const user = await prisma.user.findUniqueOrThrow({
-    where: {
-      razorpay_order_id: validatedData.razorpay_order_id,
-      deletedAt: null,
-      contacts: {
-        some: {
-          isVerified: true,
-          deletedAt: null,
-        },
-      },
-    },
-    include: {
-      subscription: true,
-    },
-  });
+    // const user = await prisma.user.findUniqueOrThrow({
+    //   where: {
+    //     razorpay_order_id: validatedData.razorpay_order_id,
+    //     deletedAt: null,
+    //     contacts: {
+    //       some: {
+    //         isVerified: true,
+    //         deletedAt: null,
+    //       },
+    //     },
+    //   },
+    //   include: {
+    //     subscription: true,
+    //   },
+    // });
 
-  const subscriptionExpire = new Date();
-  subscriptionExpire.setDate(
-    subscriptionExpire.getDate() + user.subscription!.duration
-  );
+    // const subscriptionExpire = new Date();
+    // subscriptionExpire.setDate(
+    //   subscriptionExpire.getDate() + user.subscription!.duration
+    // );
 
-  const verifiedUserPayment = await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      paymentVerification: true,
-      subscriptionExpire: subscriptionExpire,
-    },
-  });
+    // const verifiedUserPayment = await prisma.user.update({
+    //   where: {
+    //     id: user.id,
+    //   },
+    //   data: {
+    //     paymentVerification: true,
+    //     subscriptionExpire: subscriptionExpire,
+    //   },
+    // });
 
-  return {
-    ...verifiedUserPayment,
-    message: "Payment Verified!",
+    // return {
+    //   ...verifiedUserPayment,
+    //   message: "Payment Verified!",
+    // };
+    return {
+      message: "This route is not functional yet.",
+    };
   };
-};
