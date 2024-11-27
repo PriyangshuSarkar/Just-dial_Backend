@@ -41,6 +41,11 @@ export const uploadToSpaces = async (
       ContentType: upload.file.mimetype, // Set proper content type
     });
 
+    await s3Client.deleteObject({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+
     // Return the CDN URL
     return `${CDN_ENDPOINT}/${key}`;
   } catch (error) {
@@ -48,33 +53,24 @@ export const uploadToSpaces = async (
   }
 };
 
-export const deleteFromSpaces = async (
-  urls: string | string[] // Accept a single URL or an array of URLs
-): Promise<void | void[]> => {
-  // Normalize URLs to an array for consistent handling
-  const urlArray = Array.isArray(urls) ? urls : [urls];
-
+export const deleteFromSpaces = async (url: string): Promise<void> => {
   const extractKey = (url: string): string => {
     // Remove the CDN endpoint to get the key
     return url.replace(`${CDN_ENDPOINT}/`, "");
   };
 
-  // Extract keys from URLs
-  const keys = urlArray.map((url) => extractKey(url));
+  const key = extractKey(url);
 
-  // Delete all files using Promise.all
-  await Promise.all(
-    keys.map(async (key) => {
-      try {
-        await s3Client.deleteObject({
-          Bucket: BUCKET_NAME,
-          Key: key,
-        });
-      } catch (error) {
-        throw new Error(`Failed to delete file ${key}: ${error}`);
-      }
-    })
-  );
+  try {
+    await s3Client.deleteObject({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+    console.log(`Successfully deleted file: ${key}`);
+  } catch (error) {
+    console.error(`Failed to delete file ${key}: ${error}`);
+    throw new Error(`Failed to delete file ${key}: ${error}`);
+  }
 };
 
 // // Configure Cloudinary with environment variables

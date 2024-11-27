@@ -36,7 +36,7 @@ export const typeDefs = gql`
       name: String
       email: String
       phone: String
-      subscriptionId: String
+      subscriptionId: ID
       hasSubscription: Boolean
       isVerified: Boolean
       createdAtStart: String
@@ -53,9 +53,9 @@ export const typeDefs = gql`
       phone: String
       type: BusinessType
       isBusinessVerified: Boolean
-      subscriptionId: String
+      subscriptionId: ID
       hasSubscription: Boolean
-      categoryId: String
+      categoryId: ID
       averageRatingMin: Float
       averageRatingMax: Float
       isListed: Boolean
@@ -70,11 +70,11 @@ export const typeDefs = gql`
 
   # Mutation Type Definitions
   type Mutation {
-    blockUsers(userIds: [String!]!): [User]
-    blockBusinesses(businessIds: [String!]!): [Business]
-    verifyBusinesses(businessIds: [String!]!): [Business]
+    blockUsers(userIds: [ID!]!): [User]
+    blockBusinesses(businessIds: [ID!]!): [Business]
+    verifyBusinesses(businessIds: [ID!]!): [Business]
     manageUserSubscription(
-      id: String
+      id: ID
       name: String!
       description: String
       price: Float!
@@ -83,7 +83,7 @@ export const typeDefs = gql`
       toDelete: Boolean
     ): UserSubscription
     manageBusinessSubscription(
-      id: String
+      id: ID
       name: String!
       description: String
       type: BusinessType!
@@ -93,35 +93,76 @@ export const typeDefs = gql`
       tierLevel: Int
       toDelete: Boolean
     ): BusinessSubscription
-    manageLanguage(
-      id: String
-      name: String!
-      slug: String
-      toDelete: Boolean
-    ): Language
-    manageProficiency(
-      id: String
-      name: String!
-      slug: String
-      toDelete: Boolean
-    ): Proficiency
-    manageCourt(
-      id: String
-      name: String!
-      slug: String
-      toDelete: Boolean
-    ): Court
-    manageCategory(
-      id: String
-      name: String!
-      slug: String
-      categoryImage: Upload
-      toDelete: Boolean
-    ): Category
-    manageTag(id: String, name: String!, toDelete: Boolean): Tag
-    manageCountry(id: ID, name: String!, slug: String): Country
-    manageState(id: ID, name: String!, slug: String, countryId: ID!): State
-    manageCity(id: ID, name: String!, slug: String, stateId: ID!): City
-    managePincode(id: ID, code: String!, slug: String, cityId: ID!): Pincode
+    manageLanguage(languages: [ManageLanguageInput!]!): [Language]
+    manageProficiency(proficiencies: [ManageProficiencyInput!]!): [Proficiency]
+    manageCourt(courts: [ManageCourtInput!]!): [Court]
+    manageCategory(categories: [ManageCategoryInput!]!): [Category]
+    manageTag(tags: [ManageTagInput!]!): [Tag]
+    manageCountry(countries: [ManageCountryInput!]!): [Country]
+    manageState(states: [ManageStateInput!]!): [State]
+    manageCity(cities: [ManageCityInput!]!): [City]
+    managePincode(pincodes: [ManagePincodeInput!]!): [Pincode]
+  }
+
+  input ManageLanguageInput {
+    id: ID
+    name: String!
+    slug: String
+    toDelete: Boolean
+  }
+
+  input ManageProficiencyInput {
+    id: ID
+    name: String!
+    slug: String
+    toDelete: Boolean
+  }
+
+  input ManageCourtInput {
+    id: ID
+    name: String!
+    slug: String
+    toDelete: Boolean
+  }
+
+  input ManageCategoryInput {
+    id: ID
+    name: String!
+    slug: String
+    categoryImage: Upload
+    toDelete: Boolean
+  }
+
+  input ManageTagInput {
+    id: ID
+    name: String!
+    toDelete: Boolean
+  }
+
+  input ManageCountryInput {
+    id: ID
+    name: String!
+    slug: String
+  }
+
+  input ManageStateInput {
+    id: ID
+    name: String!
+    slug: String
+    countryId: ID!
+  }
+
+  input ManageCityInput {
+    id: ID
+    name: String!
+    slug: String
+    stateId: ID!
+  }
+
+  input ManagePincodeInput {
+    id: ID
+    code: String!
+    slug: String
+    cityId: ID!
   }
 `;

@@ -398,30 +398,31 @@ export const manageBusinessSubscription = async (
 
 export const manageLanguage = async (_: unknown, args: ManageLanguageInput) => {
   const validatedData = ManageLanguageSchema.parse(args);
+  const results = await Promise.all(
+    validatedData.languages.map(async (language) => {
+      if (!language.id) {
+        const newLanguage = await prisma.language.create({
+          data: {
+            name: language.name,
+            slug: language.slug,
+          },
+        });
+        return newLanguage;
+      } else {
+        const updatedLanguage = await prisma.language.update({
+          where: { id: language.id },
+          data: {
+            name: language.name,
+            slug: language.slug,
+            deletedAt: language.toDelete ? new Date() : null,
+          },
+        });
+        return updatedLanguage;
+      }
+    })
+  );
 
-  if (!validatedData.id) {
-    const newLanguage = await prisma.language.create({
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...newLanguage,
-    };
-  } else {
-    const updatedLanguage = await prisma.language.update({
-      where: { id: validatedData.id },
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-        deletedAt: validatedData.toDelete ? new Date() : null,
-      },
-    });
-    return {
-      ...updatedLanguage,
-    };
-  }
+  return results;
 };
 
 export const manageProficiency = async (
@@ -430,231 +431,232 @@ export const manageProficiency = async (
 ) => {
   const validatedData = ManageProficiencySchema.parse(args);
 
-  if (!validatedData.id) {
-    const newProficiency = await prisma.proficiency.create({
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...newProficiency,
-    };
-  } else {
-    const updatedProficiency = await prisma.proficiency.update({
-      where: { id: validatedData.id },
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-        deletedAt: validatedData.toDelete ? new Date() : null,
-      },
-    });
-    return {
-      ...updatedProficiency,
-    };
-  }
+  const results = await Promise.all(
+    validatedData.proficiencies.map(async (proficiency) => {
+      if (!proficiency.id) {
+        return await prisma.proficiency.create({
+          data: {
+            name: proficiency.name,
+            slug: proficiency.slug,
+          },
+        });
+      } else {
+        return await prisma.proficiency.update({
+          where: { id: proficiency.id },
+          data: {
+            name: proficiency.name,
+            slug: proficiency.slug,
+            deletedAt: proficiency.toDelete ? new Date() : null,
+          },
+        });
+      }
+    })
+  );
+
+  return results;
 };
 
 export const manageCourt = async (_: unknown, args: ManageCourtInput) => {
   const validatedData = ManageCourtSchema.parse(args);
 
-  if (!validatedData.id) {
-    const newCourt = await prisma.court.create({
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...newCourt,
-    };
-  } else {
-    const updatedCourt = await prisma.court.update({
-      where: { id: validatedData.id },
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-        deletedAt: validatedData.toDelete ? new Date() : null,
-      },
-    });
-    return {
-      ...updatedCourt,
-    };
-  }
+  const results = await Promise.all(
+    validatedData.courts.map(async (court) => {
+      if (!court.id) {
+        return await prisma.court.create({
+          data: {
+            name: court.name,
+            slug: court.slug,
+          },
+        });
+      } else {
+        return await prisma.court.update({
+          where: { id: court.id },
+          data: {
+            name: court.name,
+            slug: court.slug,
+            deletedAt: court.toDelete ? new Date() : null,
+          },
+        });
+      }
+    })
+  );
+
+  return results;
 };
 
 export const manageCategory = async (_: unknown, args: ManageCategoryInput) => {
   const validatedData = ManageCategorySchema.parse(args);
 
-  let categoryImage = null;
-  if (validatedData.categoryImage) {
-    categoryImage = await uploadToSpaces(
-      validatedData.categoryImage,
-      "category_image"
-    );
-  }
-  if (!validatedData.id) {
-    const newCategory = await prisma.category.create({
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-        categoryImage,
-      },
-    });
-    return {
-      ...newCategory,
-    };
-  } else {
-    const updatedCategory = await prisma.category.update({
-      where: { id: validatedData.id },
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-        categoryImage,
-        deletedAt: validatedData.toDelete ? new Date() : null,
-      },
-    });
-    return {
-      ...updatedCategory,
-    };
-  }
+  const results = await Promise.all(
+    validatedData.categories.map(async (category) => {
+      let categoryImage = null;
+      if (category.categoryImage) {
+        categoryImage = await uploadToSpaces(
+          category.categoryImage,
+          "category_image"
+        );
+      }
+
+      if (!category.id) {
+        return await prisma.category.create({
+          data: {
+            name: category.name,
+            slug: category.slug,
+            categoryImage,
+          },
+        });
+      } else {
+        return await prisma.category.update({
+          where: { id: category.id },
+          data: {
+            name: category.name,
+            slug: category.slug,
+            categoryImage,
+            deletedAt: category.toDelete ? new Date() : null,
+          },
+        });
+      }
+    })
+  );
+
+  return results;
 };
 
 export const manageTag = async (_: unknown, args: ManageTagInput) => {
   const validatedData = ManageTagSchema.parse(args);
 
-  if (!validatedData.id) {
-    const newTag = await prisma.tag.create({
-      data: {
-        name: validatedData.name,
-      },
-    });
-    return {
-      ...newTag,
-    };
-  } else {
-    const updatedTag = await prisma.tag.update({
-      where: { id: validatedData.id },
-      data: {
-        name: validatedData.name,
-      },
-    });
-    return {
-      ...updatedTag,
-    };
-  }
+  const results = await Promise.all(
+    validatedData.tags.map(async (tag) => {
+      if (!tag.id) {
+        return await prisma.tag.create({
+          data: {
+            name: tag.name,
+          },
+        });
+      } else {
+        return await prisma.tag.update({
+          where: { id: tag.id },
+          data: {
+            name: tag.name,
+          },
+        });
+      }
+    })
+  );
+
+  return results;
 };
 
 export const manageCountry = async (_: unknown, args: ManageCountryInput) => {
   const validatedData = ManageCountrySchema.parse(args);
 
-  if (!validatedData.id) {
-    const newCountry = await prisma.country.create({
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...newCountry,
-    };
-  } else {
-    const updatedCountry = await prisma.country.update({
-      where: { id: validatedData.id },
-      data: {
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...updatedCountry,
-    };
-  }
+  const results = await Promise.all(
+    validatedData.countries.map(async (country) => {
+      if (!country.id) {
+        return await prisma.country.create({
+          data: {
+            name: country.name,
+            slug: country.slug,
+          },
+        });
+      } else {
+        return await prisma.country.update({
+          where: { id: country.id },
+          data: {
+            name: country.name,
+            slug: country.slug,
+          },
+        });
+      }
+    })
+  );
+
+  return results;
 };
 
 export const manageState = async (_: unknown, args: ManageStateInput) => {
   const validatedData = ManageStateSchema.parse(args);
 
-  if (!validatedData.id) {
-    const newState = await prisma.state.create({
-      data: {
-        countryId: validatedData.countryId,
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...newState,
-    };
-  } else {
-    const updatedState = await prisma.state.update({
-      where: { id: validatedData.id },
-      data: {
-        countryId: validatedData.countryId,
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...updatedState,
-    };
-  }
+  const results = await Promise.all(
+    validatedData.states.map(async (state) => {
+      if (!state.id) {
+        return await prisma.state.create({
+          data: {
+            countryId: state.countryId,
+            name: state.name,
+            slug: state.slug,
+          },
+        });
+      } else {
+        return await prisma.state.update({
+          where: { id: state.id },
+          data: {
+            countryId: state.countryId,
+            name: state.name,
+            slug: state.slug,
+          },
+        });
+      }
+    })
+  );
+
+  return results;
 };
 
 export const manageCity = async (_: unknown, args: ManageCityInput) => {
   const validatedData = ManageCitySchema.parse(args);
 
-  if (!validatedData.id) {
-    const newCity = await prisma.city.create({
-      data: {
-        stateId: validatedData.stateId,
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...newCity,
-    };
-  } else {
-    const updatedCity = await prisma.city.update({
-      where: { id: validatedData.id },
-      data: {
-        stateId: validatedData.stateId,
-        name: validatedData.name,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...updatedCity,
-    };
-  }
+  const results = await Promise.all(
+    validatedData.cities.map(async (city) => {
+      if (!city.id) {
+        return await prisma.city.create({
+          data: {
+            stateId: city.stateId,
+            name: city.name,
+            slug: city.slug,
+          },
+        });
+      } else {
+        return await prisma.city.update({
+          where: { id: city.id },
+          data: {
+            stateId: city.stateId,
+            name: city.name,
+            slug: city.slug,
+          },
+        });
+      }
+    })
+  );
+
+  return results;
 };
 
 export const managePincode = async (_: unknown, args: ManagePincodeInput) => {
   const validatedData = ManagePincodeSchema.parse(args);
 
-  if (!validatedData.id) {
-    const newPincode = await prisma.pincode.create({
-      data: {
-        cityId: validatedData.cityId,
-        code: validatedData.code,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...newPincode,
-    };
-  } else {
-    const updatedPincode = await prisma.pincode.update({
-      where: { id: validatedData.id },
-      data: {
-        cityId: validatedData.cityId,
-        code: validatedData.code,
-        slug: validatedData.slug,
-      },
-    });
-    return {
-      ...updatedPincode,
-    };
-  }
+  const results = await Promise.all(
+    validatedData.pincodes.map(async (pincode) => {
+      if (!pincode.id) {
+        return await prisma.pincode.create({
+          data: {
+            cityId: pincode.cityId,
+            code: pincode.code,
+            slug: pincode.slug,
+          },
+        });
+      } else {
+        return await prisma.pincode.update({
+          where: { id: pincode.id },
+          data: {
+            cityId: pincode.cityId,
+            code: pincode.code,
+            slug: pincode.slug,
+          },
+        });
+      }
+    })
+  );
+
+  return results;
 };

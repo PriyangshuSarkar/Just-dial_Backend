@@ -10,7 +10,7 @@ export const typeDefs = gql`
   }
 
   input UserAddressInput {
-    addressId: String
+    addressId: ID
     street: String
     city: String
     state: String
@@ -44,7 +44,7 @@ export const typeDefs = gql`
     ): User
     deleteUserAccount: User
     manageUserAddress(addresses: [UserAddressInput!]!): UserAddress
-    userSubscription(subscriptionId: String!): Razorpay!
+    userSubscription(subscriptionId: ID!): Razorpay!
     userVerifyPayment(
       razorpay_order_id: String!
       razorpay_payment_id: String!

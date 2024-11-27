@@ -1,12 +1,4 @@
-import exp from "constants";
-import {
-  object,
-  string,
-  infer as infer_,
-  any,
-  boolean,
-  enum as enum_,
-} from "zod";
+import { object, string, infer as infer_, any, boolean } from "zod";
 
 export const UserSignupSchema = object({
   name: string().min(2).max(50),

@@ -16,7 +16,7 @@ export const typeDefs = gql`
 
   input BusinessAddressInput {
     order: Int
-    addressId: String
+    addressId: ID
     street: String
     city: String
     state: String
@@ -26,21 +26,21 @@ export const typeDefs = gql`
   }
 
   input BusinessWebsiteInput {
-    websiteId: String
+    websiteId: ID
     type: String
     url: String
     toDelete: Boolean
   }
 
   input BusinessImageInput {
-    imageId: String
+    imageId: ID
     image: Upload
     order: Int
     toDelete: Boolean
   }
 
   input BusinessSupportingDocumentInput {
-    documentId: String
+    documentId: ID
     document: Upload
     type: String
     toDelete: Boolean
@@ -81,7 +81,7 @@ export const typeDefs = gql`
       description: String
       degrees: [String!]
       gstNumber: String
-      categoryId: String
+      categoryId: ID
       languages: [String!]
       proficiencies: [String!]
       courts: [String!]
@@ -100,7 +100,7 @@ export const typeDefs = gql`
     manageBusinessSupportingDocuments(
       image: [BusinessSupportingDocumentInput!]!
     ): [BusinessSupportingDocuments]
-    businessSubscription(subscriptionId: String!): Razorpay!
+    businessSubscription(subscriptionId: ID!): Razorpay!
     businessVerifyPayment(
       razorpay_order_id: String!
       razorpay_payment_id: String!

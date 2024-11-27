@@ -97,71 +97,89 @@ export type ManageBusinessSubscriptionInput = infer_<
 >;
 
 export const ManageLanguageSchema = object({
-  id: string().optional(),
-  name: string(),
-  slug: string().optional(),
-  toDelete: boolean().optional().default(false),
+  languages: object({
+    id: string().optional(),
+    name: string(),
+    slug: string().optional(),
+    toDelete: boolean().optional().default(false),
+  }).array(),
 });
 export type ManageLanguageInput = infer_<typeof ManageLanguageSchema>;
 
 export const ManageProficiencySchema = object({
-  id: string().optional(),
-  name: string(),
-  slug: string().optional(),
-  toDelete: boolean().optional().default(false),
+  proficiencies: object({
+    id: string().optional(),
+    name: string(),
+    slug: string().optional(),
+    toDelete: boolean().optional().default(false),
+  }).array(),
 });
 export type ManageProficiencyInput = infer_<typeof ManageProficiencySchema>;
 
 export const ManageCourtSchema = object({
-  id: string().optional(),
-  name: string(),
-  slug: string().optional(),
-  toDelete: boolean().optional().default(false),
+  courts: object({
+    id: string().optional(),
+    name: string(),
+    slug: string().optional(),
+    toDelete: boolean().optional().default(false),
+  }).array(),
 });
 export type ManageCourtInput = infer_<typeof ManageCourtSchema>;
 
 export const ManageCategorySchema = object({
-  id: string().optional(),
-  name: string(),
-  slug: string().optional(),
-  categoryImage: any().optional(),
-  toDelete: boolean().optional().default(false),
+  categories: object({
+    id: string().optional(),
+    name: string(),
+    slug: string().optional(),
+    categoryImage: any().optional(),
+    toDelete: boolean().optional().default(false),
+  }).array(),
 });
 export type ManageCategoryInput = infer_<typeof ManageCategorySchema>;
 
 export const ManageTagSchema = object({
-  id: string().optional(),
-  name: string(),
+  tags: object({
+    id: string().optional(),
+    name: string(),
+  }).array(),
 });
 export type ManageTagInput = infer_<typeof ManageTagSchema>;
 
 export const ManageCountrySchema = object({
-  id: string().optional(),
-  name: string(),
-  slug: string().optional(),
+  countries: object({
+    id: string().optional(),
+    name: string(),
+    slug: string().optional(),
+  }).array(),
 });
 export type ManageCountryInput = infer_<typeof ManageCountrySchema>;
 
 export const ManageStateSchema = object({
-  id: string().optional(),
-  name: string(),
-  slug: string().optional(),
-  countryId: string(),
+  states: object({
+    id: string().optional(),
+    name: string(),
+    slug: string().optional(),
+    countryId: string(),
+  }).array(),
 });
 export type ManageStateInput = infer_<typeof ManageStateSchema>;
 
 export const ManageCitySchema = object({
-  id: string().optional(),
-  name: string(),
-  slug: string().optional(),
-  stateId: string(),
+  cities: object({
+    id: string().optional(),
+    name: string(),
+    slug: string().optional(),
+    stateId: string(),
+  }).array(),
 });
 export type ManageCityInput = infer_<typeof ManageCitySchema>;
 
 export const ManagePincodeSchema = object({
-  id: string().optional(),
-  code: string(),
-  slug: string().optional(),
-  cityId: string(),
+  pincodes: object({
+    id: string().optional(),
+    code: string(),
+    slug: string().optional(),
+    cityId: string(),
+  }).array(),
 });
 export type ManagePincodeInput = infer_<typeof ManagePincodeSchema>;
