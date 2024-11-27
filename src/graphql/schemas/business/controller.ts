@@ -1007,7 +1007,11 @@ export const updateBusinessDetails = async (
   }
   // Handle logo update if provided
   if (validatedData.logo) {
-    const logoUrl = await uploadToSpaces(validatedData.logo, "business_logos");
+    const logoUrl = await uploadToSpaces(
+      validatedData.logo,
+      "business_logos",
+      business.businessDetails?.logo
+    );
     await prisma.businessDetails.update({
       where: { id: business.id },
       data: {
@@ -1683,7 +1687,8 @@ export const manageBusinessImage = async (
     } else if (existingImage) {
       const updatedUrl = await uploadToSpaces(
         imageData.image,
-        "business_images"
+        "business_images",
+        existingImage.url
       );
       // If the image exists and toDelete is not true, update it
       const updatedImage = await prisma.businessImage.update({
@@ -1701,7 +1706,8 @@ export const manageBusinessImage = async (
     } else {
       const newImageUrl = await uploadToSpaces(
         imageData.image,
-        "business_images"
+        "business_images",
+        null
       );
       // If the address does not exist, create a new one
       const newImage = await prisma.businessImage.create({
@@ -1785,7 +1791,8 @@ export const manageBusinessSupportingDocuments = async (
     } else if (existingDocument) {
       const updatedUrl = await uploadToSpaces(
         documentData.document,
-        "business_supporting_documents"
+        "business_supporting_documents",
+        existingDocument.url
       );
       // If the image exists and toDelete is not true, update it
       const updatedDocument = await prisma.businessSupportingDocuments.update({
@@ -1803,7 +1810,8 @@ export const manageBusinessSupportingDocuments = async (
     } else {
       const newDocumentUrl = await uploadToSpaces(
         documentData.document,
-        "business_supporting_documents"
+        "business_supporting_documents",
+        null
       );
       // If the address does not exist, create a new one
       const newDocument = await prisma.businessSupportingDocuments.create({

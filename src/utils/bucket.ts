@@ -15,13 +15,11 @@ const CDN_ENDPOINT = process.env.DO_SPACES_CDN_ENDPOINT!;
 
 export const uploadToSpaces = async (
   upload: any, // Single file
-  folder: string // Dynamic folder name
+  folder: string, // Dynamic folder name
+  url: string | null | undefined
 ): Promise<string> => {
-  console.log(upload);
   const createReadStream = await upload.file.createReadStream;
-  console.log(createReadStream);
   const stream = createReadStream();
-  const uniqueFileName = uuid(); // Generate UUID for the file name
 
   // Convert stream to buffer
   const chunks: any[] = [];
@@ -30,7 +28,16 @@ export const uploadToSpaces = async (
   }
   const buffer = Buffer.concat(chunks);
 
-  const key = `${folder}/${uniqueFileName}`; // Create file path with folder
+  let key: string;
+  if (url) {
+    const extractKey = (url: string): string => {
+      return url.replace(`${CDN_ENDPOINT}/`, "");
+    };
+    key = extractKey(url); // Use the existing key if URL is provided
+  } else {
+    const uniqueFileName = uuid(); // Generate UUID for new file name
+    key = `${folder}/${uniqueFileName}`; // Create file path with folder
+  }
 
   try {
     await s3Client.putObject({
@@ -39,11 +46,6 @@ export const uploadToSpaces = async (
       Body: buffer,
       ACL: "public-read", // Make the file publicly accessible
       ContentType: upload.file.mimetype, // Set proper content type
-    });
-
-    await s3Client.deleteObject({
-      Bucket: BUCKET_NAME,
-      Key: key,
     });
 
     // Return the CDN URL

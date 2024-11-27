@@ -487,38 +487,56 @@ export const manageCourt = async (_: unknown, args: ManageCourtInput) => {
 export const manageCategory = async (_: unknown, args: ManageCategoryInput) => {
   const validatedData = ManageCategorySchema.parse(args);
 
-  const results = await Promise.all(
-    validatedData.categories.map(async (category) => {
-      let categoryImage = null;
-      if (category.categoryImage) {
+  const processCategory = async (category: any) => {
+    let categoryImage = null;
+
+    if (category.categoryImage) {
+      if (category.id) {
+        // Replace existing image if category ID exists
+        const existingCategory = await prisma.category.findUnique({
+          where: { id: category.id },
+        });
         categoryImage = await uploadToSpaces(
           category.categoryImage,
-          "category_image"
+          "category_image",
+          existingCategory?.categoryImage
+        );
+      } else {
+        // Upload new image if no category ID exists
+        categoryImage = await uploadToSpaces(
+          category.categoryImage,
+          "category_image",
+          null
         );
       }
+    }
 
-      if (!category.id) {
-        return await prisma.category.create({
-          data: {
-            name: category.name,
-            slug: category.slug,
-            categoryImage,
-          },
-        });
-      } else {
-        return await prisma.category.update({
-          where: { id: category.id },
-          data: {
-            name: category.name,
-            slug: category.slug,
-            categoryImage,
-            deletedAt: category.toDelete ? new Date() : null,
-          },
-        });
-      }
-    })
+    if (!category.id) {
+      // Create a new category
+      return prisma.category.create({
+        data: {
+          name: category.name,
+          slug: category.slug,
+          categoryImage,
+        },
+      });
+    } else {
+      // Update an existing category
+      return prisma.category.update({
+        where: { id: category.id },
+        data: {
+          name: category.name,
+          slug: category.slug,
+          categoryImage,
+          deletedAt: category.toDelete ? new Date() : null,
+        },
+      });
+    }
+  };
+
+  const results = await Promise.all(
+    validatedData.categories.map(processCategory)
   );
-
   return results;
 };
 

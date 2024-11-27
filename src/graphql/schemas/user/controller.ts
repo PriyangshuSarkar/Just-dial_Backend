@@ -757,7 +757,11 @@ export const updateUserDetails = async (
 
   // Handle avatar upload if provided
   if (validatedData.avatar) {
-    avatarUrl = await uploadToSpaces(validatedData.avatar, "avatars");
+    avatarUrl = await uploadToSpaces(
+      validatedData.avatar,
+      "avatars",
+      user.avatar
+    );
   }
 
   if (validatedData.slug) {

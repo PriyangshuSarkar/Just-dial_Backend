@@ -3,7 +3,8 @@ import { verify, sign } from "jsonwebtoken";
 export const verifyToken = (token: string) => {
   try {
     return verify(token, process.env.JWT_SECRET!); // Use your secret here
-  } catch (error: any) {
+  } catch (error: unknown) {
+    console.log(error);
     return null;
   }
 };
