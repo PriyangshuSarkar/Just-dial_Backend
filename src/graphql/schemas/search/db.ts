@@ -45,6 +45,11 @@ export const LocationPrioritySchema = union([
 ]);
 export type LocationPriorityInput = infer_<typeof LocationPrioritySchema>;
 
+export const GetBusinessByIdSchema = object({
+  businessId: string(),
+});
+export type GetBusinessByIdInput = infer_<typeof GetBusinessByIdSchema>;
+
 export const AreaSchema = object({
   search: string(),
 });

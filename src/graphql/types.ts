@@ -162,7 +162,7 @@ export const typeDefs = gql`
     teamSize: Int
     description: String
     websites: [BusinessWebsite]
-    images: [BusinessImage]
+    images: [BusinessCoverImage]
     latitude: Float
     longitude: Float
     degree: [String]
@@ -193,7 +193,32 @@ export const typeDefs = gql`
     business: Business
   }
 
-  type BusinessImage {
+  type BusinessCoverImage {
+    id: ID
+    url: String
+    order: Int
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetailsId: ID
+    businessDetails: BusinessDetails
+    message: String
+    token: String
+  }
+
+  type BusinessAdBannerImage {
+    id: ID
+    url: String
+    order: Int
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    businessDetailsId: ID
+    businessDetails: BusinessDetails
+    message: String
+    token: String
+  }
+  type BusinessMobileAdBannerImage {
     id: ID
     url: String
     order: Int

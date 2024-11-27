@@ -32,7 +32,19 @@ export const typeDefs = gql`
     toDelete: Boolean
   }
 
-  input BusinessImageInput {
+  input BusinessCoverImageInput {
+    imageId: ID
+    image: Upload
+    order: Int
+    toDelete: Boolean
+  }
+  input BusinessAdBannerImageInput {
+    imageId: ID
+    image: Upload
+    order: Int
+    toDelete: Boolean
+  }
+  input BusinessMobileAdBannerImageInput {
     imageId: ID
     image: Upload
     order: Int
@@ -96,7 +108,15 @@ export const typeDefs = gql`
       addresses: [BusinessAddressInput!]!
     ): [BusinessAddress]
     manageBusinessWebsite(websites: [BusinessWebsiteInput!]!): [BusinessWebsite]
-    manageBusinessImage(images: [BusinessImageInput!]!): [BusinessImage]
+    manageBusinessCoverImage(
+      images: [BusinessCoverImageInput!]!
+    ): [BusinessCoverImage]
+    manageBusinessAdBannerImage(
+      images: [BusinessAdBannerImageInput!]!
+    ): [BusinessAdBannerImage]
+    manageBusinessMobileAdBannerImage(
+      images: [BusinessMobileAdBannerImageInput!]!
+    ): [BusinessMobileAdBannerImage]
     manageBusinessSupportingDocuments(
       image: [BusinessSupportingDocumentInput!]!
     ): [BusinessSupportingDocuments]

@@ -4,6 +4,8 @@ import {
   AreaInput,
   AreaSchema,
   FilterInput,
+  GetBusinessByIdInput,
+  GetBusinessByIdSchema,
   LocationPriorityInput,
   SearchInput,
   SearchSchema,
@@ -197,6 +199,157 @@ const buildOrderByClause = (
     default:
       return [{ updatedAt: "desc" }];
   }
+};
+
+export const getBusinessById = async (
+  _: unknown,
+  args: GetBusinessByIdInput
+) => {
+  const validatedData = GetBusinessByIdSchema.parse(args);
+
+  const business = await prisma.business.findFirst({
+    where: {
+      id: validatedData.businessId,
+      deletedAt: null,
+      isListed: true,
+      isBlocked: false,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      // primaryContacts: true,
+      businessDetails: {
+        include: {
+          addresses: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          websites: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          coverImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          adBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          mobileAdBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          courts: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          proficiencies: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          languages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          tags: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
+      },
+      // businessSupportingDocuments: {
+      //   where: {
+      //     deletedAt: null,
+      //   },
+      //   orderBy: {
+      //     createdAt: "desc",
+      //   },
+      // },
+      reviews: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+      // subscription: {
+      //   where: {
+      //     deletedAt: null,
+      //   },
+      // },
+      // bookings: {
+      //   where: {
+      //     deletedAt: null,
+      //   },
+      //   orderBy: {
+      //     createdAt: "desc",
+      //   },
+      // },
+    },
+  });
+
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+  const {
+    /* eslint-disable */
+    // Code block where all ESLint rules are disabled
+    password,
+    salt,
+    subscriptionId,
+    subscriptionExpire,
+    paymentVerification,
+    razorpay_order_id,
+    // More code here
+    /* eslint-enable */
+    ...restOfBusiness
+  } = business;
+
+  return {
+    ...restOfBusiness,
+  };
 };
 
 export const allLanguages = async () => {

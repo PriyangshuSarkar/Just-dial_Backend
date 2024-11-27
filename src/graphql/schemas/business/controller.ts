@@ -15,12 +15,16 @@ import {
   VerifyBusinessPrimaryContactSchema,
   ManageBusinessWebsiteInput,
   ManageBusinessWebsiteSchema,
-  ManageBusinessImageInput,
-  ManageBusinessImageSchema,
   AddBusinessPrimaryContactInput,
   AddBusinessPrimaryContactSchema,
   ManageBusinessSupportingDocumentsInput,
   ManageBusinessSupportingDocumentsSchema,
+  ManageBusinessCoverImageInput,
+  ManageBusinessCoverImageSchema,
+  ManageBusinessAdBannerImageInput,
+  ManageBusinessAdBannerImageSchema,
+  ManageBusinessMobileAdBannerImageInput,
+  ManageBusinessMobileAdBannerImageSchema,
   // BusinessVerifyPaymentInput,
   // BusinessVerifyPaymentSchema,
   // BusinessSubscriptionInput,
@@ -151,7 +155,23 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               createdAt: "desc",
             },
           },
-          images: {
+          coverImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          adBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          mobileAdBannerImages: {
             where: {
               deletedAt: null,
             },
@@ -415,7 +435,23 @@ export const verifyBusinessPrimaryContact = async (
                     createdAt: "desc",
                   },
                 },
-                images: {
+                coverImages: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    createdAt: "desc",
+                  },
+                },
+                adBannerImages: {
+                  where: {
+                    deletedAt: null,
+                  },
+                  orderBy: {
+                    createdAt: "desc",
+                  },
+                },
+                mobileAdBannerImages: {
                   where: {
                     deletedAt: null,
                   },
@@ -542,7 +578,23 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
               createdAt: "desc",
             },
           },
-          images: {
+          coverImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          adBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          mobileAdBannerImages: {
             where: {
               deletedAt: null,
             },
@@ -882,7 +934,23 @@ export const changeBusinessPassword = async (
                 createdAt: "desc",
               },
             },
-            images: {
+            coverImages: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            adBannerImages: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
+            mobileAdBannerImages: {
               where: {
                 deletedAt: null,
               },
@@ -1166,7 +1234,23 @@ export const updateBusinessDetails = async (
               createdAt: "desc",
             },
           },
-          images: {
+          coverImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          adBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          mobileAdBannerImages: {
             where: {
               deletedAt: null,
             },
@@ -1262,7 +1346,9 @@ export const deleteBusinessAccount = async (
         businessDetails: {
           include: {
             websites: true,
-            images: true,
+            coverImages: true,
+            adBannerImages: true,
+            mobileAdBannerImages: true,
             addresses: true,
           },
         },
@@ -1309,8 +1395,8 @@ export const deleteBusinessAccount = async (
       });
     }
 
-    if (business.businessDetails?.images) {
-      await tx.businessImage.updateMany({
+    if (business.businessDetails?.coverImages) {
+      await tx.businessCoverImage.updateMany({
         where: {
           businessDetailsId: context.owner.businessId,
         },
@@ -1348,7 +1434,7 @@ export const deleteBusinessAccount = async (
                 createdAt: "desc",
               },
             },
-            images: {
+            coverImages: {
               where: {
                 deletedAt: null,
               },
@@ -1614,13 +1700,13 @@ export const manageBusinessWebsite = async (
   return updatedWebsites;
 };
 
-export const manageBusinessImage = async (
+export const manageBusinessCoverImage = async (
   _: unknown,
-  args: ManageBusinessImageInput,
+  args: ManageBusinessCoverImageInput,
   context: any
 ) => {
   // Validate input data using Zod
-  const validatedData = ManageBusinessImageSchema.parse(args);
+  const validatedData = ManageBusinessCoverImageSchema.parse(args);
 
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {
@@ -1642,7 +1728,7 @@ export const manageBusinessImage = async (
     include: {
       businessDetails: {
         include: {
-          images: {
+          coverImages: {
             where: {
               deletedAt: null,
             },
@@ -1661,9 +1747,9 @@ export const manageBusinessImage = async (
 
   const updateResults = [];
 
-  for (const imageData of validatedData.images) {
+  for (const imageData of validatedData.coverImages) {
     const existingImage = imageData.imageId
-      ? business.businessDetails?.images.find(
+      ? business.businessDetails?.coverImages.find(
           (image) => image.id === imageData.imageId
         )
       : null;
@@ -1672,7 +1758,7 @@ export const manageBusinessImage = async (
       // If toDelete is true, delete the image
       if (existingImage) {
         await deleteFromSpaces(existingImage.url);
-        await prisma.businessImage.delete({
+        await prisma.businessCoverImage.delete({
           where: { id: existingImage.id },
         });
 
@@ -1691,7 +1777,7 @@ export const manageBusinessImage = async (
         existingImage.url
       );
       // If the image exists and toDelete is not true, update it
-      const updatedImage = await prisma.businessImage.update({
+      const updatedImage = await prisma.businessCoverImage.update({
         where: { id: existingImage.id },
         data: {
           url: updatedUrl,
@@ -1710,7 +1796,237 @@ export const manageBusinessImage = async (
         null
       );
       // If the address does not exist, create a new one
-      const newImage = await prisma.businessImage.create({
+      const newImage = await prisma.businessCoverImage.create({
+        data: {
+          url: newImageUrl,
+          order: imageData.order,
+          businessDetails: {
+            connect: { id: business.id },
+          },
+        },
+      });
+
+      updateResults.push({
+        ...newImage,
+        message: "Business image added successfully.",
+      });
+    }
+  }
+  return updateResults;
+};
+
+export const manageBusinessAdBannerImage = async (
+  _: unknown,
+  args: ManageBusinessAdBannerImageInput,
+  context: any
+) => {
+  // Validate input data using Zod
+  const validatedData = ManageBusinessAdBannerImageSchema.parse(args);
+
+  // Verify the token and get the business ID
+  if (!context.owner || typeof context.owner.businessId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  // Find the business, ensuring they have a verified contact
+  const business = await prisma.business.findUnique({
+    where: {
+      id: context.owner.id,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      businessDetails: {
+        include: {
+          adBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              order: "asc",
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+
+  const updateResults = [];
+
+  for (const imageData of validatedData.adBannerImages) {
+    const existingImage = imageData.imageId
+      ? business.businessDetails?.adBannerImages.find(
+          (image) => image.id === imageData.imageId
+        )
+      : null;
+
+    if (imageData.toDelete) {
+      // If toDelete is true, delete the image
+      if (existingImage) {
+        await deleteFromSpaces(existingImage.url);
+        await prisma.businessAdBannerImage.delete({
+          where: { id: existingImage.id },
+        });
+
+        updateResults.push({
+          message: `Business image with id ${existingImage.id} deleted successfully.`,
+        });
+      } else {
+        updateResults.push({
+          message: "Image not found to delete.",
+        });
+      }
+    } else if (existingImage) {
+      const updatedUrl = await uploadToSpaces(
+        imageData.image,
+        "business_images",
+        existingImage.url
+      );
+      // If the image exists and toDelete is not true, update it
+      const updatedImage = await prisma.businessAdBannerImage.update({
+        where: { id: existingImage.id },
+        data: {
+          url: updatedUrl,
+          order: imageData.order,
+        },
+      });
+
+      updateResults.push({
+        ...updatedImage,
+        message: "Business image updated successfully.",
+      });
+    } else {
+      const newImageUrl = await uploadToSpaces(
+        imageData.image,
+        "business_images",
+        null
+      );
+      // If the address does not exist, create a new one
+      const newImage = await prisma.businessAdBannerImage.create({
+        data: {
+          url: newImageUrl,
+          order: imageData.order,
+          businessDetails: {
+            connect: { id: business.id },
+          },
+        },
+      });
+
+      updateResults.push({
+        ...newImage,
+        message: "Business image added successfully.",
+      });
+    }
+  }
+  return updateResults;
+};
+
+export const manageBusinessMobileAdBannerImage = async (
+  _: unknown,
+  args: ManageBusinessMobileAdBannerImageInput,
+  context: any
+) => {
+  // Validate input data using Zod
+  const validatedData = ManageBusinessMobileAdBannerImageSchema.parse(args);
+
+  // Verify the token and get the business ID
+  if (!context.owner || typeof context.owner.businessId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  // Find the business, ensuring they have a verified contact
+  const business = await prisma.business.findUnique({
+    where: {
+      id: context.owner.id,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      businessDetails: {
+        include: {
+          mobileAdBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              order: "asc",
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+
+  const updateResults = [];
+
+  for (const imageData of validatedData.mobileAdBannerImages) {
+    const existingImage = imageData.imageId
+      ? business.businessDetails?.mobileAdBannerImages.find(
+          (image) => image.id === imageData.imageId
+        )
+      : null;
+
+    if (imageData.toDelete) {
+      // If toDelete is true, delete the image
+      if (existingImage) {
+        await deleteFromSpaces(existingImage.url);
+        await prisma.businessMobileAdBannerImage.delete({
+          where: { id: existingImage.id },
+        });
+
+        updateResults.push({
+          message: `Business image with id ${existingImage.id} deleted successfully.`,
+        });
+      } else {
+        updateResults.push({
+          message: "Image not found to delete.",
+        });
+      }
+    } else if (existingImage) {
+      const updatedUrl = await uploadToSpaces(
+        imageData.image,
+        "business_images",
+        existingImage.url
+      );
+      // If the image exists and toDelete is not true, update it
+      const updatedImage = await prisma.businessMobileAdBannerImage.update({
+        where: { id: existingImage.id },
+        data: {
+          url: updatedUrl,
+          order: imageData.order,
+        },
+      });
+
+      updateResults.push({
+        ...updatedImage,
+        message: "Business image updated successfully.",
+      });
+    } else {
+      const newImageUrl = await uploadToSpaces(
+        imageData.image,
+        "business_images",
+        null
+      );
+      // If the address does not exist, create a new one
+      const newImage = await prisma.businessMobileAdBannerImage.create({
         data: {
           url: newImageUrl,
           order: imageData.order,

@@ -183,30 +183,32 @@ model BusinessAddress {
 }
 
 model BusinessDetails {
-  id                 String            @id
-  business           Business          @relation(fields: [id], references: [id])
-  registrationNumber String?
-  license            String?
-  experience         Int?
-  teamSize           Int?
-  description        String?
-  websites           BusinessWebsite[]
-  images             BusinessImage[]
-  latitude           Float?
-  longitude          Float?
-  degree             String[]
-  languages          Language[]
-  proficiencies      Proficiency[]
-  courts             Court[]
-  gstNumber          String?
-  categoryId         String?
-  category           Category?         @relation(fields: [categoryId], references: [id])
-  tags               Tag[]
-  addresses          BusinessAddress[]
-  logo               String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  deletedAt          DateTime?
+  id                   String                        @id
+  business             Business                      @relation(fields: [id], references: [id])
+  registrationNumber   String?
+  license              String?
+  experience           Int?
+  teamSize             Int?
+  description          String?
+  websites             BusinessWebsite[]
+  coverImages          BusinessCoverImage[]
+  adBannerImages       BusinessAdBannerImage[]
+  mobileAdBannerImages BusinessMobileAdBannerImage[]
+  latitude             Float?
+  longitude            Float?
+  degree               String[]
+  languages            Language[]
+  proficiencies        Proficiency[]
+  courts               Court[]
+  gstNumber            String?
+  categoryId           String?
+  category             Category?                     @relation(fields: [categoryId], references: [id])
+  tags                 Tag[]
+  addresses            BusinessAddress[]
+  logo                 String?
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
+  deletedAt            DateTime?
 
   @@index([categoryId])
 }
@@ -222,7 +224,29 @@ model BusinessSupportingDocuments {
   business   Business  @relation(fields: [businessId], references: [id])
 }
 
-model BusinessImage {
+model BusinessCoverImage {
+  id                String           @id @default(uuid())
+  url               String
+  order             Int?
+  createdAt         DateTime         @default(now())
+  deletedAt         DateTime?
+  updatedAt         DateTime         @updatedAt
+  businessDetailsId String?
+  businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+}
+
+model BusinessAdBannerImage {
+  id                String           @id @default(uuid())
+  url               String
+  order             Int?
+  createdAt         DateTime         @default(now())
+  deletedAt         DateTime?
+  updatedAt         DateTime         @updatedAt
+  businessDetailsId String?
+  businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+}
+
+model BusinessMobileAdBannerImage {
   id                String           @id @default(uuid())
   url               String
   order             Int?

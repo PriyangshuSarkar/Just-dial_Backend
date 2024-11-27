@@ -130,15 +130,39 @@ export type ManageBusinessWebsiteInput = infer_<
   typeof ManageBusinessWebsiteSchema
 >;
 
-export const ManageBusinessImageSchema = object({
-  images: object({
+export const ManageBusinessCoverImageSchema = object({
+  coverImages: object({
     imageId: string().optional(),
     image: any().optional(),
     order: number().optional(),
     toDelete: boolean().optional(),
   }).array(),
 });
-export type ManageBusinessImageInput = infer_<typeof ManageBusinessImageSchema>;
+export type ManageBusinessCoverImageInput = infer_<
+  typeof ManageBusinessCoverImageSchema
+>;
+export const ManageBusinessAdBannerImageSchema = object({
+  adBannerImages: object({
+    imageId: string().optional(),
+    image: any().optional(),
+    order: number().optional(),
+    toDelete: boolean().optional(),
+  }).array(),
+});
+export type ManageBusinessAdBannerImageInput = infer_<
+  typeof ManageBusinessAdBannerImageSchema
+>;
+export const ManageBusinessMobileAdBannerImageSchema = object({
+  mobileAdBannerImages: object({
+    imageId: string().optional(),
+    image: any().optional(),
+    order: number().optional(),
+    toDelete: boolean().optional(),
+  }).array(),
+});
+export type ManageBusinessMobileAdBannerImageInput = infer_<
+  typeof ManageBusinessMobileAdBannerImageSchema
+>;
 
 export const ManageBusinessSupportingDocumentsSchema = object({
   documents: object({

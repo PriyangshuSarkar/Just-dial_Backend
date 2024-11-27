@@ -6,8 +6,10 @@ import {
   changeBusinessPassword,
   deleteBusinessAccount,
   forgetBusinessPassword,
+  manageBusinessAdBannerImage,
   manageBusinessAddress,
-  manageBusinessImage,
+  manageBusinessCoverImage,
+  manageBusinessMobileAdBannerImage,
   manageBusinessSupportingDocuments,
   manageBusinessWebsite,
   updateBusinessDetails,
@@ -33,7 +35,11 @@ export const Mutation = {
 
   manageBusinessWebsite,
 
-  manageBusinessImage,
+  manageBusinessCoverImage,
+
+  manageBusinessAdBannerImage,
+
+  manageBusinessMobileAdBannerImage,
 
   manageBusinessSupportingDocuments,
 
