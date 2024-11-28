@@ -40,6 +40,8 @@ export const typeDefs = gql`
       limit: Int = 10
     ): SearchResult
 
+    getBusinessById(businessId: String!): Business
+
     allLanguages: [Language]
 
     allProficiencies: [Proficiency]

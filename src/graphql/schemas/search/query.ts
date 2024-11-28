@@ -5,6 +5,7 @@ import {
   allProficiencies,
   allTags,
   areas,
+  getBusinessById,
   search,
 } from "./controller";
 
@@ -12,6 +13,8 @@ export const Query = {
   status: () => "Server is running",
 
   search,
+
+  getBusinessById,
 
   allLanguages,
 
