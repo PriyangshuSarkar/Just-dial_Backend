@@ -162,7 +162,9 @@ export const typeDefs = gql`
     teamSize: Int
     description: String
     websites: [BusinessWebsite]
-    images: [BusinessCoverImage]
+    coverImage: [BusinessCoverImage]
+    adBannerImage: [BusinessAdBannerImage]
+    businessMobileAdBannerImage: [BusinessMobileAdBannerImage]
     latitude: Float
     longitude: Float
     degree: [String]
