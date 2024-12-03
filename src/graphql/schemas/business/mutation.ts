@@ -10,6 +10,7 @@ import {
   manageBusinessAddress,
   manageBusinessCoverImage,
   manageBusinessMobileAdBannerImage,
+  manageBusinessOperatingHours,
   manageBusinessSupportingDocuments,
   manageBusinessWebsite,
   updateBusinessDetails,
@@ -42,6 +43,8 @@ export const Mutation = {
   manageBusinessMobileAdBannerImage,
 
   manageBusinessSupportingDocuments,
+
+  manageBusinessOperatingHours,
 
   businessSubscription,
 

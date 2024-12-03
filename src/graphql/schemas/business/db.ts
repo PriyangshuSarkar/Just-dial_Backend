@@ -176,6 +176,28 @@ export type ManageBusinessSupportingDocumentsInput = infer_<
   typeof ManageBusinessSupportingDocumentsSchema
 >;
 
+// const timeRegex = /^([0-1]\d|2[0-3]):([0-5]\d)$/; // Matches "HH:mm" format
+
+export const ManageBusinessOperatingHoursSchema = object({
+  operatingHours: object({
+    dayOfWeek: enum_([
+      "SUNDAY",
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY",
+      "SATURDAY",
+    ]),
+    openingTime: string(),
+    closingTime: string(),
+    toDelete: boolean().optional(),
+  }).array(),
+});
+export type ManageBusinessOperatingHoursInput = infer_<
+  typeof ManageBusinessOperatingHoursSchema
+>;
+
 export const BusinessSubscriptionSchema = object({
   subscriptionId: string(),
 });

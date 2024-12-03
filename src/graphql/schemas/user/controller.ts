@@ -480,7 +480,7 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
 
   const user = await prisma.user.findFirst({
     where: {
-      id: context.owner.id,
+      id: context.owner.userId,
       deletedAt: null,
       contacts: {
         some: {
@@ -738,7 +738,7 @@ export const updateUserDetails = async (
 
   const user = await prisma.user.findFirst({
     where: {
-      id: context.owner.id,
+      id: context.owner.userId,
       deletedAt: null,
       contacts: {
         some: {
@@ -905,7 +905,7 @@ export const manageUserAddress = async (
   // Find the user, ensuring they have a verified contact
   const user = await prisma.user.findUnique({
     where: {
-      id: context.owner.id,
+      id: context.owner.userId,
       deletedAt: null,
       contacts: {
         some: {
@@ -1004,7 +1004,7 @@ export const userSubscription = async () =>
 
     // const user = await prisma.user.findFirstOrThrow({
     //   where: {
-    //     id: context.owner.id,
+    //     id: context.owner.userId,
     //     deletedAt: null,
     //     isBlocked: false,
     //     contacts: {

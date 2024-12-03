@@ -58,6 +58,30 @@ export const typeDefs = gql`
     toDelete: Boolean
   }
 
+  input BusinessSupportingDocumentInput {
+    documentId: ID
+    document: Upload
+    type: String
+    toDelete: Boolean
+  }
+
+  enum DayOfWeek {
+    SUNDAY
+    MONDAY
+    TUESDAY
+    WEDNESDAY
+    THURSDAY
+    FRIDAY
+    SATURDAY
+  }
+
+  input BusinessOperatingHourInput {
+    dayOfWeek: DayOfWeek!
+    openingTime: String! # Expecting HH:mm format
+    closingTime: String! # Expecting HH:mm format
+    toDelete: Boolean
+  }
+
   type Mutation {
     businessSignup(
       email: String
@@ -109,17 +133,20 @@ export const typeDefs = gql`
     ): [BusinessAddress]
     manageBusinessWebsite(websites: [BusinessWebsiteInput!]!): [BusinessWebsite]
     manageBusinessCoverImage(
-      images: [BusinessCoverImageInput!]!
+      coverImages: [BusinessCoverImageInput!]!
     ): [BusinessCoverImage]
     manageBusinessAdBannerImage(
-      images: [BusinessAdBannerImageInput!]!
+      adBannerImages: [BusinessAdBannerImageInput!]!
     ): [BusinessAdBannerImage]
     manageBusinessMobileAdBannerImage(
-      images: [BusinessMobileAdBannerImageInput!]!
+      mobileAdBannerImages: [BusinessMobileAdBannerImageInput!]!
     ): [BusinessMobileAdBannerImage]
     manageBusinessSupportingDocuments(
-      image: [BusinessSupportingDocumentInput!]!
+      documents: [BusinessSupportingDocumentInput!]!
     ): [BusinessSupportingDocuments]
+    manageBusinessOperatingHours(
+      operatingHours: [BusinessOperatingHourInput!]!
+    ): [BusinessOperatingHourResult]
     businessSubscription(subscriptionId: ID!): Razorpay!
     businessVerifyPayment(
       razorpay_order_id: String!

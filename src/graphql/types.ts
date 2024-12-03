@@ -164,7 +164,8 @@ export const typeDefs = gql`
     websites: [BusinessWebsite]
     coverImage: [BusinessCoverImage]
     adBannerImage: [BusinessAdBannerImage]
-    businessMobileAdBannerImage: [BusinessMobileAdBannerImage]
+    mobileAdBannerImage: [BusinessMobileAdBannerImage]
+    operatingHourResult: [BusinessOperatingHourResult]
     latitude: Float
     longitude: Float
     degree: [String]
@@ -240,6 +241,30 @@ export const typeDefs = gql`
     createdAt: Date
     deletedAt: Date
     updatedAt: Date
+    businessDetailsId: ID
+    businessDetails: BusinessDetails
+    message: String
+    token: String
+  }
+
+  enum DayOfWeek {
+    SUNDAY
+    MONDAY
+    TUESDAY
+    WEDNESDAY
+    THURSDAY
+    FRIDAY
+    SATURDAY
+  }
+
+  type BusinessOperatingHourResult {
+    id: ID
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    dayOfWeek: DayOfWeek
+    openingTime: String
+    closingTime: String
     businessDetailsId: ID
     businessDetails: BusinessDetails
     message: String

@@ -25,6 +25,8 @@ import {
   ManageBusinessAdBannerImageSchema,
   ManageBusinessMobileAdBannerImageInput,
   ManageBusinessMobileAdBannerImageSchema,
+  ManageBusinessOperatingHoursInput,
+  ManageBusinessOperatingHoursSchema,
   // BusinessVerifyPaymentInput,
   // BusinessVerifyPaymentSchema,
   // BusinessSubscriptionInput,
@@ -126,7 +128,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
 
   const business = await prisma.business.findFirst({
     where: {
-      id: context.owner.id,
+      id: context.owner.businessId,
       deletedAt: null,
       primaryContacts: {
         some: {
@@ -1036,7 +1038,7 @@ export const updateBusinessDetails = async (
 
   const business = await prisma.business.findFirst({
     where: {
-      id: context.owner.id,
+      id: context.owner.businessId,
       deletedAt: null,
       primaryContacts: {
         some: {
@@ -1500,7 +1502,7 @@ export const manageBusinessAddress = async (
   // Find the business, ensuring they have a verified contact
   const business = await prisma.business.findUnique({
     where: {
-      id: context.owner.id,
+      id: context.owner.businessId,
       deletedAt: null,
       primaryContacts: {
         some: {
@@ -1612,7 +1614,7 @@ export const manageBusinessWebsite = async (
   // Find the business, ensuring they have a verified contact
   const business = await prisma.business.findUnique({
     where: {
-      id: context.owner.id,
+      id: context.owner.businessId,
       deletedAt: null,
       primaryContacts: {
         some: {
@@ -1716,7 +1718,7 @@ export const manageBusinessCoverImage = async (
   // Find the business, ensuring they have a verified contact
   const business = await prisma.business.findUnique({
     where: {
-      id: context.owner.id,
+      id: context.owner.businessId,
       deletedAt: null,
       primaryContacts: {
         some: {
@@ -1831,7 +1833,7 @@ export const manageBusinessAdBannerImage = async (
   // Find the business, ensuring they have a verified contact
   const business = await prisma.business.findUnique({
     where: {
-      id: context.owner.id,
+      id: context.owner.businessId,
       deletedAt: null,
       primaryContacts: {
         some: {
@@ -1946,7 +1948,7 @@ export const manageBusinessMobileAdBannerImage = async (
   // Find the business, ensuring they have a verified contact
   const business = await prisma.business.findUnique({
     where: {
-      id: context.owner.id,
+      id: context.owner.businessId,
       deletedAt: null,
       primaryContacts: {
         some: {
@@ -2061,7 +2063,7 @@ export const manageBusinessSupportingDocuments = async (
   // Find the business, ensuring they have a verified contact
   const business = await prisma.business.findUnique({
     where: {
-      id: context.owner.id,
+      id: context.owner.businessId,
       deletedAt: null,
       primaryContacts: {
         some: {
@@ -2148,6 +2150,112 @@ export const manageBusinessSupportingDocuments = async (
   }
   return updateResults;
 };
+export const manageBusinessOperatingHours = async (
+  _: unknown,
+  args: ManageBusinessOperatingHoursInput,
+  context: any
+) => {
+  // Validate input data using Zod
+  const validatedData = ManageBusinessOperatingHoursSchema.parse(args);
+
+  // Verify the token and get the business ID
+  if (!context.owner || typeof context.owner.businessId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  // Find the business, ensuring they have a verified contact
+  const business = await prisma.business.findUnique({
+    where: {
+      id: context.owner.businessId,
+      deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      businessDetails: {
+        include: {
+          operatingHours: true,
+        },
+      },
+    },
+  });
+
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+
+  const updateResults = [];
+
+  for (const operatingHour of validatedData.operatingHours) {
+    const existingDayOfWeek = business.businessDetails?.operatingHours.find(
+      (hour) => hour.dayOfWeek === operatingHour.dayOfWeek
+    );
+
+    if (operatingHour.toDelete) {
+      // If toDelete is true, delete the image
+      if (existingDayOfWeek) {
+        await prisma.businessOperatingHours.delete({
+          where: {
+            businessDetailsId_dayOfWeek: {
+              businessDetailsId: business.businessDetails!.id,
+              dayOfWeek: existingDayOfWeek.dayOfWeek,
+            },
+          },
+        });
+
+        updateResults.push({
+          message: `Business day of week ${existingDayOfWeek.dayOfWeek} deleted successfully.`,
+        });
+      } else {
+        updateResults.push({
+          message: "Business day of week not found to delete.",
+        });
+      }
+    } else if (existingDayOfWeek) {
+      // If the image exists and toDelete is not true, update it
+      const updatedDayOfWeek = await prisma.businessOperatingHours.update({
+        where: {
+          businessDetailsId_dayOfWeek: {
+            businessDetailsId: business.businessDetails!.id,
+            dayOfWeek: existingDayOfWeek.dayOfWeek,
+          },
+        },
+        data: {
+          openingTime: operatingHour.openingTime,
+          closingTime: operatingHour.closingTime,
+        },
+      });
+
+      updateResults.push({
+        ...updatedDayOfWeek,
+        message: "Business day of week updated successfully.",
+      });
+    } else {
+      // If the address does not exist, create a new one
+      const newDayOfWeek = await prisma.businessOperatingHours.create({
+        data: {
+          openingTime: operatingHour.openingTime,
+          closingTime: operatingHour.closingTime,
+          dayOfWeek: operatingHour.dayOfWeek,
+          businessDetails: {
+            connect: { id: business.businessDetails!.id },
+          },
+        },
+      });
+
+      updateResults.push({
+        ...newDayOfWeek,
+        message: "Business day of week added successfully.",
+      });
+    }
+  }
+
+  return updateResults;
+};
 
 export const businessSubscription = async () =>
   // _: unknown,
@@ -2163,7 +2271,7 @@ export const businessSubscription = async () =>
 
     // const business = await prisma.business.findFirstOrThrow({
     //   where: {
-    //     id: context.owner.id,
+    //     id: context.owner.businessId,
     //     deletedAt: null,
     //     isBlocked: false,
     //     primaryContacts: {

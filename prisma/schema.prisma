@@ -194,6 +194,7 @@ model BusinessDetails {
   coverImages          BusinessCoverImage[]
   adBannerImages       BusinessAdBannerImage[]
   mobileAdBannerImages BusinessMobileAdBannerImage[]
+  operatingHours       BusinessOperatingHours[]
   latitude             Float?
   longitude            Float?
   degree               String[]
@@ -266,6 +267,30 @@ model BusinessWebsite {
   updatedAt         DateTime         @updatedAt
   businessDetailsId String?
   businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+}
+
+enum DayOfWeek {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+model BusinessOperatingHours {
+  id                String          @id @default(uuid())
+  businessDetailsId String
+  dayOfWeek         DayOfWeek
+  openingTime       String
+  closingTime       String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+  businessDetails   BusinessDetails @relation(fields: [businessDetailsId], references: [id])
+
+  @@unique([businessDetailsId, dayOfWeek])
 }
 
 model Language {

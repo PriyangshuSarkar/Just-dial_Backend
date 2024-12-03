@@ -2,15 +2,15 @@ import { gql } from "graphql-tag";
 
 export const typeDefs = gql`
   enum SortByEnum {
-    ALPHABETICAL
-    RATING
-    PRICE
-    POPULARITY
+    alphabetical
+    rating
+    price
+    popularity
   }
 
   enum OrderEnum {
-    ASC
-    DESC
+    asc
+    desc
   }
 
   type SearchResult {

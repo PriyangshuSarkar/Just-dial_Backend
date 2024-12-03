@@ -133,7 +133,7 @@ export const allUsers = async (_: unknown, args: AllUserInput) => {
   const totalPages = Math.ceil(total / validatedData.limit);
 
   return {
-    ...users,
+    users,
     total,
     page: validatedData.page,
     limit: validatedData.limit,
@@ -250,7 +250,7 @@ export const allBusinesses = async (_: unknown, args: AllBusinessesInput) => {
   const totalPages = Math.ceil(total / validatedData.limit);
 
   return {
-    ...businesses,
+    businesses,
     total,
     page: validatedData.page,
     limit: validatedData.limit,

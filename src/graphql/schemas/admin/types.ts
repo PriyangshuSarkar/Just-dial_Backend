@@ -4,14 +4,14 @@ export const typeDefs = gql`
   scalar Upload
   # Enums
   enum AllUsersSortBy {
-    NAME
-    CREATED_AT
-    UPDATED_AT
+    name
+    createdAt
+    updatedAt
   }
 
   enum SortOrder {
-    ASC
-    DESC
+    asc
+    desc
   }
 
   enum BusinessType {
@@ -20,10 +20,25 @@ export const typeDefs = gql`
   }
 
   enum AllBusinessesSortBy {
-    NAME
-    CREATED_AT
-    AVERAGE_RATING
-    REVIEW_COUNT
+    name
+    createdAt
+    averageRating
+    reviewCount
+  }
+
+  type AllUserResult {
+    users: [User]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+  type AllBusinessResult {
+    businesses: [Business]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
   }
 
   # Query Type Definitions
@@ -43,9 +58,9 @@ export const typeDefs = gql`
       createdAtEnd: String
       page: Int = 1
       limit: Int = 10
-      sortBy: AllUsersSortBy = CREATED_AT
-      sortOrder: SortOrder = DESC
-    ): [User]
+      sortBy: AllUsersSortBy = createdAt
+      sortOrder: SortOrder = desc
+    ): AllUserResult
 
     allBusinesses(
       name: String
@@ -63,8 +78,8 @@ export const typeDefs = gql`
       createdAtEnd: String
       page: Int = 1
       limit: Int = 10
-      sortBy: AllBusinessesSortBy = CREATED_AT
-      sortOrder: SortOrder = DESC
+      sortBy: AllBusinessesSortBy = createdAt
+      sortOrder: SortOrder = desc
     ): [Business]
   }
 
