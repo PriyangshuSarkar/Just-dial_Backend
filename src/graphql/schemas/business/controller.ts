@@ -35,8 +35,7 @@ import {
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendOtpEmail } from "../../../utils/emailService";
-import { sign } from "jsonwebtoken";
-import { generateToken } from "../../../utils/verifyToken";
+import { generateToken } from "../../../utils/token";
 import slugify from "slugify";
 import { sendOtpPhone } from "../../../utils/smsService";
 import { createOtpData } from "../../../utils/generateOtp";
@@ -673,9 +672,7 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
   );
 
   if (verify) {
-    const token = sign({ businessId: business.id }, process.env.JWT_SECRET!, {
-      expiresIn: process.env.JWT_EXPIRATION_TIME!,
-    });
+    const token = generateToken(business.id, "BUSINESS");
 
     return {
       ...business,

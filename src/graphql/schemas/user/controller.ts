@@ -23,7 +23,7 @@ import {
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
 import { sendOtpEmail } from "../../../utils/emailService";
-import { generateToken } from "../../../utils/verifyToken";
+import { generateToken } from "../../../utils/token";
 import slugify from "slugify";
 import { sendOtpPhone } from "../../../utils/smsService";
 import { createOtpData } from "../../../utils/generateOtp";

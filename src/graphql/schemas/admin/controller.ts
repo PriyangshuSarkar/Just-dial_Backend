@@ -1,5 +1,6 @@
 import { uploadToSpaces } from "../../../utils/bucket";
 import { prisma } from "../../../utils/dbConnect";
+import { generateToken } from "../../../utils/token";
 import {
   AdminLoginInput,
   AdminLoginSchema,
@@ -36,7 +37,6 @@ import {
   VerifyBusinessesInput,
   VerifyBusinessesSchema,
 } from "./db";
-import { sign } from "jsonwebtoken";
 
 export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
   const validatedData = AdminLoginSchema.parse(args);
@@ -50,9 +50,7 @@ export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
   }
 
   if (admin.password === validatedData.password) {
-    const token = sign({ adminId: admin.id }, process.env.JWT_SECRET!, {
-      expiresIn: process.env.JWT_EXPIRATION_TIME!,
-    });
+    const token = generateToken(admin.id, "ADMIN");
 
     return {
       id: admin.id,
@@ -66,7 +64,15 @@ export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
   }
 };
 
-export const allUsers = async (_: unknown, args: AllUserInput) => {
+export const allUsers = async (
+  _: unknown,
+  args: AllUserInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
   const validatedData = AllUsersSchema.parse(args);
 
   const skip = (validatedData.page - 1) * validatedData.limit;
@@ -141,7 +147,15 @@ export const allUsers = async (_: unknown, args: AllUserInput) => {
   };
 };
 
-export const allBusinesses = async (_: unknown, args: AllBusinessesInput) => {
+export const allBusinesses = async (
+  _: unknown,
+  args: AllBusinessesInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
   const validatedData = AllBusinessesSchema.parse(args);
 
   const skip = (validatedData.page - 1) * validatedData.limit;
@@ -258,7 +272,14 @@ export const allBusinesses = async (_: unknown, args: AllBusinessesInput) => {
   };
 };
 
-export const blockUsers = async (_: unknown, args: BlockUserInput) => {
+export const blockUsers = async (
+  _: unknown,
+  args: BlockUserInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const { userIds } = BlockUserSchema.parse(args);
 
   const blockedUsers = await prisma.user.updateMany({
@@ -279,8 +300,12 @@ export const blockUsers = async (_: unknown, args: BlockUserInput) => {
 
 export const blockBusinesses = async (
   _: unknown,
-  args: BlockBusinessesInput
+  args: BlockBusinessesInput,
+  context: any
 ) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const { businessIds } = BlockBusinessesSchema.parse(args);
 
   const blockedBusinesses = await prisma.business.updateMany({
@@ -301,8 +326,12 @@ export const blockBusinesses = async (
 
 export const verifyBusinesses = async (
   _: unknown,
-  args: VerifyBusinessesInput
+  args: VerifyBusinessesInput,
+  context: any
 ) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = VerifyBusinessesSchema.parse(args);
 
   const verifiedBusinesses = await prisma.business.updateMany({
@@ -321,8 +350,12 @@ export const verifyBusinesses = async (
 
 export const manageUserSubscription = async (
   _: unknown,
-  args: ManageUserSubscriptionInput
+  args: ManageUserSubscriptionInput,
+  context: any
 ) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageUserSubscriptionSchema.parse(args);
 
   if (!validatedData.id) {
@@ -358,8 +391,12 @@ export const manageUserSubscription = async (
 
 export const manageBusinessSubscription = async (
   _: unknown,
-  args: ManageBusinessSubscriptionInput
+  args: ManageBusinessSubscriptionInput,
+  context: any
 ) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageBusinessSubscriptionSchema.parse(args);
 
   if (!validatedData.id) {
@@ -398,7 +435,14 @@ export const manageBusinessSubscription = async (
   }
 };
 
-export const manageLanguage = async (_: unknown, args: ManageLanguageInput) => {
+export const manageLanguage = async (
+  _: unknown,
+  args: ManageLanguageInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageLanguageSchema.parse(args);
   const results = await Promise.all(
     validatedData.languages.map(async (language) => {
@@ -429,8 +473,12 @@ export const manageLanguage = async (_: unknown, args: ManageLanguageInput) => {
 
 export const manageProficiency = async (
   _: unknown,
-  args: ManageProficiencyInput
+  args: ManageProficiencyInput,
+  context: any
 ) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageProficiencySchema.parse(args);
 
   const results = await Promise.all(
@@ -458,7 +506,14 @@ export const manageProficiency = async (
   return results;
 };
 
-export const manageCourt = async (_: unknown, args: ManageCourtInput) => {
+export const manageCourt = async (
+  _: unknown,
+  args: ManageCourtInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageCourtSchema.parse(args);
 
   const results = await Promise.all(
@@ -486,7 +541,14 @@ export const manageCourt = async (_: unknown, args: ManageCourtInput) => {
   return results;
 };
 
-export const manageCategory = async (_: unknown, args: ManageCategoryInput) => {
+export const manageCategory = async (
+  _: unknown,
+  args: ManageCategoryInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageCategorySchema.parse(args);
 
   const processCategory = async (category: any) => {
@@ -542,7 +604,14 @@ export const manageCategory = async (_: unknown, args: ManageCategoryInput) => {
   return results;
 };
 
-export const manageTag = async (_: unknown, args: ManageTagInput) => {
+export const manageTag = async (
+  _: unknown,
+  args: ManageTagInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageTagSchema.parse(args);
 
   const results = await Promise.all(
@@ -567,7 +636,14 @@ export const manageTag = async (_: unknown, args: ManageTagInput) => {
   return results;
 };
 
-export const manageCountry = async (_: unknown, args: ManageCountryInput) => {
+export const manageCountry = async (
+  _: unknown,
+  args: ManageCountryInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageCountrySchema.parse(args);
 
   const results = await Promise.all(
@@ -594,7 +670,14 @@ export const manageCountry = async (_: unknown, args: ManageCountryInput) => {
   return results;
 };
 
-export const manageState = async (_: unknown, args: ManageStateInput) => {
+export const manageState = async (
+  _: unknown,
+  args: ManageStateInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageStateSchema.parse(args);
 
   const results = await Promise.all(
@@ -623,7 +706,14 @@ export const manageState = async (_: unknown, args: ManageStateInput) => {
   return results;
 };
 
-export const manageCity = async (_: unknown, args: ManageCityInput) => {
+export const manageCity = async (
+  _: unknown,
+  args: ManageCityInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManageCitySchema.parse(args);
 
   const results = await Promise.all(
@@ -652,7 +742,14 @@ export const manageCity = async (_: unknown, args: ManageCityInput) => {
   return results;
 };
 
-export const managePincode = async (_: unknown, args: ManagePincodeInput) => {
+export const managePincode = async (
+  _: unknown,
+  args: ManagePincodeInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
   const validatedData = ManagePincodeSchema.parse(args);
 
   const results = await Promise.all(
