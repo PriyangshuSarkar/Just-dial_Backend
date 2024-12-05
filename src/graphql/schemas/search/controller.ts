@@ -143,18 +143,22 @@ const getBusinessWithPriority = async (
     return b.updatedAt.getTime() - a.updatedAt.getTime();
   });
 
-  let categories;
-
-  if (filters.search) {
-    categories = await prisma.category.findMany({
-      where: {
-        OR: [
-          { name: { contains: filters.search, mode: "insensitive" } },
-          { slug: { contains: filters.search, mode: "insensitive" } },
-        ],
-      },
-    });
-  }
+  const categories = filters.categoryId
+    ? await prisma.category
+        .findFirst({
+          where: { id: filters.categoryId },
+        })
+        .then((category) => (category ? [category] : null))
+    : await prisma.category.findMany({
+        where: {
+          ...(filters.search && {
+            OR: [
+              { name: { contains: filters.search, mode: "insensitive" } },
+              { slug: { contains: filters.search, mode: "insensitive" } },
+            ],
+          }),
+        },
+      });
 
   return {
     businesses: sortedBusinesses,
