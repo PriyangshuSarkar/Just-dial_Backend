@@ -10,6 +10,7 @@ import {
 } from "zod";
 
 export const FilterSchema = object({
+  search: string().optional(),
   verified: boolean().optional(),
   minPrice: number().optional(),
   maxPrice: number().optional(),
@@ -25,7 +26,6 @@ export type FilterInput = infer_<typeof FilterSchema>;
 
 export const SearchSchema = FilterSchema.extend({
   cityName: string().optional(),
-  businessName: string().optional(),
   page: number().optional().default(1),
   limit: number().optional().default(10),
 });

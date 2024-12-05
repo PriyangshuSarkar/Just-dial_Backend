@@ -15,6 +15,7 @@ export const typeDefs = gql`
 
   type SearchResult {
     businesses: [Business]
+    categories: [Category]
     total: Int
     page: Int
     limit: Int
@@ -35,7 +36,7 @@ export const typeDefs = gql`
       courts: [String!]
       proficiencies: [String!]
       cityName: String
-      businessName: String
+      search: String
       page: Int = 1
       limit: Int = 10
     ): SearchResult

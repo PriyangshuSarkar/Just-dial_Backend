@@ -14,7 +14,7 @@ import {
 export const search = async (_: unknown, args: SearchInput) => {
   const {
     cityName,
-    businessName,
+    search,
     page = 1,
     limit = 10,
     ...filters
@@ -29,9 +29,9 @@ export const search = async (_: unknown, args: SearchInput) => {
     isListed: true,
     deletedAt: null,
     isBlocked: false,
-    ...(businessName && {
+    ...(search && {
       name: {
-        contains: businessName,
+        contains: search,
         mode: "insensitive",
       },
     }),
@@ -143,8 +143,22 @@ const getBusinessWithPriority = async (
     return b.updatedAt.getTime() - a.updatedAt.getTime();
   });
 
+  let categories;
+
+  if (filters.search) {
+    categories = await prisma.category.findMany({
+      where: {
+        OR: [
+          { name: { contains: filters.search, mode: "insensitive" } },
+          { slug: { contains: filters.search, mode: "insensitive" } },
+        ],
+      },
+    });
+  }
+
   return {
     businesses: sortedBusinesses,
+    categories,
     total,
     page,
     limit,
