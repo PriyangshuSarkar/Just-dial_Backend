@@ -598,11 +598,14 @@ export const allLanguages = async () => {
     where: {
       deletedAt: null,
     },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
   });
 
-  return {
-    ...allLanguages,
-  };
+  return allLanguages;
 };
 
 export const allProficiencies = async () => {
@@ -610,11 +613,14 @@ export const allProficiencies = async () => {
     where: {
       deletedAt: null,
     },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
   });
 
-  return {
-    ...allProficiency,
-  };
+  return allProficiency;
 };
 
 export const allCourts = async () => {
@@ -622,11 +628,14 @@ export const allCourts = async () => {
     where: {
       deletedAt: null,
     },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
   });
 
-  return {
-    ...allCourt,
-  };
+  return allCourt;
 };
 
 export const allCategories = async () => {
@@ -634,11 +643,14 @@ export const allCategories = async () => {
     where: {
       deletedAt: null,
     },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
   });
 
-  return {
-    ...allCategory,
-  };
+  return allCategory;
 };
 
 export const allTags = async () => {
@@ -646,11 +658,13 @@ export const allTags = async () => {
     where: {
       deletedAt: null,
     },
+    select: {
+      id: true,
+      name: true,
+    },
   });
 
-  return {
-    ...allTag,
-  };
+  return allTag;
 };
 
 export const areas = async (_: unknown, args: AreaInput) => {
@@ -686,12 +700,30 @@ export const areas = async (_: unknown, args: AreaInput) => {
         },
       ],
     },
-    include: {
+    select: {
+      id: true,
+      code: true,
+      slug: true,
+      cityId: true,
       city: {
-        include: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          stateId: true,
           state: {
-            include: {
-              country: true,
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              countryId: true,
+              country: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
             },
           },
         },
@@ -699,7 +731,5 @@ export const areas = async (_: unknown, args: AreaInput) => {
     },
   });
 
-  return {
-    ...results,
-  };
+  return results;
 };
