@@ -275,6 +275,7 @@ const getBusinessWithPriority = async (
             userId: true,
           },
         },
+        price: true,
       },
       orderBy,
       skip: (page - 1) * limit,
@@ -580,6 +581,8 @@ export const getBusinessById = async (
           userId: true,
         },
       },
+
+      price: true,
     },
   });
 
