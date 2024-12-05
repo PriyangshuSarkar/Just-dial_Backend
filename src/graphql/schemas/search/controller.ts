@@ -96,25 +96,184 @@ const getBusinessWithPriority = async (
   const [businesses, total] = await prisma.$transaction([
     prisma.business.findMany({
       where: whereConditions,
-      include: {
-        businessDetails: {
-          include: {
-            addresses: true,
-            languages: true,
-            courts: true,
-            proficiencies: true,
-            category: true,
-            tags: true,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        updatedAt: true,
+        primaryContacts: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          select: {
+            id: true,
+            value: true,
+            type: true,
           },
         },
+        additionalContacts: true,
+        type: true,
+        averageRating: true,
+        reviewCount: true,
+        businessDetails: {
+          where: {
+            deletedAt: null,
+          },
+          select: {
+            id: true,
+            experience: true,
+            teamSize: true,
+            description: true,
+            updatedAt: true,
+            websites: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                type: true,
+                url: true,
+              },
+            },
+            coverImages: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                url: true,
+                order: true,
+              },
+            },
+            adBannerImages: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                url: true,
+                order: true,
+              },
+            },
+            mobileAdBannerImages: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                url: true,
+                order: true,
+              },
+            },
+            operatingHours: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                dayOfWeek: true,
+                openingTime: true,
+                closingTime: true,
+              },
+            },
+            latitude: true,
+            longitude: true,
+            degree: true,
+            languages: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+            proficiencies: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+            courts: {
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+            category: {
+              where: {
+                deletedAt: null,
+              },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+            categoryId: true,
+            tags: {
+              where: {
+                deletedAt: null,
+              },
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            logo: true,
+          },
+        },
+
         reviews: {
           where: {
             deletedAt: null,
           },
           orderBy: {
-            createdAt: "desc",
+            updatedAt: "desc",
           },
-          take: 5,
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            businessId: true,
+            userId: true,
+          },
         },
       },
       orderBy,
@@ -153,8 +312,14 @@ const getBusinessWithPriority = async (
         where: {
           ...(filters.search && {
             OR: [
-              { name: { contains: filters.search, mode: "insensitive" } },
-              { slug: { contains: filters.search, mode: "insensitive" } },
+              {
+                name: { contains: filters.search, mode: "insensitive" },
+                deletedAt: null,
+              },
+              {
+                slug: { contains: filters.search, mode: "insensitive" },
+                deletedAt: null,
+              },
             ],
           }),
         },
@@ -238,24 +403,47 @@ export const getBusinessById = async (
         },
       },
     },
-    include: {
-      // primaryContacts: true,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      primaryContacts: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        select: {
+          id: true,
+          value: true,
+          type: true,
+        },
+      },
+      additionalContacts: true,
+      type: true,
+      averageRating: true,
+      reviewCount: true,
       businessDetails: {
-        include: {
-          addresses: {
-            where: {
-              deletedAt: null,
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
+        where: {
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          experience: true,
+          teamSize: true,
+          description: true,
           websites: {
             where: {
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "desc",
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              type: true,
+              url: true,
             },
           },
           coverImages: {
@@ -263,7 +451,12 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "desc",
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              url: true,
+              order: true,
             },
           },
           adBannerImages: {
@@ -271,7 +464,12 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "desc",
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              url: true,
+              order: true,
             },
           },
           mobileAdBannerImages: {
@@ -279,15 +477,42 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "desc",
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              url: true,
+              order: true,
             },
           },
-          courts: {
+          operatingHours: {
             where: {
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "desc",
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              dayOfWeek: true,
+              openingTime: true,
+              closingTime: true,
+            },
+          },
+          latitude: true,
+          longitude: true,
+          degree: true,
+          languages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
             },
           },
           proficiencies: {
@@ -295,79 +520,74 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "desc",
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
             },
           },
-          languages: {
+          courts: {
             where: {
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "desc",
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
             },
           },
+          category: {
+            where: {
+              deletedAt: null,
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          categoryId: true,
           tags: {
             where: {
               deletedAt: null,
             },
-            orderBy: {
-              createdAt: "desc",
+            select: {
+              id: true,
+              name: true,
             },
           },
+          logo: true,
         },
       },
-      // businessSupportingDocuments: {
-      //   where: {
-      //     deletedAt: null,
-      //   },
-      //   orderBy: {
-      //     createdAt: "desc",
-      //   },
-      // },
+
       reviews: {
         where: {
           deletedAt: null,
         },
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
+        },
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          businessId: true,
+          userId: true,
         },
       },
-      // subscription: {
-      //   where: {
-      //     deletedAt: null,
-      //   },
-      // },
-      // bookings: {
-      //   where: {
-      //     deletedAt: null,
-      //   },
-      //   orderBy: {
-      //     createdAt: "desc",
-      //   },
-      // },
     },
   });
 
   if (!business) {
     throw new Error("Business not found!");
   }
-  const {
-    /* eslint-disable */
-    // Code block where all ESLint rules are disabled
-    password,
-    salt,
-    subscriptionId,
-    subscriptionExpire,
-    paymentVerification,
-    razorpay_order_id,
-    // More code here
-    /* eslint-enable */
-    ...restOfBusiness
-  } = business;
 
-  return {
-    ...restOfBusiness,
-  };
+  return business;
 };
 
 export const allLanguages = async () => {
