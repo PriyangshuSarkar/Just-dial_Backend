@@ -122,28 +122,28 @@ export const typeDefs = gql`
   input ManageLanguageInput {
     id: ID
     name: String!
-    slug: String
+    slug: ID
     toDelete: Boolean
   }
 
   input ManageProficiencyInput {
     id: ID
     name: String!
-    slug: String
+    slug: ID
     toDelete: Boolean
   }
 
   input ManageCourtInput {
     id: ID
     name: String!
-    slug: String
+    slug: ID
     toDelete: Boolean
   }
 
   input ManageCategoryInput {
     id: ID
     name: String!
-    slug: String
+    slug: ID
     categoryImage: Upload
     toDelete: Boolean
   }
@@ -157,27 +157,27 @@ export const typeDefs = gql`
   input ManageCountryInput {
     id: ID
     name: String!
-    slug: String
+    slug: ID
   }
 
   input ManageStateInput {
     id: ID
     name: String!
-    slug: String
+    slug: ID
     countryId: ID!
   }
 
   input ManageCityInput {
     id: ID
     name: String!
-    slug: String
+    slug: ID
     stateId: ID!
   }
 
   input ManagePincodeInput {
     id: ID
     code: String!
-    slug: String
+    slug: ID
     cityId: ID!
   }
 `;

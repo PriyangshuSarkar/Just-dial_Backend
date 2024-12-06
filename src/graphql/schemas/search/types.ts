@@ -32,6 +32,7 @@ export const typeDefs = gql`
       sortBy: SortByEnum
       order: OrderEnum
       categoryId: ID
+      categorySlug: ID
       languages: [String!]
       courts: [String!]
       proficiencies: [String!]
@@ -41,7 +42,7 @@ export const typeDefs = gql`
       limit: Int = 10
     ): SearchResult
 
-    getBusinessById(businessId: String!): Business
+    getBusinessById(businessId: String, businessSlug: String): Business
 
     allLanguages: [Language]
 
@@ -53,6 +54,6 @@ export const typeDefs = gql`
 
     allTags: [Tag]
 
-    areas(search: String!): [Pincode]
+    location(search: String): [Pincode]
   }
 `;

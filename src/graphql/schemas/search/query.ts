@@ -4,9 +4,9 @@ import {
   allLanguages,
   allProficiencies,
   allTags,
-  areas,
   getBusinessById,
   search,
+  location,
 } from "./controller";
 
 export const Query = {
@@ -26,5 +26,5 @@ export const Query = {
 
   allTags,
 
-  areas,
+  location,
 };

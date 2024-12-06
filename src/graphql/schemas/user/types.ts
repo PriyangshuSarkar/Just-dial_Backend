@@ -38,7 +38,7 @@ export const typeDefs = gql`
     ): User
     updateUserDetails(
       name: String
-      slug: String
+      slug: ID
       hideDetails: Boolean
       avatar: Upload
     ): User

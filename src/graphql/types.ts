@@ -19,7 +19,7 @@ export const typeDefs = gql`
   type User {
     id: ID
     name: String
-    slug: String
+    slug: ID
     contacts: [UserContact]
     hideDetails: Boolean
     isBlocked: Boolean
@@ -93,7 +93,7 @@ export const typeDefs = gql`
   type Business {
     id: ID
     name: String
-    slug: String
+    slug: ID
     primaryContacts: [BusinessPrimaryContact]
     additionalContacts: [String]
     isBusinessVerified: Boolean
@@ -274,7 +274,7 @@ export const typeDefs = gql`
   type Language {
     id: ID
     name: String
-    slug: String
+    slug: ID
     createdAt: Date
     deletedAt: Date
     updatedAt: Date
@@ -286,7 +286,7 @@ export const typeDefs = gql`
   type Proficiency {
     id: ID
     name: String
-    slug: String
+    slug: ID
     createdAt: Date
     deletedAt: Date
     updatedAt: Date
@@ -298,7 +298,7 @@ export const typeDefs = gql`
   type Court {
     id: ID
     name: String
-    slug: String
+    slug: ID
     createdAt: Date
     deletedAt: Date
     updatedAt: Date
@@ -321,7 +321,7 @@ export const typeDefs = gql`
   type Category {
     id: ID
     name: String
-    slug: String
+    slug: ID
     createdAt: Date
     deletedAt: Date
     categoryImage: String
@@ -374,7 +374,7 @@ export const typeDefs = gql`
   type Pincode {
     id: ID
     code: String
-    slug: String
+    slug: ID
     cityId: ID
     city: City
     createdAt: Date
@@ -387,7 +387,7 @@ export const typeDefs = gql`
   type City {
     id: ID
     name: String
-    slug: String
+    slug: ID
     stateId: ID
     state: State
     createdAt: Date
@@ -401,7 +401,7 @@ export const typeDefs = gql`
   type State {
     id: ID
     name: String
-    slug: String
+    slug: ID
     countryId: ID
     country: Country
     createdAt: Date
@@ -415,7 +415,7 @@ export const typeDefs = gql`
   type Country {
     id: ID
     name: String
-    slug: String
+    slug: ID
     createdAt: Date
     deletedAt: Date
     updatedAt: Date

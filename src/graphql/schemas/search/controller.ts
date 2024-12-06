@@ -1,12 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../utils/dbConnect";
 import {
-  AreaInput,
-  AreaSchema,
   FilterInput,
   GetBusinessByIdInput,
   GetBusinessByIdSchema,
+  LocationInput,
   LocationPriorityInput,
+  LocationSchema,
   SearchInput,
   SearchSchema,
 } from "./db";
@@ -306,7 +306,18 @@ const getBusinessWithPriority = async (
   const categories = filters.categoryId
     ? await prisma.category
         .findFirst({
-          where: { id: filters.categoryId },
+          where: {
+            OR: [
+              {
+                id: filters.categoryId,
+                deletedAt: null,
+              },
+              {
+                slug: filters.categorySlug,
+                deletedAt: null,
+              },
+            ],
+          },
         })
         .then((category) => (category ? [category] : null))
     : await prisma.category.findMany({
@@ -393,7 +404,10 @@ export const getBusinessById = async (
 
   const business = await prisma.business.findFirst({
     where: {
-      id: validatedData.businessId,
+      OR: [
+        { id: validatedData.businessId },
+        { slug: validatedData.businessSlug },
+      ],
       deletedAt: null,
       isListed: true,
       isBlocked: false,
@@ -667,39 +681,45 @@ export const allTags = async () => {
   return allTag;
 };
 
-export const areas = async (_: unknown, args: AreaInput) => {
-  const { search } = AreaSchema.parse(args);
+export const location = async (_: unknown, args: LocationInput) => {
+  const { search } = LocationSchema.parse(args);
   const results = await prisma.pincode.findMany({
-    where: {
-      OR: [
-        { code: { contains: search, mode: "insensitive" } },
-        { slug: { contains: search, mode: "insensitive" } },
-        {
-          city: {
-            OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { slug: { contains: search, mode: "insensitive" } },
-              {
-                state: {
-                  OR: [
-                    { name: { contains: search, mode: "insensitive" } },
-                    { slug: { contains: search, mode: "insensitive" } },
-                    {
-                      country: {
-                        OR: [
-                          { name: { contains: search, mode: "insensitive" } },
-                          { slug: { contains: search, mode: "insensitive" } },
-                        ],
-                      },
+    where: search
+      ? {
+          OR: [
+            { code: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
+            {
+              city: {
+                OR: [
+                  { name: { contains: search, mode: "insensitive" } },
+                  { slug: { contains: search, mode: "insensitive" } },
+                  {
+                    state: {
+                      OR: [
+                        { name: { contains: search, mode: "insensitive" } },
+                        { slug: { contains: search, mode: "insensitive" } },
+                        {
+                          country: {
+                            OR: [
+                              {
+                                name: { contains: search, mode: "insensitive" },
+                              },
+                              {
+                                slug: { contains: search, mode: "insensitive" },
+                              },
+                            ],
+                          },
+                        },
+                      ],
                     },
-                  ],
-                },
+                  },
+                ],
               },
-            ],
-          },
-        },
-      ],
-    },
+            },
+          ],
+        }
+      : {},
     select: {
       id: true,
       code: true,
