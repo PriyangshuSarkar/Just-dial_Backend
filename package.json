@@ -9,6 +9,9 @@
     "build:default": "tsc",
     "start": "bun dist/app.js || node dist/app.js"
   },
+  "prisma": {
+    "seed": "bun run ./prisma/seed.ts"
+  },
   "devDependencies": {
     "@apollo/server": "^4.11.2",
     "@eslint/js": "^9.16.0",
