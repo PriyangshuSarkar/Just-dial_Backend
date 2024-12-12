@@ -411,7 +411,7 @@ export const verifyBusinessPrimaryContact = async (
         otp: null,
         otpExpiresAt: null,
         business: {
-          update: passwordUpdate,
+          update: { ...passwordUpdate, type: "FIRM" },
         },
       },
       include: {
@@ -1206,7 +1206,6 @@ export const updateBusinessDetails = async (
     where: { id: business.id, deletedAt: null },
     data: {
       name: validatedData.name || business.name,
-      type: validatedData.type || business.type,
       slug: slug || business.slug,
       isListed: validatedData.isListed || business.isListed,
       additionalContacts:

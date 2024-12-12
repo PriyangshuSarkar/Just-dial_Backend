@@ -185,10 +185,6 @@ export const allBusinesses = async (
     };
   }
 
-  if (validatedData.type) {
-    where.type = validatedData.type;
-  }
-
   if (validatedData.isBusinessVerified !== undefined) {
     where.isBusinessVerified = validatedData.isBusinessVerified;
   }
@@ -359,6 +355,13 @@ export const manageUserSubscription = async (
   const validatedData = ManageUserSubscriptionSchema.parse(args);
 
   if (!validatedData.id) {
+    if (
+      !validatedData.name ||
+      !validatedData.price ||
+      !validatedData.duration
+    ) {
+      throw new Error("Name, Price and Duration are required");
+    }
     const newUserSubscription = await prisma.userSubscription.create({
       data: {
         name: validatedData.name,
@@ -400,11 +403,18 @@ export const manageBusinessSubscription = async (
   const validatedData = ManageBusinessSubscriptionSchema.parse(args);
 
   if (!validatedData.id) {
+    if (
+      !validatedData.name ||
+      !validatedData.price ||
+      !validatedData.duration
+    ) {
+      throw new Error("Name, Price and Duration are required");
+    }
     const newBusinessSubscription = await prisma.businessSubscription.create({
       data: {
         name: validatedData.name,
         description: validatedData.description,
-        type: validatedData.type,
+        type: "FIRM",
         price: validatedData.price,
         duration: validatedData.duration,
         features: validatedData.features,
@@ -421,7 +431,6 @@ export const manageBusinessSubscription = async (
         data: {
           name: validatedData.name,
           description: validatedData.description,
-          type: validatedData.type,
           price: validatedData.price,
           duration: validatedData.duration,
           features: validatedData.features,

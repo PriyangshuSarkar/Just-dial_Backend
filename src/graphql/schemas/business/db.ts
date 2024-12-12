@@ -11,7 +11,6 @@ import {
 export const BusinessSignupSchema = object({
   email: string().email().optional(),
   phone: string().optional(),
-  type: enum_(["INDIVIDUAL", "FIRM"]).optional(),
 }).refine((data) => data.email || data.phone, {
   message: "Either email or phone must be provided.",
   path: ["email", "phone"],
@@ -79,7 +78,6 @@ export type ChangeBusinessPasswordInput = infer_<
 export const UpdateBusinessDetailsSchema = object({
   name: string().optional(),
   slug: string().optional(),
-  type: enum_(["INDIVIDUAL", "FIRM"]).optional(),
   isListed: boolean().optional(),
   registrationNumber: string().optional(),
   license: string().optional(),

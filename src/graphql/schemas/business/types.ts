@@ -104,7 +104,6 @@ export const typeDefs = gql`
     updateBusinessDetails(
       name: String
       slug: ID
-      type: BusinessType
       isListed: Boolean
       registrationNumber: String
       license: String

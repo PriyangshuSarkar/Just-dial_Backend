@@ -34,7 +34,6 @@ export const AllBusinessesSchema = object({
   name: string().optional(),
   email: string().optional(),
   phone: string().optional(),
-  type: enum_(["INDIVIDUAL", "FIRM"]).optional(),
   isBusinessVerified: boolean().optional(),
   subscriptionId: string().optional(),
   hasSubscription: boolean().optional(),
@@ -70,11 +69,11 @@ export type BlockUserInput = infer_<typeof BlockUserSchema>;
 
 export const ManageUserSubscriptionSchema = object({
   id: string().optional(),
-  name: string(),
+  name: string().optional(),
   description: string().optional(),
-  price: number(),
-  duration: number(),
-  features: string().array(),
+  price: number().optional(),
+  duration: number().optional(),
+  features: string().array().optional(),
   toDelete: boolean().optional().default(false),
 });
 export type ManageUserSubscriptionInput = infer_<
@@ -83,12 +82,11 @@ export type ManageUserSubscriptionInput = infer_<
 
 export const ManageBusinessSubscriptionSchema = object({
   id: string().optional(),
-  name: string(),
+  name: string().optional(),
   description: string().optional(),
-  type: enum_(["INDIVIDUAL", "FIRM"]),
-  price: number(),
-  duration: number(),
-  features: string().array(),
+  price: number().optional(),
+  duration: number().optional(),
+  features: string().array().optional(),
   tierLevel: number().optional(),
   toDelete: boolean().optional().default(false),
 });

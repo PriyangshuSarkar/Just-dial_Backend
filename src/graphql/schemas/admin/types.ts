@@ -66,7 +66,6 @@ export const typeDefs = gql`
       name: String
       email: String
       phone: String
-      type: BusinessType
       isBusinessVerified: Boolean
       subscriptionId: ID
       hasSubscription: Boolean
@@ -101,7 +100,6 @@ export const typeDefs = gql`
       id: ID
       name: String!
       description: String
-      type: BusinessType!
       price: Float!
       duration: Int!
       features: [String!]!
