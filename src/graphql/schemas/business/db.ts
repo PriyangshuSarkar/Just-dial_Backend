@@ -11,7 +11,7 @@ import {
 export const BusinessSignupSchema = object({
   email: string().email().optional(),
   phone: string().optional(),
-  type: enum_(["INDIVIDUAL", "FIRM"]),
+  type: enum_(["INDIVIDUAL", "FIRM"]).optional(),
 }).refine((data) => data.email || data.phone, {
   message: "Either email or phone must be provided.",
   path: ["email", "phone"],
