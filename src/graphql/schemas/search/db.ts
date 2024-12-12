@@ -22,11 +22,11 @@ export const FilterSchema = object({
   languages: string().array().optional(),
   courts: string().array().optional(),
   proficiencies: string().array().optional(),
+  cityName: string().optional(),
 });
 export type FilterInput = infer_<typeof FilterSchema>;
 
 export const SearchSchema = FilterSchema.extend({
-  cityName: string().optional(),
   page: number().optional().default(1),
   limit: number().optional().default(10),
 });

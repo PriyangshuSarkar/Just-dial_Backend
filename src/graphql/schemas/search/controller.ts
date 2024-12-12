@@ -12,26 +12,20 @@ import {
 } from "./db";
 
 export const search = async (_: unknown, args: SearchInput) => {
-  const {
-    cityName,
-    search,
-    page = 1,
-    limit = 10,
-    ...filters
-  } = SearchSchema.parse(args);
+  const { page = 1, limit = 10, ...filters } = SearchSchema.parse(args);
 
   // Get location info only if cityName is provided
-  const locationInfo = cityName
-    ? await getLocationHierarchy(cityName)
+  const locationInfo = filters.cityName
+    ? await getLocationHierarchy(filters.cityName)
     : { city: null, state: null, country: null };
 
   const baseConditions: Prisma.BusinessWhereInput = {
     isListed: true,
     deletedAt: null,
     isBlocked: false,
-    ...(search && {
+    ...(filters.search && {
       name: {
-        contains: search,
+        contains: filters.search,
         mode: "insensitive",
       },
     }),
@@ -128,6 +122,42 @@ const getBusinessWithPriority = async (
             teamSize: true,
             description: true,
             updatedAt: true,
+            addresses: {
+              where: {
+                deletedAt: null,
+                OR: [
+                  {
+                    city: {
+                      contains: location.city || undefined,
+                      mode: "insensitive",
+                    },
+                  },
+                  {
+                    state: {
+                      contains: location.state || undefined,
+                      mode: "insensitive",
+                    },
+                  },
+                  {
+                    country: {
+                      contains: location.country || undefined,
+                      mode: "insensitive",
+                    },
+                  },
+                ],
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                id: true,
+                pincode: true,
+                city: true,
+                state: true,
+                country: true,
+                order: true,
+              },
+            },
             websites: {
               where: {
                 deletedAt: null,
@@ -322,18 +352,16 @@ const getBusinessWithPriority = async (
         .then((category) => (category ? [category] : null))
     : await prisma.category.findMany({
         where: {
-          ...(filters.search && {
-            OR: [
-              {
-                name: { contains: filters.search, mode: "insensitive" },
-                deletedAt: null,
-              },
-              {
-                slug: { contains: filters.search, mode: "insensitive" },
-                deletedAt: null,
-              },
-            ],
-          }),
+          OR: [
+            {
+              name: { contains: filters.search, mode: "insensitive" },
+              deletedAt: null,
+            },
+            {
+              slug: { contains: filters.search, mode: "insensitive" },
+              deletedAt: null,
+            },
+          ],
         },
       });
 
