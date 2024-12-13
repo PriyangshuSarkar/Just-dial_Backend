@@ -337,15 +337,30 @@ CREATE TABLE "Tag" (
 -- CreateTable
 CREATE TABLE "Review" (
     "id" TEXT NOT NULL,
-    "rating" INTEGER NOT NULL,
+    "rating" DOUBLE PRECISION NOT NULL,
     "comment" TEXT,
-    "businessId" TEXT,
+    "businessId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(3),
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Testimonial" (
+    "id" TEXT NOT NULL,
+    "order" INTEGER,
+    "rating" DOUBLE PRECISION,
+    "comment" TEXT,
+    "businessId" TEXT,
+    "userId" TEXT,
+    "createdAt" TIMESTAMP(3),
+    "deletedAt" TIMESTAMP(3),
+    "updatedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Testimonial_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -624,10 +639,16 @@ ALTER TABLE "BusinessWebsite" ADD CONSTRAINT "BusinessWebsite_businessDetailsId_
 ALTER TABLE "BusinessOperatingHours" ADD CONSTRAINT "BusinessOperatingHours_businessDetailsId_fkey" FOREIGN KEY ("businessDetailsId") REFERENCES "BusinessDetails"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Review" ADD CONSTRAINT "Review_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Review" ADD CONSTRAINT "Review_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Testimonial" ADD CONSTRAINT "Testimonial_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Testimonial" ADD CONSTRAINT "Testimonial_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Booking" ADD CONSTRAINT "Booking_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

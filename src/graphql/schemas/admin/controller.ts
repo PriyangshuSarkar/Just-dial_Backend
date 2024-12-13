@@ -32,6 +32,8 @@ import {
   ManageStateSchema,
   ManageTagInput,
   ManageTagSchema,
+  ManageTestimonialInput,
+  ManageTestimonialSchema,
   ManageUserSubscriptionInput,
   ManageUserSubscriptionSchema,
   VerifyBusinessesInput,
@@ -781,6 +783,43 @@ export const managePincode = async (
           },
         });
       }
+    })
+  );
+
+  return results;
+};
+
+export const manageTestimonial = async (
+  _: unknown,
+  args: ManageTestimonialInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+  const validatedData = ManageTestimonialSchema.parse(args);
+
+  const results = await Promise.all(
+    validatedData.review.map(async (review) => {
+      if (review.toDelete && review.id) {
+        return await prisma.testimonial.delete({
+          where: { id: review.id },
+        });
+      }
+      if (!review.order) {
+        throw new Error("Testimonial Order is required");
+      }
+      const existingReview = await prisma.review.findFirst({
+        where: {
+          id: review.id,
+        },
+      });
+      return await prisma.testimonial.create({
+        data: {
+          ...existingReview,
+          order: review.order,
+        },
+      });
     })
   );
 

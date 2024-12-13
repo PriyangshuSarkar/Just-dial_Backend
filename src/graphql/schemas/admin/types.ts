@@ -106,39 +106,40 @@ export const typeDefs = gql`
       tierLevel: Int
       toDelete: Boolean
     ): BusinessSubscription
-    manageLanguage(languages: [ManageLanguageInput!]!): [Language]
-    manageProficiency(proficiencies: [ManageProficiencyInput!]!): [Proficiency]
-    manageCourt(courts: [ManageCourtInput!]!): [Court]
-    manageCategory(categories: [ManageCategoryInput!]!): [Category]
-    manageTag(tags: [ManageTagInput!]!): [Tag]
-    manageCountry(countries: [ManageCountryInput!]!): [Country]
-    manageState(states: [ManageStateInput!]!): [State]
-    manageCity(cities: [ManageCityInput!]!): [City]
-    managePincode(pincodes: [ManagePincodeInput!]!): [Pincode]
+    manageLanguage(languages: [LanguageInput!]!): [Language]
+    manageProficiency(proficiencies: [ProficiencyInput!]!): [Proficiency]
+    manageCourt(courts: [CourtInput!]!): [Court]
+    manageCategory(categories: [CategoryInput!]!): [Category]
+    manageTag(tags: [TagInput!]!): [Tag]
+    manageCountry(countries: [CountryInput!]!): [Country]
+    manageState(states: [StateInput!]!): [State]
+    manageCity(cities: [CityInput!]!): [City]
+    managePincode(pincodes: [PincodeInput!]!): [Pincode]
+    manageTestimonial(review: [ReviewInput!]!): [Testimonial]
   }
 
-  input ManageLanguageInput {
+  input LanguageInput {
     id: ID
     name: String!
     slug: ID
     toDelete: Boolean
   }
 
-  input ManageProficiencyInput {
+  input ProficiencyInput {
     id: ID
     name: String!
     slug: ID
     toDelete: Boolean
   }
 
-  input ManageCourtInput {
+  input CourtInput {
     id: ID
     name: String!
     slug: ID
     toDelete: Boolean
   }
 
-  input ManageCategoryInput {
+  input CategoryInput {
     id: ID
     name: String!
     slug: ID
@@ -146,36 +147,41 @@ export const typeDefs = gql`
     toDelete: Boolean
   }
 
-  input ManageTagInput {
+  input TagInput {
     id: ID
     name: String!
     toDelete: Boolean
   }
 
-  input ManageCountryInput {
+  input CountryInput {
     id: ID
     name: String!
     slug: ID
   }
 
-  input ManageStateInput {
+  input StateInput {
     id: ID
     name: String!
     slug: ID
     countryId: ID!
   }
 
-  input ManageCityInput {
+  input CityInput {
     id: ID
     name: String!
     slug: ID
     stateId: ID!
   }
 
-  input ManagePincodeInput {
+  input PincodeInput {
     id: ID
     code: String!
     slug: ID
     cityId: ID!
+  }
+  input ReviewInput {
+    id: ID
+    order: Int
+    toDelete: Boolean
   }
 `;

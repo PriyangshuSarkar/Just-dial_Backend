@@ -344,7 +344,23 @@ export const typeDefs = gql`
 
   type Review {
     id: ID
-    rating: Int
+    rating: Float
+    comment: String
+    businessId: ID
+    business: Business
+    userId: ID
+    user: User
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    message: String
+    token: String
+  }
+
+  type Testimonial {
+    id: ID
+    order: Int
+    rating: Float
     comment: String
     businessId: ID
     business: Business

@@ -3,6 +3,134 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const indianStatesAndUTs = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  // "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  // "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
+];
+
+const countries = ["India"];
+
+const courtTypes = [
+  "Civil Court",
+  "Criminal Court",
+  "High Court",
+  "Consumer Court",
+  "District Court",
+  "Family Court",
+  "Labour Court",
+  "Session Court",
+  "Magistrate Court",
+  "Supreme Court",
+  "Bombay High Court",
+  "Chandigarh High Court",
+];
+
+const legalServices = [
+  "Corporate Law",
+  "Intellectual Property (IP) Law",
+  "Employment and Labor Law",
+  "Real Estate Law",
+  "Family Law",
+  "Criminal Defense",
+  "Immigration Law",
+  "Tax Law",
+  "Personal Injury Law",
+  "Estate Planning and Probate",
+  "Bankruptcy Law",
+  "Environmental Law",
+  "Contract Law",
+  "Medical Malpractice",
+  "Consumer Protection Law",
+  "Civil Rights Law",
+  "Entertainment Law",
+  "Construction Law",
+  "Insurance Law",
+  "International Law",
+  "Cybersecurity and Data Privacy",
+  "Litigation and Dispute Resolution",
+  "Mergers and Acquisitions",
+  "Alternative Dispute Resolution (ADR)",
+  "Education Law",
+  "Administrative Law",
+  "Elder Law",
+  "Social Security Disability Law",
+  "Antitrust and Competition Law",
+  "Human Rights Law",
+  "Maritime and Admiralty Law",
+  "Healthcare Law",
+  "Securities Law",
+  "Agricultural Law",
+  "Telecommunications Law",
+  "Transportation Law",
+  "Gaming Law",
+];
+
+const languageProficiencyIndia = [
+  "Hindi",
+  "English",
+  "Bengali",
+  "Telugu",
+  "Marathi",
+  "Tamil",
+  "Urdu",
+  "Gujarati",
+  "Malayalam",
+  "Kannada",
+  "Odia",
+  "Punjabi",
+  "Assamese",
+  "Maithili",
+  "Sanskrit",
+  "Kashmiri",
+  "Nepali",
+  "Sindhi",
+  "Dogri",
+  "Manipuri",
+  "Bodo",
+  "Santhali",
+  "Konkani",
+  "Rajasthani",
+  "Haryanvi",
+  "Mizo",
+  "Tulu",
+  "Khasi",
+  "Sikkimese",
+];
+
 async function main() {
   // Create Categories
   const legalCategory = await prisma.category.create({
@@ -198,6 +326,41 @@ async function main() {
       closingTime: "19:00",
     },
   });
+
+  // Seed States and UTs
+  for (const state of indianStatesAndUTs) {
+    await prisma.state.create({
+      data: {
+        name: state,
+        slug: state.toLowerCase().replace(/ /g, "-"),
+        country: { connect: { id: india.id } },
+      },
+    });
+  }
+
+  // Seed Court Types
+  for (const courtType of courtTypes) {
+    await prisma.court.create({
+      data: {
+        name: courtType,
+        slug: courtType.toLowerCase().replace(/ /g, "-"),
+      },
+    });
+  }
+
+  // Seed Legal Services
+  for (const service of legalServices) {
+    await prisma.category.create({
+      data: { name: service, slug: service.toLowerCase().replace(/ /g, "-") },
+    });
+  }
+
+  // Seed Languages
+  for (const language of languageProficiencyIndia) {
+    await prisma.language.create({
+      data: { name: language, slug: language.toLowerCase().replace(/ /g, "-") },
+    });
+  }
 
   console.log("Seed data inserted successfully.");
 }

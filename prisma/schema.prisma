@@ -48,6 +48,7 @@ model User {
   chats               Chat[]
   reviews             Review[]
   subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
+  testimonials        Testimonial[]
 
   @@index([subscriptionId])
 }
@@ -134,6 +135,7 @@ model Business {
   chats                       Chat[]
   bookings                    Booking[]
   reviews                     Review[]
+  testimonials                Testimonial[]
   businessSupportingDocuments BusinessSupportingDocuments[]
   businessDetails             BusinessDetails?
   price                       Float?
@@ -355,13 +357,27 @@ model Tag {
 
 model Review {
   id         String    @id @default(uuid())
-  rating     Int
+  rating     Float
   comment    String?
-  businessId String?
+  businessId String
   userId     String
   createdAt  DateTime  @default(now())
   deletedAt  DateTime?
   updatedAt  DateTime  @updatedAt
+  business   Business? @relation(fields: [businessId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id])
+}
+
+model Testimonial {
+  id         String    @id @default(uuid())
+  order      Int?
+  rating     Float?
+  comment    String?
+  businessId String?
+  userId     String?
+  createdAt  DateTime?
+  deletedAt  DateTime?
+  updatedAt  DateTime?
   business   Business? @relation(fields: [businessId], references: [id])
   user       User?     @relation(fields: [userId], references: [id])
 }

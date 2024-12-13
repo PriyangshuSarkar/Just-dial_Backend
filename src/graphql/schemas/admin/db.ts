@@ -181,3 +181,12 @@ export const ManagePincodeSchema = object({
   }).array(),
 });
 export type ManagePincodeInput = infer_<typeof ManagePincodeSchema>;
+
+export const ManageTestimonialSchema = object({
+  review: object({
+    id: string().optional(),
+    order: number().optional(),
+    toDelete: boolean().optional().default(false),
+  }).array(),
+});
+export type ManageTestimonialInput = infer_<typeof ManageTestimonialSchema>;

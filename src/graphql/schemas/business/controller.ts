@@ -545,7 +545,7 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
     },
   });
   if (!existingContact) {
-    throw new Error(`${value} doesn't exit!`);
+    throw new Error(`Wrong email or password!`);
   }
 
   const business = await prisma.business.findFirst({
@@ -662,7 +662,7 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
   });
 
   if (!business) {
-    throw new Error("Email doesn't exit!");
+    throw new Error("Wrong email or password!");
   }
 
   const verify = verifyPassword(
@@ -680,7 +680,7 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
       token: token,
     };
   } else {
-    throw new Error("Wrong password!");
+    throw new Error("Wrong email or password!");
   }
 };
 
