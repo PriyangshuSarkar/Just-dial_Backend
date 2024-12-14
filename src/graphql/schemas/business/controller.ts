@@ -259,23 +259,26 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
   const validatedData = BusinessSignupSchema.parse(args);
 
   return await prisma.$transaction(async (tx) => {
+    let contactConditions: Prisma.BusinessPrimaryContactWhereInput;
+
+    if (validatedData.email) {
+      contactConditions = {
+        value: validatedData.email,
+        type: "EMAIL",
+        isVerified: true,
+        deletedAt: null,
+      };
+    } else {
+      contactConditions = {
+        value: validatedData.phone,
+        type: "PHONE",
+        isVerified: true,
+        deletedAt: null,
+      };
+    }
+
     const existingContact = await tx.businessPrimaryContact.findFirst({
-      where: {
-        OR: [
-          {
-            value: validatedData.email,
-            type: "EMAIL",
-            isVerified: true,
-            deletedAt: null,
-          },
-          {
-            value: validatedData.phone,
-            type: "PHONE",
-            isVerified: true,
-            deletedAt: null,
-          },
-        ],
-      },
+      where: contactConditions,
     });
 
     if (existingContact) {
@@ -328,18 +331,18 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
       });
     }
 
-    // Send verification codes
-    try {
-      if (validatedData.email && emailOtpData) {
-        await sendOtpEmail(null, validatedData.email, emailOtpData.otp);
-      }
-      if (validatedData.phone && phoneOtpData) {
-        await sendOtpPhone(null, validatedData.phone, phoneOtpData.otp);
-      }
-    } catch (error) {
-      // Log error but don't fail the transaction
-      console.error("Error sending OTP:", error);
-    }
+    // // Send verification codes
+    // try {
+    //   if (validatedData.email && emailOtpData) {
+    //     await sendOtpEmail(null, validatedData.email, emailOtpData.otp);
+    //   }
+    //   if (validatedData.phone && phoneOtpData) {
+    //     await sendOtpPhone(null, validatedData.phone, phoneOtpData.otp);
+    //   }
+    // } catch (error) {
+    //   // Log error but don't fail the transaction
+    //   console.error("Error sending OTP:", error);
+    // }
 
     return {
       value: [validatedData.email, validatedData.phone]
