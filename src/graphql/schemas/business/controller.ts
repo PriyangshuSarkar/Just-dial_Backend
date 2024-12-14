@@ -269,7 +269,7 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
             deletedAt: null,
           },
           {
-            value: validatedData.email,
+            value: validatedData.phone,
             type: "PHONE",
             isVerified: true,
             deletedAt: null,
