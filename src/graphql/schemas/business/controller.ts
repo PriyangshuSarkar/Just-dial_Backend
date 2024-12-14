@@ -365,174 +365,183 @@ export const verifyBusinessPrimaryContact = async (
 ) => {
   const validatedData = VerifyBusinessPrimaryContactSchema.parse(args);
 
-  return await prisma.$transaction(async (tx) => {
-    const value = validatedData.email || validatedData.phone;
-    const type = validatedData.email ? "EMAIL" : "PHONE";
+  return await prisma.$transaction(
+    async (tx) => {
+      const value = validatedData.email || validatedData.phone;
+      const type = validatedData.email ? "EMAIL" : "PHONE";
 
-    const contact = await tx.businessPrimaryContact.findFirst({
-      where: {
-        value,
-        type,
-        deletedAt: null,
-      },
-    });
-
-    if (!contact) {
-      throw new Error("Contact not found");
-    }
-
-    if (!contact.otp || !contact.otpExpiresAt) {
-      throw new Error("No verification code found. Please request a new one.");
-    }
-
-    if (contact.otpExpiresAt < new Date()) {
-      throw new Error(
-        "Verification code has expired. Please request a new one."
-      );
-    }
-
-    if (contact.otp !== validatedData.otp) {
-      throw new Error("Invalid verification code");
-    }
-
-    const business = await tx.business.findUnique({
-      where: { id: contact.businessId },
-    });
-
-    let passwordUpdate = {};
-    if (!business?.password && validatedData.password) {
-      const { salt, hash } = hashPassword(validatedData.password);
-      passwordUpdate = { password: hash, salt };
-    }
-
-    // Verify the contact
-    const verifiedContact = await tx.businessPrimaryContact.update({
-      where: { id: contact.id, value },
-      data: {
-        isVerified: true,
-        verifiedAt: new Date(),
-        otp: null,
-        otpExpiresAt: null,
-        business: {
-          update: { ...passwordUpdate, type: "FIRM" },
+      const contact = await tx.businessPrimaryContact.findFirst({
+        where: {
+          value,
+          type,
+          deletedAt: null,
         },
-      },
-      include: {
-        business: {
-          include: {
-            primaryContacts: true,
-            businessDetails: {
-              include: {
-                addresses: {
-                  where: {
-                    deletedAt: null,
+      });
+
+      if (!contact) {
+        throw new Error("Contact not found");
+      }
+
+      if (!contact.otp || !contact.otpExpiresAt) {
+        throw new Error(
+          "No verification code found. Please request a new one."
+        );
+      }
+
+      if (contact.otpExpiresAt < new Date()) {
+        throw new Error(
+          "Verification code has expired. Please request a new one."
+        );
+      }
+
+      if (contact.otp !== validatedData.otp) {
+        throw new Error("Invalid verification code");
+      }
+
+      const business = await tx.business.findUnique({
+        where: { id: contact.businessId },
+      });
+
+      let passwordUpdate = {};
+      if (!business?.password && validatedData.password) {
+        const { salt, hash } = hashPassword(validatedData.password);
+        passwordUpdate = { password: hash, salt };
+      }
+
+      // Verify the contact
+      const verifiedContact = await tx.businessPrimaryContact.update({
+        where: { id: contact.id, value },
+        data: {
+          isVerified: true,
+          verifiedAt: new Date(),
+          otp: null,
+          otpExpiresAt: null,
+          business: {
+            update: { ...passwordUpdate, type: "FIRM" },
+          },
+        },
+        include: {
+          business: {
+            include: {
+              primaryContacts: true,
+              businessDetails: {
+                include: {
+                  addresses: {
+                    where: {
+                      deletedAt: null,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
                   },
-                  orderBy: {
-                    createdAt: "desc",
+                  websites: {
+                    where: {
+                      deletedAt: null,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
                   },
-                },
-                websites: {
-                  where: {
-                    deletedAt: null,
+                  coverImages: {
+                    where: {
+                      deletedAt: null,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
                   },
-                  orderBy: {
-                    createdAt: "desc",
+                  adBannerImages: {
+                    where: {
+                      deletedAt: null,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
                   },
-                },
-                coverImages: {
-                  where: {
-                    deletedAt: null,
+                  mobileAdBannerImages: {
+                    where: {
+                      deletedAt: null,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
                   },
-                  orderBy: {
-                    createdAt: "desc",
+                  courts: {
+                    where: {
+                      deletedAt: null,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
                   },
-                },
-                adBannerImages: {
-                  where: {
-                    deletedAt: null,
+                  proficiencies: {
+                    where: {
+                      deletedAt: null,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
                   },
-                  orderBy: {
-                    createdAt: "desc",
-                  },
-                },
-                mobileAdBannerImages: {
-                  where: {
-                    deletedAt: null,
-                  },
-                  orderBy: {
-                    createdAt: "desc",
-                  },
-                },
-                courts: {
-                  where: {
-                    deletedAt: null,
-                  },
-                  orderBy: {
-                    createdAt: "desc",
-                  },
-                },
-                proficiencies: {
-                  where: {
-                    deletedAt: null,
-                  },
-                  orderBy: {
-                    createdAt: "desc",
-                  },
-                },
-                tags: {
-                  where: {
-                    deletedAt: null,
-                  },
-                  orderBy: {
-                    createdAt: "desc",
+                  tags: {
+                    where: {
+                      deletedAt: null,
+                    },
+                    orderBy: {
+                      createdAt: "desc",
+                    },
                   },
                 },
               },
-            },
-            businessSupportingDocuments: {
-              where: {
-                deletedAt: null,
+              businessSupportingDocuments: {
+                where: {
+                  deletedAt: null,
+                },
+                orderBy: {
+                  createdAt: "desc",
+                },
               },
-              orderBy: {
-                createdAt: "desc",
+              reviews: {
+                where: {
+                  deletedAt: null,
+                },
+                orderBy: {
+                  createdAt: "desc",
+                },
               },
-            },
-            reviews: {
-              where: {
-                deletedAt: null,
+              subscription: {
+                where: {
+                  deletedAt: null,
+                },
               },
-              orderBy: {
-                createdAt: "desc",
-              },
-            },
-            subscription: {
-              where: {
-                deletedAt: null,
-              },
-            },
-            bookings: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "desc",
+              bookings: {
+                where: {
+                  deletedAt: null,
+                },
+                orderBy: {
+                  createdAt: "desc",
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    // Ensure there's a primary contact
-    await ensurePrimaryContact(tx, contact.businessId);
-    const token = generateToken(verifiedContact.businessId, "BUSINESS");
+      // Ensure there's a primary contact
+      await ensurePrimaryContact(tx, contact.businessId);
+      const token = generateToken(verifiedContact.businessId, "BUSINESS");
 
-    return {
-      ...verifiedContact.business,
-      token,
-      message: `${type === "EMAIL" ? "Email" : "Phone"} verified successfully!`,
-    };
-  });
+      return {
+        ...verifiedContact.business,
+        token,
+        message: `${
+          type === "EMAIL" ? "Email" : "Phone"
+        } verified successfully!`,
+      };
+    },
+    {
+      timeout: 30000, // Set timeout to 30 seconds
+    }
+  );
 };
 
 export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
