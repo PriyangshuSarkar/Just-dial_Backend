@@ -799,29 +799,71 @@ export const manageTestimonial = async (
   }
   const validatedData = ManageTestimonialSchema.parse(args);
 
-  const results = await Promise.all(
-    validatedData.review.map(async (review) => {
-      if (review.toDelete && review.id) {
+  const testimonial = await Promise.all(
+    validatedData.testimonials.map(async (testimonial) => {
+      const entityId = testimonial.reviewId || testimonial.feedbackId;
+      const entityType = testimonial.reviewId ? "REVIEW" : "FEEDBACK";
+
+      if (
+        testimonial.toDelete &&
+        (testimonial.id || testimonial.reviewId || testimonial.feedbackId)
+      ) {
+        const testimonialToDelete = await prisma.testimonial.findFirst({
+          where: {
+            OR: [
+              { id: testimonial.id },
+              { reviewId: testimonial.reviewId },
+              { feedbackId: testimonial.feedbackId },
+            ],
+          },
+        });
+
+        if (!testimonialToDelete) {
+          throw new Error("Testimonial not found.");
+        }
+
+        // Delete the matched testimonial
         return await prisma.testimonial.delete({
-          where: { id: review.id },
+          where: {
+            id: testimonialToDelete.id, // Use the unique `id` from the found testimonial
+          },
         });
       }
-      if (!review.order) {
+      if (!testimonial.order) {
         throw new Error("Testimonial Order is required");
       }
-      const existingReview = await prisma.review.findFirst({
-        where: {
-          id: review.id,
-        },
-      });
+
+      let existingReview;
+
+      if (entityType === "REVIEW") {
+        existingReview = await prisma.review.findFirst({
+          where: {
+            id: entityId,
+          },
+        });
+      } else {
+        existingReview = await prisma.feedback.findFirst({
+          where: {
+            id: entityId,
+          },
+        });
+      }
       return await prisma.testimonial.create({
         data: {
-          ...existingReview,
-          order: review.order,
+          reviewId: testimonial.reviewId,
+          feedbackId: testimonial.feedbackId,
+          order: testimonial.order,
+          type: entityType,
+          rating: existingReview?.rating,
+          comment: existingReview?.comment,
+          businessId: existingReview?.businessId,
+          userId: existingReview?.userId,
+          createdAt: existingReview?.createdAt,
+          updatedAt: existingReview?.updatedAt,
         },
       });
     })
   );
 
-  return results;
+  return testimonial;
 };

@@ -314,8 +314,14 @@ const getBusinessWithPriority = async (
     prisma.business.count({ where: whereConditions }),
   ]);
 
+  // Map businesses to include slug fallback
+  const mappedBusinesses = businesses.map((business) => ({
+    ...business,
+    slug: business.slug || business.id,
+  }));
+
   // Sort businesses based on location priority and featured status
-  const sortedBusinesses = businesses.sort((a, b) => {
+  const sortedBusinesses = mappedBusinesses.sort((a, b) => {
     if (location.city || location.state || location.country) {
       const scoreA = getLocationScore(a, location);
       const scoreB = getLocationScore(b, location);
@@ -430,12 +436,11 @@ export const getBusinessById = async (
 ) => {
   const validatedData = GetBusinessByIdSchema.parse(args);
 
+  const search = validatedData.businessSlug || validatedData.businessId;
+
   const business = await prisma.business.findFirst({
     where: {
-      OR: [
-        { id: validatedData.businessId },
-        { slug: validatedData.businessSlug },
-      ],
+      OR: [{ slug: search }, { id: search }],
       deletedAt: null,
       isListed: true,
       isBlocked: false,
@@ -630,6 +635,10 @@ export const getBusinessById = async (
 
   if (!business) {
     throw new Error("Business not found!");
+  }
+
+  if (!business?.slug) {
+    business.slug = business.id;
   }
 
   return business;

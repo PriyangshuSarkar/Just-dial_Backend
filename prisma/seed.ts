@@ -137,7 +137,6 @@ async function main() {
     data: {
       name: "Legal",
       slug: "legal",
-      categoryImage: "https://example.com/legal-category-image.jpg",
     },
   });
 
@@ -145,7 +144,6 @@ async function main() {
     data: {
       name: "Information Technology",
       slug: "information-technology",
-      categoryImage: "https://example.com/it-category-image.jpg",
     },
   });
 
@@ -242,7 +240,6 @@ async function main() {
       degree: ["LLB", "LLM"],
       gstNumber: "27AACCT0618J1ZI",
       categoryId: legalCategory.id,
-      logo: "https://example.com/legal-logo.jpg",
       id: business1.id,
     },
   });
@@ -259,7 +256,6 @@ async function main() {
       degree: ["B.Tech", "M.Tech"],
       gstNumber: "27AABCC0618J2ZI",
       categoryId: ITCategory.id,
-      logo: "https://example.com/it-logo.jpg",
       id: business2.id,
     },
   });

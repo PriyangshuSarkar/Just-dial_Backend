@@ -34,6 +34,7 @@ export const typeDefs = gql`
     addresses: [UserAddress]
     bookings: [Booking]
     reviews: [Review]
+    feedbacks: [Feedback]
     subscription: UserSubscription
     message: String
     token: String
@@ -112,6 +113,7 @@ export const typeDefs = gql`
     razorpay_order_id: String
     bookings: [Booking]
     reviews: [Review]
+    feedbacks: [Feedback]
     businessSupportingDocuments: [BusinessSupportingDocuments]
     businessDetails: BusinessDetails
     price: Float
@@ -357,9 +359,30 @@ export const typeDefs = gql`
     token: String
   }
 
+  type Feedback {
+    id: ID
+    rating: Float
+    comment: String
+    businessId: ID
+    business: Business
+    userId: ID
+    user: User
+    createdAt: Date
+    deletedAt: Date
+    updatedAt: Date
+    message: String
+    token: String
+  }
+
+  enum TestimonialType {
+    REVIEW
+    FEEDBACK
+  }
+
   type Testimonial {
     id: ID
     order: Int
+    type: TestimonialType
     rating: Float
     comment: String
     businessId: ID

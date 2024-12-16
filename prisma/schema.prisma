@@ -47,6 +47,7 @@ model User {
   bookings            Booking[]
   chats               Chat[]
   reviews             Review[]
+  feedbacks           Feedback[]
   subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
   testimonials        Testimonial[]
 
@@ -135,6 +136,7 @@ model Business {
   chats                       Chat[]
   bookings                    Booking[]
   reviews                     Review[]
+  feedbacks                   Feedback[]
   testimonials                Testimonial[]
   businessSupportingDocuments BusinessSupportingDocuments[]
   businessDetails             BusinessDetails?
@@ -368,9 +370,30 @@ model Review {
   user       User?     @relation(fields: [userId], references: [id])
 }
 
-model Testimonial {
+model Feedback {
   id         String    @id @default(uuid())
+  rating     Float
+  comment    String?
+  businessId String?
+  userId     String?
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+  updatedAt  DateTime  @updatedAt
+  business   Business? @relation(fields: [businessId], references: [id])
+  user       User?     @relation(fields: [userId], references: [id])
+}
+
+enum TestimonialType {
+  REVIEW
+  FEEDBACK
+}
+
+model Testimonial {
+  id         String          @id @default(uuid())
+  reviewId   String?         @unique
+  feedbackId String?         @unique
   order      Int?
+  type       TestimonialType
   rating     Float?
   comment    String?
   businessId String?
@@ -378,8 +401,8 @@ model Testimonial {
   createdAt  DateTime?
   deletedAt  DateTime?
   updatedAt  DateTime?
-  business   Business? @relation(fields: [businessId], references: [id])
-  user       User?     @relation(fields: [userId], references: [id])
+  business   Business?       @relation(fields: [businessId], references: [id])
+  user       User?           @relation(fields: [userId], references: [id])
 }
 
 model Booking {

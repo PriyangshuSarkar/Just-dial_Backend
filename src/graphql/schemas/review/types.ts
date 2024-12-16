@@ -15,5 +15,12 @@ export const typeDefs = gql`
       businessId: ID
       toDelete: Boolean
     ): Review
+
+    feedback(
+      id: ID
+      rating: Float
+      comment: String
+      toDelete: Boolean
+    ): Feedback
   }
 `;

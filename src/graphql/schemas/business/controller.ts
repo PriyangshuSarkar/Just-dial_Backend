@@ -250,9 +250,11 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
     throw new Error("Business not found!");
   }
 
-  return {
-    ...business,
-  };
+  if (!business.slug) {
+    business.slug = business.id;
+  }
+
+  return business;
 };
 
 export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {

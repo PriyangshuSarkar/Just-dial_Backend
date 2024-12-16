@@ -8,3 +8,11 @@ export const ReviewBusinessSchema = object({
   toDelete: boolean().optional(),
 });
 export type ReviewBusinessInput = infer_<typeof ReviewBusinessSchema>;
+
+export const FeedbackSchema = object({
+  id: string().optional(),
+  rating: number().min(1).max(5).optional(),
+  comment: string().optional(),
+  toDelete: boolean().optional(),
+});
+export type FeedbackInput = infer_<typeof FeedbackSchema>;
