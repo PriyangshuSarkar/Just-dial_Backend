@@ -694,8 +694,6 @@ export const addBusinessPrimaryContact = async (
   args: AddBusinessPrimaryContactInput,
   context: any
 ) => {
-  const validatedData = AddBusinessPrimaryContactSchema.parse(args);
-
   if (
     !context.owner?.businessId ||
     typeof context.owner.businessId !== "string"
@@ -715,6 +713,10 @@ export const addBusinessPrimaryContact = async (
     if (!business) {
       throw new Error("Business not found");
     }
+
+    const validatedData = AddBusinessPrimaryContactSchema.parse(args);
+
+    if (!validatedData) return;
 
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";
@@ -1032,8 +1034,6 @@ export const updateBusinessDetails = async (
   args: UpdateBusinessDetailsInput,
   context: any
 ) => {
-  const validatedData = UpdateBusinessDetailsSchema.parse(args);
-
   if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
   }
@@ -1057,6 +1057,10 @@ export const updateBusinessDetails = async (
   if (!business) {
     throw new Error("Business not found!");
   }
+
+  const validatedData = UpdateBusinessDetailsSchema.parse(args);
+
+  if (!validatedData) return;
 
   let slug = validatedData.slug;
 
@@ -1491,9 +1495,6 @@ export const manageBusinessAddress = async (
   args: ManageBusinessAddressInput,
   context: any
 ) => {
-  // Validate input data using Zod
-  const validatedData = ManageBusinessAddressSchema.parse(args);
-
   // Verify the token and get the business ID
 
   if (!context.owner || typeof context.owner.businessId !== "string") {
@@ -1533,6 +1534,11 @@ export const manageBusinessAddress = async (
   }
 
   const updatedAddresses = [];
+
+  // Validate input data using Zod
+  const validatedData = ManageBusinessAddressSchema.parse(args);
+
+  if (!validatedData) return;
 
   for (const addressData of validatedData.addresses) {
     const existingAddress = addressData.addressId
@@ -1604,9 +1610,6 @@ export const manageBusinessWebsite = async (
   args: ManageBusinessWebsiteInput,
   context: any
 ) => {
-  // Validate input data using Zod
-  const validatedData = ManageBusinessWebsiteSchema.parse(args);
-
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
@@ -1645,6 +1648,11 @@ export const manageBusinessWebsite = async (
   }
 
   const updatedWebsites = [];
+
+  // Validate input data using Zod
+  const validatedData = ManageBusinessWebsiteSchema.parse(args);
+
+  if (!validatedData) return;
 
   for (const websiteData of validatedData.websites) {
     const existingWebsite = websiteData.websiteId
@@ -1708,9 +1716,6 @@ export const manageBusinessCoverImage = async (
   args: ManageBusinessCoverImageInput,
   context: any
 ) => {
-  // Validate input data using Zod
-  const validatedData = ManageBusinessCoverImageSchema.parse(args);
-
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
@@ -1749,6 +1754,11 @@ export const manageBusinessCoverImage = async (
   }
 
   const updateResults = [];
+
+  // Validate input data using Zod
+  const validatedData = ManageBusinessCoverImageSchema.parse(args);
+
+  if (!validatedData) return;
 
   for (const imageData of validatedData.coverImages) {
     const existingImage = imageData.imageId
@@ -1823,9 +1833,6 @@ export const manageBusinessAdBannerImage = async (
   args: ManageBusinessAdBannerImageInput,
   context: any
 ) => {
-  // Validate input data using Zod
-  const validatedData = ManageBusinessAdBannerImageSchema.parse(args);
-
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
@@ -1862,6 +1869,11 @@ export const manageBusinessAdBannerImage = async (
   if (!business) {
     throw new Error("Business not found!");
   }
+
+  // Validate input data using Zod
+  const validatedData = ManageBusinessAdBannerImageSchema.parse(args);
+
+  if (!validatedData) return;
 
   const updateResults = [];
 
@@ -1938,9 +1950,6 @@ export const manageBusinessMobileAdBannerImage = async (
   args: ManageBusinessMobileAdBannerImageInput,
   context: any
 ) => {
-  // Validate input data using Zod
-  const validatedData = ManageBusinessMobileAdBannerImageSchema.parse(args);
-
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {
     throw new Error("Invalid or missing token");
@@ -1977,6 +1986,12 @@ export const manageBusinessMobileAdBannerImage = async (
   if (!business) {
     throw new Error("Business not found!");
   }
+
+  // Validate input data using Zod
+
+  const validatedData = ManageBusinessMobileAdBannerImageSchema.parse(args);
+
+  if (!validatedData) return;
 
   const updateResults = [];
 
@@ -2055,6 +2070,8 @@ export const manageBusinessSupportingDocuments = async (
 ) => {
   // Validate input data using Zod
   const validatedData = ManageBusinessSupportingDocumentsSchema.parse(args);
+
+  if (!validatedData) return;
 
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {
@@ -2158,6 +2175,8 @@ export const manageBusinessOperatingHours = async (
 ) => {
   // Validate input data using Zod
   const validatedData = ManageBusinessOperatingHoursSchema.parse(args);
+
+  if (!validatedData) return;
 
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {

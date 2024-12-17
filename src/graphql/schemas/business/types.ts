@@ -123,24 +123,22 @@ export const typeDefs = gql`
       logo: Upload
     ): Business
     deleteBusinessAccount: Business
-    manageBusinessAddress(
-      addresses: [BusinessAddressInput!]!
-    ): [BusinessAddress]
-    manageBusinessWebsite(websites: [BusinessWebsiteInput!]!): [BusinessWebsite]
+    manageBusinessAddress(addresses: [BusinessAddressInput]): [BusinessAddress]
+    manageBusinessWebsite(websites: [BusinessWebsiteInput]): [BusinessWebsite]
     manageBusinessCoverImage(
-      coverImages: [BusinessCoverImageInput!]!
+      coverImages: [BusinessCoverImageInput]
     ): [BusinessCoverImage]
     manageBusinessAdBannerImage(
-      adBannerImages: [BusinessAdBannerImageInput!]!
+      adBannerImages: [BusinessAdBannerImageInput]
     ): [BusinessAdBannerImage]
     manageBusinessMobileAdBannerImage(
-      mobileAdBannerImages: [BusinessMobileAdBannerImageInput!]!
+      mobileAdBannerImages: [BusinessMobileAdBannerImageInput]
     ): [BusinessMobileAdBannerImage]
     manageBusinessSupportingDocuments(
-      documents: [BusinessSupportingDocumentInput!]!
+      documents: [BusinessSupportingDocumentInput]
     ): [BusinessSupportingDocuments]
     manageBusinessOperatingHours(
-      operatingHours: [BusinessOperatingHourInput!]!
+      operatingHours: [BusinessOperatingHourInput]
     ): [BusinessOperatingHourResult]
     businessSubscription(subscriptionId: ID!): Razorpay!
     businessVerifyPayment(

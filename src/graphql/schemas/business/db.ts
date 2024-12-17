@@ -95,7 +95,7 @@ export const UpdateBusinessDetailsSchema = object({
   longitude: number().optional(),
   additionalContacts: string().array().optional(),
   logo: any().optional(),
-});
+}).optional();
 export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema
 >;
@@ -111,7 +111,7 @@ export const ManageBusinessAddressSchema = object({
     pincode: string().optional(),
     toDelete: boolean().optional(),
   }).array(),
-});
+}).optional();
 export type ManageBusinessAddressInput = infer_<
   typeof ManageBusinessAddressSchema
 >;
@@ -123,7 +123,7 @@ export const ManageBusinessWebsiteSchema = object({
     url: string().url().optional(),
     toDelete: boolean().optional(),
   }).array(),
-});
+}).optional();
 export type ManageBusinessWebsiteInput = infer_<
   typeof ManageBusinessWebsiteSchema
 >;
@@ -135,7 +135,7 @@ export const ManageBusinessCoverImageSchema = object({
     order: number().optional(),
     toDelete: boolean().optional(),
   }).array(),
-});
+}).optional();
 export type ManageBusinessCoverImageInput = infer_<
   typeof ManageBusinessCoverImageSchema
 >;
@@ -146,7 +146,7 @@ export const ManageBusinessAdBannerImageSchema = object({
     order: number().optional(),
     toDelete: boolean().optional(),
   }).array(),
-});
+}).optional();
 export type ManageBusinessAdBannerImageInput = infer_<
   typeof ManageBusinessAdBannerImageSchema
 >;
@@ -157,7 +157,7 @@ export const ManageBusinessMobileAdBannerImageSchema = object({
     order: number().optional(),
     toDelete: boolean().optional(),
   }).array(),
-});
+}).optional();
 export type ManageBusinessMobileAdBannerImageInput = infer_<
   typeof ManageBusinessMobileAdBannerImageSchema
 >;
@@ -169,7 +169,7 @@ export const ManageBusinessSupportingDocumentsSchema = object({
     document: any().optional(),
     toDelete: boolean().optional(),
   }).array(),
-});
+}).optional();
 export type ManageBusinessSupportingDocumentsInput = infer_<
   typeof ManageBusinessSupportingDocumentsSchema
 >;
@@ -191,7 +191,7 @@ export const ManageBusinessOperatingHoursSchema = object({
     closingTime: string(),
     toDelete: boolean().optional(),
   }).array(),
-});
+}).optional();
 export type ManageBusinessOperatingHoursInput = infer_<
   typeof ManageBusinessOperatingHoursSchema
 >;
