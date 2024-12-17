@@ -42,6 +42,7 @@ import { createOtpData } from "../../../utils/generateOtp";
 // import crypto from "crypto";
 import { ContactType, Prisma } from "@prisma/client";
 import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
+
 // import { razorpay } from "../../../utils/razorpay";
 
 const MAX_CONTACTS_PER_TYPE = 1;
@@ -260,6 +261,8 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
 export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
   const validatedData = BusinessSignupSchema.parse(args);
 
+  if (!validatedData) return;
+
   return await prisma.$transaction(async (tx) => {
     let contactConditions: Prisma.BusinessPrimaryContactWhereInput;
 
@@ -366,6 +369,8 @@ export const verifyBusinessPrimaryContact = async (
   args: VerifyBusinessPrimaryContactInput
 ) => {
   const validatedData = VerifyBusinessPrimaryContactSchema.parse(args);
+
+  if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
     const value = validatedData.email || validatedData.phone;
@@ -539,6 +544,8 @@ export const verifyBusinessPrimaryContact = async (
 
 export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
   const validatedData = BusinessLoginSchema.parse(args);
+
+  if (!validatedData) return;
 
   const value = validatedData.email || validatedData.phone;
 
@@ -804,6 +811,8 @@ export const forgetBusinessPassword = async (
 ) => {
   const validatedData = ForgetBusinessPasswordSchema.parse(args);
 
+  if (!validatedData) return;
+
   return await prisma.$transaction(async (tx) => {
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";
@@ -869,6 +878,8 @@ export const changeBusinessPassword = async (
   args: ChangeBusinessPasswordInput
 ) => {
   const validatedData = ChangeBusinessPasswordSchema.parse(args);
+
+  if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
     const value = validatedData.email || validatedData.phone;
@@ -1062,10 +1073,23 @@ export const updateBusinessDetails = async (
 
   if (!validatedData) return;
 
+  let name;
+
+  if (validatedData && validatedData.name !== business.name) {
+    name = validatedData.name;
+  }
+
+  if (validatedData.slug) {
+    const existingSlug = await prisma.user.findFirst({
+      where: { slug: validatedData.slug },
+    });
+    if (existingSlug) throw new Error("Slug already exists.");
+  }
+
   let slug = validatedData.slug;
 
-  if (!slug && !business.slug && validatedData.name) {
-    slug = slugify(validatedData.name, { lower: true, strict: true });
+  if (!slug && name) {
+    slug = slugify(name, { lower: true, strict: true });
     let uniqueSuffixLength = 2;
     let existingSlug = await prisma.business.findFirst({ where: { slug } });
 
@@ -1073,7 +1097,7 @@ export const updateBusinessDetails = async (
       const uniqueSuffix = Math.random()
         .toString(16)
         .slice(2, 2 + uniqueSuffixLength);
-      slug = `${slugify(validatedData.name, {
+      slug = `${slugify(name, {
         lower: true,
         strict: true,
       })}-${uniqueSuffix}`;
@@ -1214,7 +1238,7 @@ export const updateBusinessDetails = async (
   const updatedBusiness = await prisma.business.update({
     where: { id: business.id, deletedAt: null },
     data: {
-      name: validatedData.name || business.name,
+      name: name || business.name,
       slug: slug || business.slug,
       isListed: validatedData.isListed || business.isListed,
       additionalContacts:
@@ -1538,7 +1562,7 @@ export const manageBusinessAddress = async (
   // Validate input data using Zod
   const validatedData = ManageBusinessAddressSchema.parse(args);
 
-  if (!validatedData) return;
+  if (!validatedData?.addresses) return;
 
   for (const addressData of validatedData.addresses) {
     const existingAddress = addressData.addressId
@@ -1652,7 +1676,7 @@ export const manageBusinessWebsite = async (
   // Validate input data using Zod
   const validatedData = ManageBusinessWebsiteSchema.parse(args);
 
-  if (!validatedData) return;
+  if (!validatedData?.websites) return;
 
   for (const websiteData of validatedData.websites) {
     const existingWebsite = websiteData.websiteId
@@ -1758,7 +1782,7 @@ export const manageBusinessCoverImage = async (
   // Validate input data using Zod
   const validatedData = ManageBusinessCoverImageSchema.parse(args);
 
-  if (!validatedData) return;
+  if (!validatedData?.coverImages) return;
 
   for (const imageData of validatedData.coverImages) {
     const existingImage = imageData.imageId
@@ -1873,7 +1897,7 @@ export const manageBusinessAdBannerImage = async (
   // Validate input data using Zod
   const validatedData = ManageBusinessAdBannerImageSchema.parse(args);
 
-  if (!validatedData) return;
+  if (!validatedData?.adBannerImages) return;
 
   const updateResults = [];
 
@@ -1991,7 +2015,7 @@ export const manageBusinessMobileAdBannerImage = async (
 
   const validatedData = ManageBusinessMobileAdBannerImageSchema.parse(args);
 
-  if (!validatedData) return;
+  if (!validatedData?.mobileAdBannerImages) return;
 
   const updateResults = [];
 
@@ -2071,7 +2095,7 @@ export const manageBusinessSupportingDocuments = async (
   // Validate input data using Zod
   const validatedData = ManageBusinessSupportingDocumentsSchema.parse(args);
 
-  if (!validatedData) return;
+  if (!validatedData?.documents) return;
 
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {
@@ -2176,7 +2200,7 @@ export const manageBusinessOperatingHours = async (
   // Validate input data using Zod
   const validatedData = ManageBusinessOperatingHoursSchema.parse(args);
 
-  if (!validatedData) return;
+  if (!validatedData?.operatingHours) return;
 
   // Verify the token and get the business ID
   if (!context.owner || typeof context.owner.businessId !== "string") {

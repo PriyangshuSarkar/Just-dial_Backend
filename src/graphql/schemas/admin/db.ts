@@ -11,7 +11,7 @@ import {
 export const AdminLoginSchema = object({
   email: string(),
   password: string(),
-});
+}).optional();
 export type AdminLoginInput = infer_<typeof AdminLoginSchema>;
 
 export const AllUsersSchema = object({
@@ -27,7 +27,7 @@ export const AllUsersSchema = object({
   limit: number().int().positive().default(10),
   sortBy: enum_(["name", "createdAt", "updatedAt"]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
-});
+}).optional();
 export type AllUserInput = infer_<typeof AllUsersSchema>;
 
 export const AllBusinessesSchema = object({
@@ -49,22 +49,22 @@ export const AllBusinessesSchema = object({
     "createdAt"
   ),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
-});
+}).optional();
 export type AllBusinessesInput = infer_<typeof AllBusinessesSchema>;
 
 export const VerifyBusinessesSchema = object({
-  businessIds: string().array(),
+  businessIds: string().array().optional(),
 });
 export type VerifyBusinessesInput = infer_<typeof VerifyBusinessesSchema>;
 
 export const BlockBusinessesSchema = object({
   businessIds: string().array(),
-});
+}).optional();
 export type BlockBusinessesInput = infer_<typeof BlockBusinessesSchema>;
 
 export const BlockUserSchema = object({
   userIds: string().array(),
-});
+}).optional();
 export type BlockUserInput = infer_<typeof BlockUserSchema>;
 
 export const ManageUserSubscriptionSchema = object({
@@ -75,7 +75,7 @@ export const ManageUserSubscriptionSchema = object({
   duration: number().optional(),
   features: string().array().optional(),
   toDelete: boolean().optional().default(false),
-});
+}).optional();
 export type ManageUserSubscriptionInput = infer_<
   typeof ManageUserSubscriptionSchema
 >;
@@ -89,7 +89,7 @@ export const ManageBusinessSubscriptionSchema = object({
   features: string().array().optional(),
   tierLevel: number().optional(),
   toDelete: boolean().optional().default(false),
-});
+}).optional();
 export type ManageBusinessSubscriptionInput = infer_<
   typeof ManageBusinessSubscriptionSchema
 >;
@@ -100,8 +100,10 @@ export const ManageLanguageSchema = object({
     name: string(),
     slug: string().optional(),
     toDelete: boolean().optional().default(false),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageLanguageInput = infer_<typeof ManageLanguageSchema>;
 
 export const ManageProficiencySchema = object({
@@ -110,8 +112,10 @@ export const ManageProficiencySchema = object({
     name: string(),
     slug: string().optional(),
     toDelete: boolean().optional().default(false),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageProficiencyInput = infer_<typeof ManageProficiencySchema>;
 
 export const ManageCourtSchema = object({
@@ -120,8 +124,10 @@ export const ManageCourtSchema = object({
     name: string(),
     slug: string().optional(),
     toDelete: boolean().optional().default(false),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageCourtInput = infer_<typeof ManageCourtSchema>;
 
 export const ManageCategorySchema = object({
@@ -131,16 +137,20 @@ export const ManageCategorySchema = object({
     slug: string().optional(),
     categoryImage: any().optional(),
     toDelete: boolean().optional().default(false),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageCategoryInput = infer_<typeof ManageCategorySchema>;
 
 export const ManageTagSchema = object({
   tags: object({
     id: string().optional(),
     name: string(),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageTagInput = infer_<typeof ManageTagSchema>;
 
 export const ManageCountrySchema = object({
@@ -148,8 +158,10 @@ export const ManageCountrySchema = object({
     id: string().optional(),
     name: string(),
     slug: string().optional(),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageCountryInput = infer_<typeof ManageCountrySchema>;
 
 export const ManageStateSchema = object({
@@ -158,8 +170,10 @@ export const ManageStateSchema = object({
     name: string(),
     slug: string().optional(),
     countryId: string(),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageStateInput = infer_<typeof ManageStateSchema>;
 
 export const ManageCitySchema = object({
@@ -168,8 +182,10 @@ export const ManageCitySchema = object({
     name: string(),
     slug: string().optional(),
     stateId: string(),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageCityInput = infer_<typeof ManageCitySchema>;
 
 export const ManagePincodeSchema = object({
@@ -178,8 +194,10 @@ export const ManagePincodeSchema = object({
     code: string(),
     slug: string().optional(),
     cityId: string(),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManagePincodeInput = infer_<typeof ManagePincodeSchema>;
 
 export const ManageTestimonialSchema = object({
@@ -189,6 +207,8 @@ export const ManageTestimonialSchema = object({
     feedbackId: string().optional(),
     order: number().optional(),
     toDelete: boolean().optional().default(false),
-  }).array(),
-});
+  })
+    .array()
+    .optional(),
+}).optional();
 export type ManageTestimonialInput = infer_<typeof ManageTestimonialSchema>;

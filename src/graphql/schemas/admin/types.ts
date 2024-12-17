@@ -84,9 +84,9 @@ export const typeDefs = gql`
 
   # Mutation Type Definitions
   type Mutation {
-    blockUsers(userIds: [ID!]!): [User]
-    blockBusinesses(businessIds: [ID!]!): [Business]
-    verifyBusinesses(businessIds: [ID!]!): [Business]
+    blockUsers(userIds: [ID]): [User]
+    blockBusinesses(businessIds: [ID]): [Business]
+    verifyBusinesses(businessIds: [ID]): [Business]
     manageUserSubscription(
       id: ID
       name: String!
@@ -106,16 +106,16 @@ export const typeDefs = gql`
       tierLevel: Int
       toDelete: Boolean
     ): BusinessSubscription
-    manageLanguage(languages: [LanguageInput!]!): [Language]
-    manageProficiency(proficiencies: [ProficiencyInput!]!): [Proficiency]
-    manageCourt(courts: [CourtInput!]!): [Court]
-    manageCategory(categories: [CategoryInput!]!): [Category]
-    manageTag(tags: [TagInput!]!): [Tag]
-    manageCountry(countries: [CountryInput!]!): [Country]
-    manageState(states: [StateInput!]!): [State]
-    manageCity(cities: [CityInput!]!): [City]
-    managePincode(pincodes: [PincodeInput!]!): [Pincode]
-    manageTestimonial(review: [ReviewInput!]!): [Testimonial]
+    manageLanguage(languages: [LanguageInput]): [Language]
+    manageProficiency(proficiencies: [ProficiencyInput]): [Proficiency]
+    manageCourt(courts: [CourtInput]): [Court]
+    manageCategory(categories: [CategoryInput]): [Category]
+    manageTag(tags: [TagInput]): [Tag]
+    manageCountry(countries: [CountryInput]): [Country]
+    manageState(states: [StateInput]): [State]
+    manageCity(cities: [CityInput]): [City]
+    managePincode(pincodes: [PincodeInput]): [Pincode]
+    manageTestimonial(review: [ReviewInput]): [Testimonial]
   }
 
   input LanguageInput {

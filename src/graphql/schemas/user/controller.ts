@@ -175,6 +175,8 @@ export const userGoogleOAuth = async (
 export const userSignup = async (_: unknown, args: UserSignupInput) => {
   const validatedData = UserSignupSchema.parse(args);
 
+  if (!validatedData) return;
+
   return await prisma.$transaction(async (tx) => {
     const existingContact = await tx.userContact.findFirst({
       where: {
@@ -301,6 +303,8 @@ export const addUserContact = async (
 ) => {
   const validatedData = AddUserContactSchema.parse(args);
 
+  if (!validatedData) return;
+
   // const owner: any = verifyToken(validatedData.token);
   if (!context.owner?.userId || typeof context.owner.userId !== "string") {
     throw new Error("Invalid or missing token");
@@ -404,6 +408,8 @@ export const verifyUserContact = async (
   args: VerifyUserContactInput
 ) => {
   const validatedData = VerifyUserContactSchema.parse(args);
+
+  if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
     const value = validatedData.email || validatedData.phone;
@@ -537,6 +543,8 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
 export const userLogin = async (_: unknown, args: UserLoginInput) => {
   const validatedData = UserLoginSchema.parse(args);
 
+  if (!validatedData) return;
+
   const value = validatedData.email || validatedData.phone;
 
   const existingContact = await prisma.userContact.findFirst({
@@ -599,6 +607,8 @@ export const forgetUserPassword = async (
   args: ForgetUserPasswordInput
 ) => {
   const validatedData = ForgetUserPasswordSchema.parse(args);
+
+  if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
     const value = validatedData.email || validatedData.phone;
@@ -666,6 +676,8 @@ export const changeUserPassword = async (
 ) => {
   const validatedData = ChangeUserPasswordSchema.parse(args);
 
+  if (!validatedData) return;
+
   return await prisma.$transaction(async (tx) => {
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";
@@ -732,6 +744,8 @@ export const updateUserDetails = async (
 ) => {
   const validatedData = UpdateUserDetailsSchema.parse(args);
 
+  if (!validatedData) return;
+
   if (!context.owner || typeof context.owner.userId !== "string") {
     throw new Error("Invalid or missing token");
   }
@@ -764,6 +778,12 @@ export const updateUserDetails = async (
     );
   }
 
+  let name;
+
+  if (validatedData && validatedData.name !== user.name) {
+    name = validatedData.name;
+  }
+
   if (validatedData.slug) {
     const existingSlug = await prisma.user.findFirst({
       where: { slug: validatedData.slug },
@@ -771,12 +791,32 @@ export const updateUserDetails = async (
     if (existingSlug) throw new Error("Slug already exists.");
   }
 
+  let slug = validatedData.slug;
+
+  if (!slug && name) {
+    slug = slugify(name, { lower: true, strict: true });
+    let uniqueSuffixLength = 2;
+    let existingSlug = await prisma.business.findFirst({ where: { slug } });
+
+    while (existingSlug) {
+      const uniqueSuffix = Math.random()
+        .toString(16)
+        .slice(2, 2 + uniqueSuffixLength);
+      slug = `${slugify(name, {
+        lower: true,
+        strict: true,
+      })}-${uniqueSuffix}`;
+      existingSlug = await prisma.business.findFirst({ where: { slug } });
+      uniqueSuffixLength += 1;
+    }
+  }
+
   // Update user name and phone
   const updatedUser = await prisma.user.update({
     where: { id: user.id, deletedAt: null },
     data: {
-      name: validatedData.name || user.name,
-      slug: validatedData.slug || user.slug,
+      name: name || user.name,
+      slug: slug || user.slug,
       avatar: avatarUrl || user.avatar,
       hideDetails: validatedData.hideDetails || user.hideDetails,
     },
@@ -895,9 +935,6 @@ export const manageUserAddress = async (
   args: ManageUserAddressInput,
   context: any
 ) => {
-  // Validate input data using Zod
-  const validatedData = ManageUserAddressSchema.parse(args);
-
   if (!context.owner || typeof context.owner.userId !== "string") {
     throw new Error("Invalid or missing token");
   }
@@ -929,6 +966,11 @@ export const manageUserAddress = async (
   if (!user) {
     throw new Error("User not found!");
   }
+
+  // Validate input data using Zod
+  const validatedData = ManageUserAddressSchema.parse(args);
+
+  if (!validatedData?.addresses) return;
 
   const updatedAddresses = [];
 

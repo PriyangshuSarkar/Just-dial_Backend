@@ -34,6 +34,8 @@ export const reviewBusiness = async (
 
   const validatedData = ReviewBusinessSchema.parse(args);
 
+  if (!validatedData) return;
+
   if (validatedData.id) {
     const review = await prisma.review.update({
       where: {
@@ -124,6 +126,8 @@ export const feedback = async (
 
   // Validate and parse feedback data
   const validatedData = FeedbackSchema.parse(args);
+
+  if (!validatedData) return;
 
   if (validatedData.id) {
     // Update feedback if ID is provided

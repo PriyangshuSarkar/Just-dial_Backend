@@ -11,10 +11,12 @@ import {
 export const BusinessSignupSchema = object({
   email: string().email().optional(),
   phone: string().optional(),
-}).refine((data) => data.email || data.phone, {
-  message: "Either email or phone must be provided.",
-  path: ["email", "phone"],
-});
+})
+  .refine((data) => data.email || data.phone, {
+    message: "Either email or phone must be provided.",
+    path: ["email", "phone"],
+  })
+  .optional();
 export type BusinessSignupInput = infer_<typeof BusinessSignupSchema>;
 
 export const VerifyBusinessPrimaryContactSchema = object({
@@ -22,10 +24,12 @@ export const VerifyBusinessPrimaryContactSchema = object({
   phone: string().optional(),
   otp: string(),
   password: string().optional(),
-}).refine((data) => (data.email ? !data.phone : !!data.phone), {
-  message: "Only one of email or phone should be provided.",
-  path: ["email", "phone"],
-});
+})
+  .refine((data) => (data.email ? !data.phone : !!data.phone), {
+    message: "Only one of email or phone should be provided.",
+    path: ["email", "phone"],
+  })
+  .optional();
 export type VerifyBusinessPrimaryContactInput = infer_<
   typeof VerifyBusinessPrimaryContactSchema
 >;
@@ -33,10 +37,12 @@ export type VerifyBusinessPrimaryContactInput = infer_<
 export const AddBusinessPrimaryContactSchema = object({
   email: string().email().optional(),
   phone: string().optional(),
-}).refine((data) => (data.email ? !data.phone : !!data.phone), {
-  message: "Only one of email or phone should be provided.",
-  path: ["email", "phone"],
-});
+})
+  .refine((data) => (data.email ? !data.phone : !!data.phone), {
+    message: "Only one of email or phone should be provided.",
+    path: ["email", "phone"],
+  })
+  .optional();
 export type AddBusinessPrimaryContactInput = infer_<
   typeof AddBusinessPrimaryContactSchema
 >;
@@ -45,19 +51,23 @@ export const BusinessLoginSchema = object({
   email: string().optional(),
   phone: string().optional(),
   password: string(),
-}).refine((data) => (data.email ? !data.phone : !!data.phone), {
-  message: "Only one of email or phone should be provided.",
-  path: ["email", "phone"],
-});
+})
+  .refine((data) => (data.email ? !data.phone : !!data.phone), {
+    message: "Only one of email or phone should be provided.",
+    path: ["email", "phone"],
+  })
+  .optional();
 export type BusinessLoginInput = infer_<typeof BusinessLoginSchema>;
 
 export const ForgetBusinessPasswordSchema = object({
   email: string().optional(),
   phone: string().optional(),
-}).refine((data) => (data.email ? !data.phone : !!data.phone), {
-  message: "Only one of email or phone should be provided.",
-  path: ["email", "phone"],
-});
+})
+  .refine((data) => (data.email ? !data.phone : !!data.phone), {
+    message: "Only one of email or phone should be provided.",
+    path: ["email", "phone"],
+  })
+  .optional();
 export type ForgetBusinessPasswordInput = infer_<
   typeof ForgetBusinessPasswordSchema
 >;
@@ -67,10 +77,12 @@ export const ChangeBusinessPasswordSchema = object({
   phone: string().optional(),
   password: string(),
   otp: string(),
-}).refine((data) => (data.email ? !data.phone : !!data.phone), {
-  message: "Only one of email or phone should be provided.",
-  path: ["email", "phone"],
-});
+})
+  .refine((data) => (data.email ? !data.phone : !!data.phone), {
+    message: "Only one of email or phone should be provided.",
+    path: ["email", "phone"],
+  })
+  .optional();
 export type ChangeBusinessPasswordInput = infer_<
   typeof ChangeBusinessPasswordSchema
 >;
@@ -110,7 +122,9 @@ export const ManageBusinessAddressSchema = object({
     country: string().optional(),
     pincode: string().optional(),
     toDelete: boolean().optional(),
-  }).array(),
+  })
+    .array()
+    .optional(),
 }).optional();
 export type ManageBusinessAddressInput = infer_<
   typeof ManageBusinessAddressSchema
@@ -122,7 +136,9 @@ export const ManageBusinessWebsiteSchema = object({
     type: string().optional(),
     url: string().url().optional(),
     toDelete: boolean().optional(),
-  }).array(),
+  })
+    .array()
+    .optional(),
 }).optional();
 export type ManageBusinessWebsiteInput = infer_<
   typeof ManageBusinessWebsiteSchema
@@ -134,7 +150,9 @@ export const ManageBusinessCoverImageSchema = object({
     image: any().optional(),
     order: number().optional(),
     toDelete: boolean().optional(),
-  }).array(),
+  })
+    .array()
+    .optional(),
 }).optional();
 export type ManageBusinessCoverImageInput = infer_<
   typeof ManageBusinessCoverImageSchema
@@ -145,7 +163,9 @@ export const ManageBusinessAdBannerImageSchema = object({
     image: any().optional(),
     order: number().optional(),
     toDelete: boolean().optional(),
-  }).array(),
+  })
+    .array()
+    .optional(),
 }).optional();
 export type ManageBusinessAdBannerImageInput = infer_<
   typeof ManageBusinessAdBannerImageSchema
@@ -156,7 +176,9 @@ export const ManageBusinessMobileAdBannerImageSchema = object({
     image: any().optional(),
     order: number().optional(),
     toDelete: boolean().optional(),
-  }).array(),
+  })
+    .array()
+    .optional(),
 }).optional();
 export type ManageBusinessMobileAdBannerImageInput = infer_<
   typeof ManageBusinessMobileAdBannerImageSchema
@@ -168,7 +190,9 @@ export const ManageBusinessSupportingDocumentsSchema = object({
     type: string().optional(),
     document: any().optional(),
     toDelete: boolean().optional(),
-  }).array(),
+  })
+    .array()
+    .optional(),
 }).optional();
 export type ManageBusinessSupportingDocumentsInput = infer_<
   typeof ManageBusinessSupportingDocumentsSchema
@@ -190,7 +214,9 @@ export const ManageBusinessOperatingHoursSchema = object({
     openingTime: string(),
     closingTime: string(),
     toDelete: boolean().optional(),
-  }).array(),
+  })
+    .array()
+    .optional(),
 }).optional();
 export type ManageBusinessOperatingHoursInput = infer_<
   typeof ManageBusinessOperatingHoursSchema
@@ -198,7 +224,7 @@ export type ManageBusinessOperatingHoursInput = infer_<
 
 export const BusinessSubscriptionSchema = object({
   subscriptionId: string(),
-});
+}).optional();
 export type BusinessSubscriptionInput = infer_<
   typeof BusinessSubscriptionSchema
 >;
@@ -207,7 +233,7 @@ export const BusinessVerifyPaymentSchema = object({
   razorpay_order_id: string(),
   razorpay_payment_id: string(),
   razorpay_signature: string(),
-});
+}).optional();
 export type BusinessVerifyPaymentInput = infer_<
   typeof BusinessVerifyPaymentSchema
 >;

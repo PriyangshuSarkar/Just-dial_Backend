@@ -43,6 +43,8 @@ import {
 export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
   const validatedData = AdminLoginSchema.parse(args);
 
+  if (!validatedData) return;
+
   const admin = await prisma.admin.findFirst({
     where: { email: validatedData.email },
   });
@@ -76,6 +78,8 @@ export const allUsers = async (
   }
 
   const validatedData = AllUsersSchema.parse(args);
+
+  if (!validatedData) return;
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
@@ -159,6 +163,7 @@ export const allBusinesses = async (
   }
 
   const validatedData = AllBusinessesSchema.parse(args);
+  if (!validatedData) return;
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
@@ -278,7 +283,11 @@ export const blockUsers = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const { userIds } = BlockUserSchema.parse(args);
+
+  const validatedData = BlockUserSchema.parse(args);
+  if (!validatedData) return;
+
+  const { userIds } = validatedData;
 
   const blockedUsers = await prisma.user.updateMany({
     where: {
@@ -304,7 +313,12 @@ export const blockBusinesses = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const { businessIds } = BlockBusinessesSchema.parse(args);
+
+  const validatedData = BlockBusinessesSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const { businessIds } = validatedData;
 
   const blockedBusinesses = await prisma.business.updateMany({
     where: {
@@ -332,6 +346,8 @@ export const verifyBusinesses = async (
   }
   const validatedData = VerifyBusinessesSchema.parse(args);
 
+  if (!validatedData) return;
+
   const verifiedBusinesses = await prisma.business.updateMany({
     where: {
       id: { in: validatedData.businessIds },
@@ -355,6 +371,8 @@ export const manageUserSubscription = async (
     throw new Error("Invalid or missing token");
   }
   const validatedData = ManageUserSubscriptionSchema.parse(args);
+
+  if (!validatedData) return;
 
   if (!validatedData.id) {
     if (
@@ -403,6 +421,8 @@ export const manageBusinessSubscription = async (
     throw new Error("Invalid or missing token");
   }
   const validatedData = ManageBusinessSubscriptionSchema.parse(args);
+
+  if (!validatedData) return;
 
   if (!validatedData.id) {
     if (
@@ -455,6 +475,9 @@ export const manageLanguage = async (
     throw new Error("Invalid or missing token");
   }
   const validatedData = ManageLanguageSchema.parse(args);
+
+  if (!validatedData?.languages) return;
+
   const results = await Promise.all(
     validatedData.languages.map(async (language) => {
       if (!language.id) {
@@ -492,6 +515,8 @@ export const manageProficiency = async (
   }
   const validatedData = ManageProficiencySchema.parse(args);
 
+  if (!validatedData?.proficiencies) return;
+
   const results = await Promise.all(
     validatedData.proficiencies.map(async (proficiency) => {
       if (!proficiency.id) {
@@ -527,6 +552,8 @@ export const manageCourt = async (
   }
   const validatedData = ManageCourtSchema.parse(args);
 
+  if (!validatedData?.courts) return;
+
   const results = await Promise.all(
     validatedData.courts.map(async (court) => {
       if (!court.id) {
@@ -561,6 +588,8 @@ export const manageCategory = async (
     throw new Error("Invalid or missing token");
   }
   const validatedData = ManageCategorySchema.parse(args);
+
+  if (!validatedData?.categories) return;
 
   const processCategory = async (category: any) => {
     let categoryImage = null;
@@ -625,6 +654,8 @@ export const manageTag = async (
   }
   const validatedData = ManageTagSchema.parse(args);
 
+  if (!validatedData?.tags) return;
+
   const results = await Promise.all(
     validatedData.tags.map(async (tag) => {
       if (!tag.id) {
@@ -656,6 +687,8 @@ export const manageCountry = async (
     throw new Error("Invalid or missing token");
   }
   const validatedData = ManageCountrySchema.parse(args);
+
+  if (!validatedData?.countries) return;
 
   const results = await Promise.all(
     validatedData.countries.map(async (country) => {
@@ -690,6 +723,8 @@ export const manageState = async (
     throw new Error("Invalid or missing token");
   }
   const validatedData = ManageStateSchema.parse(args);
+
+  if (!validatedData?.states) return;
 
   const results = await Promise.all(
     validatedData.states.map(async (state) => {
@@ -727,6 +762,8 @@ export const manageCity = async (
   }
   const validatedData = ManageCitySchema.parse(args);
 
+  if (!validatedData?.cities) return;
+
   const results = await Promise.all(
     validatedData.cities.map(async (city) => {
       if (!city.id) {
@@ -763,6 +800,8 @@ export const managePincode = async (
   }
   const validatedData = ManagePincodeSchema.parse(args);
 
+  if (!validatedData?.pincodes) return;
+
   const results = await Promise.all(
     validatedData.pincodes.map(async (pincode) => {
       if (!pincode.id) {
@@ -798,6 +837,8 @@ export const manageTestimonial = async (
     throw new Error("Invalid or missing token");
   }
   const validatedData = ManageTestimonialSchema.parse(args);
+
+  if (!validatedData?.testimonials) return;
 
   const testimonial = await Promise.all(
     validatedData.testimonials.map(async (testimonial) => {
