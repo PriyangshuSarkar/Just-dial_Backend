@@ -13,8 +13,9 @@ export const typeDefs = gql`
       rating: Float
       comment: String
       businessId: ID
+      businessSlug: ID
       toDelete: Boolean
-    ): Review
+    ): Business
 
     feedback(
       id: ID

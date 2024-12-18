@@ -58,12 +58,12 @@ export const typeDefs = gql`
     toDelete: Boolean
   }
 
-  input BusinessSupportingDocumentInput {
-    documentId: ID
-    document: Upload
-    type: String
-    toDelete: Boolean
-  }
+  # input BusinessSupportingDocumentInput {
+  #   documentId: ID
+  #   document: Upload
+  #   type: String
+  #   toDelete: Boolean
+  # }
 
   enum DayOfWeek {
     SUNDAY
@@ -139,7 +139,7 @@ export const typeDefs = gql`
     ): [BusinessSupportingDocuments]
     manageBusinessOperatingHours(
       operatingHours: [BusinessOperatingHourInput]
-    ): [BusinessOperatingHourResult]
+    ): [BusinessOperatingHour]
     businessSubscription(subscriptionId: ID!): Razorpay!
     businessVerifyPayment(
       razorpay_order_id: String!

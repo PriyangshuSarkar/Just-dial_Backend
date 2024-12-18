@@ -98,7 +98,7 @@ export const UpdateBusinessDetailsSchema = object({
   description: string().optional(),
   degrees: string().toLowerCase().array().optional(),
   gstNumber: string().optional(),
-  categoryId: string().optional(),
+  categoryIds: string().optional().array(),
   languages: string().toLowerCase().array().optional(),
   proficiencies: string().toLowerCase().array().optional(),
   courts: string().toLowerCase().array().optional(),

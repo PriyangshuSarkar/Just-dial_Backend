@@ -23,12 +23,71 @@ export const search = async (_: unknown, args: SearchInput) => {
     isListed: true,
     deletedAt: null,
     isBlocked: false,
-    ...(filters.search && {
-      name: {
-        contains: filters.search,
-        mode: "insensitive",
+    primaryContacts: {
+      some: {
+        isVerified: true,
+        deletedAt: null,
       },
-    }),
+    },
+    name: filters.search
+      ? {
+          contains: filters.search,
+          mode: "insensitive",
+        }
+      : undefined,
+    isBusinessVerified: filters.verified,
+    businessDetails: {
+      categories:
+        filters.categoryId || filters.categorySlug
+          ? {
+              some: {
+                OR: [
+                  { id: filters.categoryId },
+                  { slug: filters.categorySlug },
+                ],
+              },
+            }
+          : undefined,
+      languages: filters.languages?.length
+        ? {
+            some: {
+              name: {
+                in: filters.languages,
+              },
+            },
+          }
+        : undefined,
+      courts: filters.courts?.length
+        ? {
+            some: {
+              name: {
+                in: filters.courts,
+              },
+            },
+          }
+        : undefined,
+      proficiencies: filters.proficiencies?.length
+        ? {
+            some: {
+              name: {
+                in: filters.proficiencies,
+              },
+            },
+          }
+        : undefined,
+      // minPrice: filters.minPrice ? { gte: filters.minPrice } : undefined,
+      // maxPrice: filters.maxPrice ? { lte: filters.maxPrice } : undefined,
+      // minRating: filters.minRating ? { gte: filters.minRating } : undefined,
+    },
+    price: {
+      gte: filters.minPrice,
+      lte: filters.maxPrice,
+    },
+    averageRating: filters.minRating
+      ? {
+          gte: filters.minRating,
+        }
+      : undefined,
   };
 
   const result = await getBusinessWithPriority(
@@ -226,7 +285,7 @@ const getBusinessWithPriority = async (
             },
             latitude: true,
             longitude: true,
-            degree: true,
+            degrees: true,
             languages: {
               where: {
                 deletedAt: null,
@@ -266,7 +325,7 @@ const getBusinessWithPriority = async (
                 slug: true,
               },
             },
-            category: {
+            categories: {
               where: {
                 deletedAt: null,
               },
@@ -276,7 +335,6 @@ const getBusinessWithPriority = async (
                 slug: true,
               },
             },
-            categoryId: true,
             tags: {
               where: {
                 deletedAt: null,
@@ -339,37 +397,38 @@ const getBusinessWithPriority = async (
     return b.updatedAt.getTime() - a.updatedAt.getTime();
   });
 
-  const categories = filters.categoryId
-    ? await prisma.category
-        .findFirst({
+  const categories =
+    filters.categoryId || filters.categorySlug
+      ? await prisma.category
+          .findFirst({
+            where: {
+              OR: [
+                {
+                  id: filters.categoryId,
+                  deletedAt: null,
+                },
+                {
+                  slug: filters.categorySlug,
+                  deletedAt: null,
+                },
+              ],
+            },
+          })
+          .then((category) => (category ? [category] : null))
+      : await prisma.category.findMany({
           where: {
             OR: [
               {
-                id: filters.categoryId,
+                name: { contains: filters.search, mode: "insensitive" },
                 deletedAt: null,
               },
               {
-                slug: filters.categorySlug,
+                slug: { contains: filters.search, mode: "insensitive" },
                 deletedAt: null,
               },
             ],
           },
-        })
-        .then((category) => (category ? [category] : null))
-    : await prisma.category.findMany({
-        where: {
-          OR: [
-            {
-              name: { contains: filters.search, mode: "insensitive" },
-              deletedAt: null,
-            },
-            {
-              slug: { contains: filters.search, mode: "insensitive" },
-              deletedAt: null,
-            },
-          ],
-        },
-      });
+        });
 
   return {
     businesses: sortedBusinesses,
@@ -549,7 +608,7 @@ export const getBusinessById = async (
           },
           latitude: true,
           longitude: true,
-          degree: true,
+          degrees: true,
           languages: {
             where: {
               deletedAt: null,
@@ -589,7 +648,7 @@ export const getBusinessById = async (
               slug: true,
             },
           },
-          category: {
+          categories: {
             where: {
               deletedAt: null,
             },
@@ -599,7 +658,6 @@ export const getBusinessById = async (
               slug: true,
             },
           },
-          categoryId: true,
           tags: {
             where: {
               deletedAt: null,

@@ -22,13 +22,14 @@ import {
 } from "./db";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
-import { sendOtpEmail } from "../../../utils/emailService";
+// import { sendOtpEmail } from "../../../utils/emailService";
 import { generateToken } from "../../../utils/token";
 import slugify from "slugify";
-import { sendOtpPhone } from "../../../utils/smsService";
+// import { sendOtpPhone } from "../../../utils/smsService";
 import { createOtpData } from "../../../utils/generateOtp";
 import { ContactType, Prisma } from "@prisma/client";
 import { uploadToSpaces } from "../../../utils/bucket";
+// import { chownSync } from "fs";
 // import { razorpay } from "../../../utils/razorpay";
 // import crypto from "crypto";
 
@@ -269,17 +270,17 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
     }
 
     // Send verification codes
-    try {
-      if (validatedData.email && emailOtpData) {
-        await sendOtpEmail(user.name, validatedData.email, emailOtpData.otp);
-      }
-      if (validatedData.phone && phoneOtpData) {
-        await sendOtpPhone(user.name, validatedData.phone, phoneOtpData.otp);
-      }
-    } catch (error) {
-      // Log error but don't fail the transaction
-      console.error("Error sending OTP:", error);
-    }
+    // try {
+    //   if (validatedData.email && emailOtpData) {
+    //     await sendOtpEmail(user.name, validatedData.email, emailOtpData.otp);
+    //   }
+    //   if (validatedData.phone && phoneOtpData) {
+    //     await sendOtpPhone(user.name, validatedData.phone, phoneOtpData.otp);
+    //   }
+    // } catch (error) {
+    //   // Log error but don't fail the transaction
+    //   console.error("Error sending OTP:", error);
+    // }
 
     return {
       value: [validatedData.email, validatedData.phone]
@@ -378,23 +379,25 @@ export const addUserContact = async (
       },
     });
 
+    console.log(!newContact);
+
     // Send OTP
-    try {
-      if (type === "EMAIL") {
-        await sendOtpEmail(newContact.user.name, value!, otpData.otp);
-      } else {
-        await sendOtpPhone(newContact.user.name, value!, otpData.otp);
-      }
-    } catch (error) {
-      console.error("Error sending OTP:", error);
-      // Delete the contact if OTP sending fails
-      await tx.userContact.delete({
-        where: { id: newContact.id },
-      });
-      throw new Error(
-        `Failed to send verification code to ${type.toLowerCase()}`
-      );
-    }
+    // try {
+    //   if (type === "EMAIL") {
+    //     await sendOtpEmail(newContact.user.name, value!, otpData.otp);
+    //   } else {
+    //     await sendOtpPhone(newContact.user.name, value!, otpData.otp);
+    //   }
+    // } catch (error) {
+    //   console.error("Error sending OTP:", error);
+    //   // Delete the contact if OTP sending fails
+    //   await tx.userContact.delete({
+    //     where: { id: newContact.id },
+    //   });
+    //   throw new Error(
+    //     `Failed to send verification code to ${type.toLowerCase()}`
+    //   );
+    // }
 
     return {
       value,
@@ -646,23 +649,26 @@ export const forgetUserPassword = async (
       },
     });
 
+    console.log(!newContact);
+
     // Send OTP
-    try {
-      if (type === "EMAIL") {
-        await sendOtpEmail(newContact.user.name, value!, otpData.otp);
-      } else {
-        await sendOtpPhone(newContact.user.name, value!, otpData.otp);
-      }
-    } catch (error) {
-      console.error("Error sending OTP:", error);
-      // Delete the contact if OTP sending fails
-      await tx.userContact.delete({
-        where: { id: newContact.id },
-      });
-      throw new Error(
-        `Failed to send verification code to ${type.toLowerCase()}`
-      );
-    }
+    // try {
+    //   if (type === "EMAIL") {
+    //     await sendOtpEmail(newContact.user.name, value!, otpData.otp);
+    //   } else {
+    //     await sendOtpPhone(newContact.user.name, value!, otpData.otp);
+    //   }
+    // } catch (error) {
+    //   console.error("Error sending OTP:", error);
+    //   // Delete the contact if OTP sending fails
+    //   await tx.userContact.delete({
+    //     where: { id: newContact.id },
+    //   });
+    //   throw new Error(
+    //     `Failed to send verification code to ${type.toLowerCase()}`
+    //   );
+    // }
+
     return {
       value: value,
       message: `Verification code sent to your ${type.toLowerCase()}`,
@@ -815,10 +821,10 @@ export const updateUserDetails = async (
   const updatedUser = await prisma.user.update({
     where: { id: user.id, deletedAt: null },
     data: {
-      name: name || user.name,
-      slug: slug || user.slug,
-      avatar: avatarUrl || user.avatar,
-      hideDetails: validatedData.hideDetails || user.hideDetails,
+      name: name,
+      slug: slug,
+      avatar: avatarUrl,
+      hideDetails: validatedData.hideDetails,
     },
     include: {
       contacts: {
@@ -999,11 +1005,11 @@ export const manageUserAddress = async (
       const updatedAddress = await prisma.userAddress.update({
         where: { id: existingAddress.id },
         data: {
-          street: addressData.street || existingAddress.street,
-          city: addressData.city || existingAddress.city,
-          state: addressData.state || existingAddress.state,
-          country: addressData.country || existingAddress.country,
-          pincode: addressData.pincode || existingAddress.pincode,
+          street: addressData.street,
+          city: addressData.city,
+          state: addressData.state,
+          country: addressData.country,
+          pincode: addressData.pincode,
         },
       });
 

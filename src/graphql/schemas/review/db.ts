@@ -5,6 +5,7 @@ export const ReviewBusinessSchema = object({
   rating: number().min(1).max(5).optional(),
   comment: string().optional(),
   businessId: string().optional(),
+  businessSlug: string().optional(),
   toDelete: boolean().optional(),
 }).optional();
 export type ReviewBusinessInput = infer_<typeof ReviewBusinessSchema>;

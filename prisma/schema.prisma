@@ -201,21 +201,18 @@ model BusinessDetails {
   operatingHours       BusinessOperatingHours[]
   latitude             Float?
   longitude            Float?
-  degree               String[]
+  degrees              String[]
   languages            Language[]
   proficiencies        Proficiency[]
   courts               Court[]
   gstNumber            String?
-  categoryId           String?
-  category             Category?                     @relation(fields: [categoryId], references: [id])
+  categories           Category[]                    @relation()
   tags                 Tag[]
   addresses            BusinessAddress[]
   logo                 String?
   createdAt            DateTime                      @default(now())
   updatedAt            DateTime                      @updatedAt
   deletedAt            DateTime?
-
-  @@index([categoryId])
 }
 
 model BusinessSupportingDocuments {
@@ -345,7 +342,7 @@ model Category {
   deletedAt         DateTime?
   categoryImage     String?
   updatedAt         DateTime          @updatedAt
-  businessesDetails BusinessDetails[]
+  businessesDetails BusinessDetails[] @relation()
 }
 
 model Tag {

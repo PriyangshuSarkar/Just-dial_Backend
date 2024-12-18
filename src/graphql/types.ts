@@ -157,26 +157,26 @@ export const typeDefs = gql`
 
   type BusinessDetails {
     id: ID
-    businessId: ID
+    business: Business
     registrationNumber: String
     license: String
     experience: Int
     teamSize: Int
     description: String
     websites: [BusinessWebsite]
-    coverImage: [BusinessCoverImage]
-    adBannerImage: [BusinessAdBannerImage]
-    mobileAdBannerImage: [BusinessMobileAdBannerImage]
-    operatingHourResult: [BusinessOperatingHourResult]
+    coverImages: [BusinessCoverImage]
+    adBannerImages: [BusinessAdBannerImage]
+    mobileAdBannerImages: [BusinessMobileAdBannerImage]
+    operatingHours: [BusinessOperatingHour]
     latitude: Float
     longitude: Float
-    degree: [String]
+    degrees: [String]
     languages: [Language]
     proficiencies: [Proficiency]
     courts: [Court]
     gstNumber: String
     categoryId: ID
-    category: Category
+    categories: [Category]
     tags: [Tag]
     addresses: [BusinessAddress]
     logo: String
@@ -259,7 +259,7 @@ export const typeDefs = gql`
     SATURDAY
   }
 
-  type BusinessOperatingHourResult {
+  type BusinessOperatingHour {
     id: ID
     createdAt: Date
     deletedAt: Date

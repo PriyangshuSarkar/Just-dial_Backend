@@ -187,7 +187,7 @@ async function main() {
     },
   });
 
-  // Create Businesses
+  // Create Businesses and Business Details
   const business1 = await prisma.business.create({
     data: {
       name: "Legal Services Inc.",
@@ -203,7 +203,47 @@ async function main() {
       paymentVerification: true,
       razorpay_order_id: "order_1234567890",
       price: 1000,
-      //   categoryId: legalCategory.id,
+      businessDetails: {
+        create: {
+          registrationNumber: "REG123456",
+          license: "LIC123456",
+          experience: 10,
+          teamSize: 50,
+          description:
+            "A leading legal firm providing comprehensive legal services.",
+          latitude: 28.6448,
+          longitude: 77.2167,
+          degrees: ["LLB", "LLM"],
+          gstNumber: "27AACCT0618J1ZI",
+          categories: {
+            connect: [{ id: legalCategory.id }],
+          },
+          addresses: {
+            create: {
+              street: "123, Legal Lane",
+              city: delhiCity.name,
+              country: india.name,
+              pincode: "110001",
+              state: delhiState.name,
+            },
+          },
+          operatingHours: {
+            create: {
+              dayOfWeek: "MONDAY",
+              openingTime: "09:00",
+              closingTime: "18:00",
+            },
+          },
+        },
+      },
+      primaryContacts: {
+        create: {
+          type: "EMAIL",
+          value: "contact@legalservicesinc.com",
+          isVerified: true,
+          isPrimary: true,
+        },
+      },
     },
   });
 
@@ -222,104 +262,46 @@ async function main() {
       paymentVerification: true,
       razorpay_order_id: "order_0987654321",
       price: 1500,
-      //   categoryId: ITCategory.id,
-    },
-  });
-
-  // Create Business Details
-  const businessDetails1 = await prisma.businessDetails.create({
-    data: {
-      registrationNumber: "REG123456",
-      license: "LIC123456",
-      experience: 10,
-      teamSize: 50,
-      description:
-        "A leading legal firm providing comprehensive legal services.",
-      latitude: 28.6448,
-      longitude: 77.2167,
-      degree: ["LLB", "LLM"],
-      gstNumber: "27AACCT0618J1ZI",
-      categoryId: legalCategory.id,
-      id: business1.id,
-    },
-  });
-
-  const businessDetails2 = await prisma.businessDetails.create({
-    data: {
-      registrationNumber: "REG654321",
-      license: "LIC654321",
-      experience: 5,
-      teamSize: 25,
-      description: "A technology firm specializing in software solutions.",
-      latitude: 19.076,
-      longitude: 72.8777,
-      degree: ["B.Tech", "M.Tech"],
-      gstNumber: "27AABCC0618J2ZI",
-      categoryId: ITCategory.id,
-      id: business2.id,
-    },
-  });
-
-  // Create Business Addresses
-  const businessAddress1 = await prisma.businessAddress.create({
-    data: {
-      businessDetailsId: businessDetails1.id,
-      street: "123, Legal Lane",
-      city: delhiCity.name,
-      country: india.name,
-      pincode: "110001",
-      state: delhiState.name,
-    },
-  });
-
-  const businessAddress2 = await prisma.businessAddress.create({
-    data: {
-      businessDetailsId: businessDetails2.id,
-      street: "456, Tech Road",
-      city: mumbaiCity.name,
-      country: india.name,
-      pincode: "400001",
-      state: mumbaiState.name,
-    },
-  });
-
-  // Create Business Primary Contacts
-  const businessPrimaryContact1 = await prisma.businessPrimaryContact.create({
-    data: {
-      businessId: business1.id,
-      type: "EMAIL",
-      value: "contact@legalservicesinc.com",
-      isVerified: true,
-      isPrimary: true,
-    },
-  });
-
-  const businessPrimaryContact2 = await prisma.businessPrimaryContact.create({
-    data: {
-      businessId: business2.id,
-      type: "EMAIL",
-      value: "contact@techsolutionspvtltd.com",
-      isVerified: true,
-      isPrimary: true,
-    },
-  });
-
-  // Create Business Operating Hours
-  const businessOperatingHours1 = await prisma.businessOperatingHours.create({
-    data: {
-      businessDetailsId: businessDetails1.id,
-      dayOfWeek: "MONDAY",
-      openingTime: "09:00",
-      closingTime: "18:00",
-    },
-  });
-
-  const businessOperatingHours2 = await prisma.businessOperatingHours.create({
-    data: {
-      businessDetailsId: businessDetails2.id,
-      dayOfWeek: "MONDAY",
-      openingTime: "10:00",
-      closingTime: "19:00",
+      businessDetails: {
+        create: {
+          registrationNumber: "REG654321",
+          license: "LIC654321",
+          experience: 5,
+          teamSize: 25,
+          description: "A technology firm specializing in software solutions.",
+          latitude: 19.076,
+          longitude: 72.8777,
+          degrees: ["B.Tech", "M.Tech"],
+          gstNumber: "27AABCC0618J2ZI",
+          categories: {
+            connect: [{ id: ITCategory.id }],
+          },
+          addresses: {
+            create: {
+              street: "456, Tech Road",
+              city: mumbaiCity.name,
+              country: india.name,
+              pincode: "400001",
+              state: mumbaiState.name,
+            },
+          },
+          operatingHours: {
+            create: {
+              dayOfWeek: "MONDAY",
+              openingTime: "10:00",
+              closingTime: "19:00",
+            },
+          },
+        },
+      },
+      primaryContacts: {
+        create: {
+          type: "EMAIL",
+          value: "contact@techsolutionspvtltd.com",
+          isVerified: true,
+          isPrimary: true,
+        },
+      },
     },
   });
 

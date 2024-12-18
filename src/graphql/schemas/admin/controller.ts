@@ -246,7 +246,7 @@ export const allBusinesses = async (
         businessDetails: {
           include: {
             addresses: true,
-            category: true,
+            categories: true,
             tags: true,
             coverImages: true,
             adBannerImages: true,

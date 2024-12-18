@@ -69,3 +69,11 @@ Filter
 // Subscription Packages (if applicable)
 // Desktop adBanners
 // Mobile adBanners
+
+
+1. Verification mobile X
+2. categories
+3. day time
+4. categories slug
+5. BusinessProfile>businessID>Page 
+    URL: (localhost:3000/cybross)

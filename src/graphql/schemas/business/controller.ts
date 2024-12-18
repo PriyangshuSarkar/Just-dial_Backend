@@ -34,10 +34,10 @@ import {
 } from "./db";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
-import { sendOtpEmail } from "../../../utils/emailService";
+// import { sendOtpEmail } from "../../../utils/emailService";
 import { generateToken } from "../../../utils/token";
 import slugify from "slugify";
-import { sendOtpPhone } from "../../../utils/smsService";
+// import { sendOtpPhone } from "../../../utils/smsService";
 import { createOtpData } from "../../../utils/generateOtp";
 // import crypto from "crypto";
 import { ContactType, Prisma } from "@prisma/client";
@@ -780,23 +780,25 @@ export const addBusinessPrimaryContact = async (
       },
     });
 
+    console.log(!newContact);
+
     // Send OTP
-    try {
-      if (type === "EMAIL") {
-        await sendOtpEmail(newContact.business.name, value!, otpData.otp);
-      } else {
-        await sendOtpPhone(newContact.business.name, value!, otpData.otp);
-      }
-    } catch (error) {
-      console.error("Error sending OTP:", error);
-      // Delete the contact if OTP sending fails
-      await tx.businessPrimaryContact.delete({
-        where: { id: newContact.id },
-      });
-      throw new Error(
-        `Failed to send verification code to ${type.toLowerCase()}`
-      );
-    }
+    // try {
+    //   if (type === "EMAIL") {
+    //     await sendOtpEmail(newContact.business.name, value!, otpData.otp);
+    //   } else {
+    //     await sendOtpPhone(newContact.business.name, value!, otpData.otp);
+    //   }
+    // } catch (error) {
+    //   console.error("Error sending OTP:", error);
+    //   // Delete the contact if OTP sending fails
+    //   await tx.businessPrimaryContact.delete({
+    //     where: { id: newContact.id },
+    //   });
+    //   throw new Error(
+    //     `Failed to send verification code to ${type.toLowerCase()}`
+    //   );
+    // }
 
     return {
       value,
@@ -849,23 +851,24 @@ export const forgetBusinessPassword = async (
       },
     });
 
+    console.log(!newContact);
     // Send OTP
-    try {
-      if (type === "EMAIL") {
-        await sendOtpEmail(newContact.business.name, value!, otpData.otp);
-      } else {
-        await sendOtpPhone(newContact.business.name, value!, otpData.otp);
-      }
-    } catch (error) {
-      console.error("Error sending OTP:", error);
-      // Delete the contact if OTP sending fails
-      await tx.businessPrimaryContact.delete({
-        where: { id: newContact.id },
-      });
-      throw new Error(
-        `Failed to send verification code to ${type.toLowerCase()}`
-      );
-    }
+    // try {
+    //   if (type === "EMAIL") {
+    //     await sendOtpEmail(newContact.business.name, value!, otpData.otp);
+    //   } else {
+    //     await sendOtpPhone(newContact.business.name, value!, otpData.otp);
+    //   }
+    // } catch (error) {
+    //   console.error("Error sending OTP:", error);
+    //   // Delete the contact if OTP sending fails
+    //   await tx.businessPrimaryContact.delete({
+    //     where: { id: newContact.id },
+    //   });
+    //   throw new Error(
+    //     `Failed to send verification code to ${type.toLowerCase()}`
+    //   );
+    // }
     return {
       value: value,
       message: `Verification code sent to your ${type.toLowerCase()}`,
@@ -1123,62 +1126,66 @@ export const updateBusinessDetails = async (
   const updatedBusinessDetails = await prisma.businessDetails.upsert({
     where: { id: business.id },
     update: {
-      registrationNumber:
-        validatedData.registrationNumber ||
-        business.businessDetails?.registrationNumber,
-      license: validatedData.license || business.businessDetails?.license,
-      experience:
-        validatedData.experience || business.businessDetails?.experience,
-      teamSize: validatedData.teamSize || business.businessDetails?.teamSize,
-      description:
-        validatedData.description || business.businessDetails?.description,
-      latitude: validatedData.latitude || business.businessDetails?.latitude,
-      longitude: validatedData.latitude || business.businessDetails?.longitude,
-      gstNumber: validatedData.gstNumber || business.businessDetails?.gstNumber,
-      category: validatedData.categoryId
-        ? { connect: { id: validatedData.categoryId } }
+      registrationNumber: validatedData.registrationNumber,
+      license: validatedData.license,
+      experience: validatedData.experience,
+      teamSize: validatedData.teamSize,
+      description: validatedData.description,
+      latitude: validatedData.latitude,
+      longitude: validatedData.longitude,
+      gstNumber: validatedData.gstNumber,
+      degrees: validatedData.degrees,
+      categories: validatedData.categoryIds
+        ? {
+            set: [], // Clear all existing categories only when data is provided
+            connect: validatedData.categoryIds
+              .filter((categoryId): categoryId is string => !!categoryId) // Ensure no undefined values
+              .map((categoryId) => ({ id: categoryId })),
+          }
+        : undefined, // Do nothing if no new data is provided
+      languages: validatedData.languages?.length
+        ? {
+            set: [], // Clear all existing languages when new data is provided
+            connectOrCreate: validatedData.languages.map(
+              (language: string) => ({
+                where: { name: language },
+                create: { name: language },
+              })
+            ),
+          }
+        : undefined, // Do nothing if no new data is provided,
+
+      proficiencies: validatedData.proficiencies?.length
+        ? {
+            set: [], // Clear existing proficiencies
+            connectOrCreate: validatedData.proficiencies.map(
+              (proficiency: string) => ({
+                where: { name: proficiency },
+                create: { name: proficiency },
+              })
+            ),
+          }
         : undefined,
-      degree: validatedData.degrees || business.businessDetails?.degree,
-      languages:
-        validatedData.languages && validatedData.languages.length
-          ? {
-              connectOrCreate: validatedData.languages.map(
-                (language: string) => ({
-                  where: { name: language }, // Check if the language with this name exists
-                  create: { name: language }, // If it doesn't exist, create it
-                })
-              ),
-            }
-          : undefined,
-      proficiencies:
-        validatedData.proficiencies && validatedData.proficiencies.length
-          ? {
-              connectOrCreate: validatedData.proficiencies.map(
-                (proficiency: string) => ({
-                  where: { name: proficiency }, // Check if the language with this name exists
-                  create: { name: proficiency }, // If it doesn't exist, create it
-                })
-              ),
-            }
-          : undefined,
-      courts:
-        validatedData.courts && validatedData.courts.length
-          ? {
-              connectOrCreate: validatedData.courts.map((court: string) => ({
-                where: { name: court }, // Check if the language with this name exists
-                create: { name: court }, // If it doesn't exist, create it
-              })),
-            }
-          : undefined,
-      tags:
-        validatedData.tags && validatedData.tags.length
-          ? {
-              connectOrCreate: validatedData.tags.map((tag: string) => ({
-                where: { name: tag }, // Check if the language with this name exists
-                create: { name: tag }, // If it doesn't exist, create it
-              })),
-            }
-          : undefined,
+
+      courts: validatedData.courts?.length
+        ? {
+            set: [], // Clear existing courts
+            connectOrCreate: validatedData.courts.map((court: string) => ({
+              where: { name: court },
+              create: { name: court },
+            })),
+          }
+        : undefined,
+
+      tags: validatedData.tags?.length
+        ? {
+            set: [], // Clear existing tags
+            connectOrCreate: validatedData.tags.map((tag: string) => ({
+              where: { name: tag },
+              create: { name: tag },
+            })),
+          }
+        : undefined,
     },
     create: {
       business: { connect: { id: business.id } },
@@ -1190,47 +1197,53 @@ export const updateBusinessDetails = async (
       latitude: validatedData.latitude,
       longitude: validatedData.longitude,
       gstNumber: validatedData.gstNumber,
-      category: validatedData.categoryId
-        ? { connect: { id: validatedData.categoryId } }
+      degrees: validatedData.degrees,
+      categories: validatedData.categoryIds
+        ? {
+            connect: validatedData.categoryIds
+              .filter((categoryId): categoryId is string => !!categoryId) // Ensure no undefined values
+              .map((categoryId) => ({ id: categoryId })),
+          }
+        : undefined, // Do nothing if no new data is provided
+      languages: validatedData.languages?.length
+        ? {
+            connectOrCreate: validatedData.languages.map(
+              (language: string) => ({
+                where: { name: language },
+                create: { name: language },
+              })
+            ),
+          }
+        : undefined, // Do nothing if no new data is provided,
+
+      proficiencies: validatedData.proficiencies?.length
+        ? {
+            connectOrCreate: validatedData.proficiencies.map(
+              (proficiency: string) => ({
+                where: { name: proficiency },
+                create: { name: proficiency },
+              })
+            ),
+          }
         : undefined,
-      degree: validatedData.degrees,
-      languages:
-        validatedData.languages && validatedData.languages.length
-          ? {
-              connect: validatedData.languages.map((languageId: string) => ({
-                id: languageId,
-              })),
-            }
-          : undefined,
-      proficiencies:
-        validatedData.proficiencies && validatedData.proficiencies.length
-          ? {
-              connectOrCreate: validatedData.proficiencies.map(
-                (proficiency: string) => ({
-                  where: { name: proficiency }, // Check if the language with this name exists
-                  create: { name: proficiency }, // If it doesn't exist, create it
-                })
-              ),
-            }
-          : undefined,
-      courts:
-        validatedData.courts && validatedData.courts.length
-          ? {
-              connectOrCreate: validatedData.courts.map((court: string) => ({
-                where: { name: court }, // Check if the language with this name exists
-                create: { name: court }, // If it doesn't exist, create it
-              })),
-            }
-          : undefined,
-      tags:
-        validatedData.tags && validatedData.tags.length
-          ? {
-              connectOrCreate: validatedData.tags.map((tag: string) => ({
-                where: { name: tag }, // Check if the language with this name exists
-                create: { name: tag }, // If it doesn't exist, create it
-              })),
-            }
-          : undefined,
+
+      courts: validatedData.courts?.length
+        ? {
+            connectOrCreate: validatedData.courts.map((court: string) => ({
+              where: { name: court },
+              create: { name: court },
+            })),
+          }
+        : undefined,
+
+      tags: validatedData.tags?.length
+        ? {
+            connectOrCreate: validatedData.tags.map((tag: string) => ({
+              where: { name: tag },
+              create: { name: tag },
+            })),
+          }
+        : undefined,
     },
   });
 
@@ -1238,11 +1251,10 @@ export const updateBusinessDetails = async (
   const updatedBusiness = await prisma.business.update({
     where: { id: business.id, deletedAt: null },
     data: {
-      name: name || business.name,
-      slug: slug || business.slug,
-      isListed: validatedData.isListed || business.isListed,
-      additionalContacts:
-        validatedData.additionalContacts || business.additionalContacts,
+      name: name,
+      slug: slug,
+      isListed: validatedData.isListed,
+      additionalContacts: validatedData.additionalContacts,
       businessDetails: { connect: { id: updatedBusinessDetails.id } },
     },
     include: {
@@ -1591,12 +1603,12 @@ export const manageBusinessAddress = async (
       const updatedAddress = await prisma.businessAddress.update({
         where: { id: existingAddress.id },
         data: {
-          order: addressData.order || existingAddress.order,
-          street: addressData.street || existingAddress.street,
-          city: addressData.city || existingAddress.city,
-          state: addressData.state || existingAddress.state,
-          country: addressData.country || existingAddress.country,
-          pincode: addressData.pincode || existingAddress.pincode,
+          order: addressData.order,
+          street: addressData.street,
+          city: addressData.city,
+          state: addressData.state,
+          country: addressData.country,
+          pincode: addressData.pincode,
         },
       });
 
@@ -1705,8 +1717,8 @@ export const manageBusinessWebsite = async (
       const updatedWebsite = await prisma.businessWebsite.update({
         where: { id: existingWebsite.id },
         data: {
-          url: websiteData.url || existingWebsite.url,
-          type: websiteData.type || existingWebsite.type,
+          url: websiteData.url,
+          type: websiteData.type,
         },
       });
 
@@ -2159,7 +2171,7 @@ export const manageBusinessSupportingDocuments = async (
         where: { id: existingDocument.id },
         data: {
           url: updatedUrl,
-          type: documentData.type || existingDocument.type,
+          type: documentData.type,
         },
       });
 
