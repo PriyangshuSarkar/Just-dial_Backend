@@ -848,3 +848,36 @@ export const location = async (_: unknown, args: LocationInput) => {
 
   return results;
 };
+
+export const allTestimonials = async () => {
+  const allTestimonials = prisma.testimonial.findMany({
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      rating: true,
+      reviewId: true,
+      feedbackId: true,
+      comment: true,
+      userId: true,
+      businessId: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+      business: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  });
+
+  return allTestimonials;
+};

@@ -7,6 +7,7 @@ import {
   getBusinessById,
   search,
   location,
+  allTestimonials,
 } from "./controller";
 
 export const Query = {
@@ -25,6 +26,8 @@ export const Query = {
   allCategories,
 
   allTags,
+
+  allTestimonials,
 
   location,
 };

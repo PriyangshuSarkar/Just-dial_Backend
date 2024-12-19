@@ -54,6 +54,8 @@ export const typeDefs = gql`
 
     allTags: [Tag]
 
+    allTestimonials: [Testimonial]
+
     location(search: String): [Pincode]
   }
 `;
