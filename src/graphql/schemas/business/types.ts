@@ -112,7 +112,7 @@ export const typeDefs = gql`
       description: String
       degrees: [String!]
       gstNumber: String
-      categoryId: ID
+      categoryIds: [ID]
       languages: [String!]
       proficiencies: [String!]
       courts: [String!]
