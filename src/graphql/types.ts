@@ -175,7 +175,6 @@ export const typeDefs = gql`
     proficiencies: [Proficiency]
     courts: [Court]
     gstNumber: String
-    categoryId: ID
     categories: [Category]
     tags: [Tag]
     addresses: [BusinessAddress]

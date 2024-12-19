@@ -141,6 +141,22 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
       primaryContacts: true,
       businessDetails: {
         include: {
+          categories: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          operatingHours: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
           addresses: {
             where: {
               deletedAt: null,
