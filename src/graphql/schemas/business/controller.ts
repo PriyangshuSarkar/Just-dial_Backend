@@ -267,10 +267,6 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
     throw new Error("Business not found!");
   }
 
-  if (!business.slug) {
-    business.slug = business.id;
-  }
-
   return business;
 };
 
@@ -437,7 +433,11 @@ export const verifyBusinessPrimaryContact = async (
         otp: null,
         otpExpiresAt: null,
         business: {
-          update: { ...passwordUpdate, type: "FIRM" },
+          update: {
+            ...passwordUpdate,
+            type: "FIRM",
+            slug: business?.slug ? undefined : business?.id,
+          },
         },
       },
       include: {
@@ -1098,12 +1098,12 @@ export const updateBusinessDetails = async (
     name = validatedData.name;
   }
 
-  if (validatedData.slug) {
-    const existingSlug = await prisma.user.findFirst({
-      where: { slug: validatedData.slug },
-    });
-    if (existingSlug) throw new Error("Slug already exists.");
-  }
+  // if (validatedData.slug) {
+  //   const existingSlug = await prisma.user.findFirst({
+  //     where: { slug: validatedData.slug },
+  //   });
+  //   if (existingSlug) throw new Error("Slug already exists.");
+  // }
 
   let slug = validatedData.slug;
 

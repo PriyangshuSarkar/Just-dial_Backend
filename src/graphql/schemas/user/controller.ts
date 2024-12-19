@@ -790,12 +790,12 @@ export const updateUserDetails = async (
     name = validatedData.name;
   }
 
-  if (validatedData.slug) {
-    const existingSlug = await prisma.user.findFirst({
-      where: { slug: validatedData.slug },
-    });
-    if (existingSlug) throw new Error("Slug already exists.");
-  }
+  // if (validatedData.slug) {
+  //   const existingSlug = await prisma.user.findFirst({
+  //     where: { slug: validatedData.slug },
+  //   });
+  //   if (existingSlug) throw new Error("Slug already exists.");
+  // }
 
   let slug = validatedData.slug;
 
