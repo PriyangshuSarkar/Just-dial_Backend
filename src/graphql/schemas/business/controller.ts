@@ -1277,6 +1277,14 @@ export const updateBusinessDetails = async (
       primaryContacts: true,
       businessDetails: {
         include: {
+          categories: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
           addresses: {
             where: {
               deletedAt: null,
