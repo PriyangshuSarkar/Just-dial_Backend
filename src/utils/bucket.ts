@@ -18,6 +18,7 @@ export const uploadToSpaces = async (
   folder: string, // Dynamic folder name
   url: string | null | undefined
 ): Promise<string> => {
+  console.log(upload);
   const createReadStream = await upload.file.createReadStream;
   const stream = createReadStream();
 
@@ -34,18 +35,31 @@ export const uploadToSpaces = async (
       return url.replace(`${CDN_ENDPOINT}/`, "");
     };
     key = extractKey(url); // Use the existing key if URL is provided
-  } else {
-    const uniqueFileName = uuid(); // Generate UUID for new file name
-    key = `${folder}/${uniqueFileName}`; // Create file path with folder
+
+    try {
+      await s3Client.deleteObject({
+        Bucket: BUCKET_NAME,
+        Key: key,
+      });
+    } catch (error) {
+      throw new Error(`Failed to delete file ${key}: ${error}`);
+    }
   }
 
+  const uniqueFileName = uuid(); // Generate UUID for new file name
+  const fileExtension = upload.file.filename.split(".").pop(); // Get file extension
+  key = `${folder}/${uniqueFileName}.${fileExtension}`; // Create file path with folder and extension
+
+  // key = `${folder}/${uniqueFileName}`; // Create file path with folder
+
   try {
+    console.log(upload.file.mimetype);
     await s3Client.putObject({
       Bucket: BUCKET_NAME,
       Key: key,
       Body: buffer,
       ACL: "public-read", // Make the file publicly accessible
-      ContentType: upload.file.mimetype, // Set proper content type
+      ContentType: upload.file.mimetype || "application/octet-stream", // Set proper content type)
     });
 
     // Return the CDN URL
@@ -68,9 +82,7 @@ export const deleteFromSpaces = async (url: string): Promise<void> => {
       Bucket: BUCKET_NAME,
       Key: key,
     });
-    console.log(`Successfully deleted file: ${key}`);
   } catch (error) {
-    console.error(`Failed to delete file ${key}: ${error}`);
     throw new Error(`Failed to delete file ${key}: ${error}`);
   }
 };
