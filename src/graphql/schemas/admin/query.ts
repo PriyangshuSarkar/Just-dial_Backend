@@ -1,4 +1,9 @@
-import { adminLogin, allBusinesses, allUsers } from "./controller";
+import {
+  adminLogin,
+  allBusinesses,
+  allUsers,
+  searchAllReviews,
+} from "./controller";
 
 export const Query = {
   status: () => "Server is running",
@@ -8,4 +13,6 @@ export const Query = {
   allUsers,
 
   allBusinesses,
+
+  searchAllReviews,
 };

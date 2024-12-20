@@ -40,6 +40,13 @@ export const typeDefs = gql`
     limit: Int
     totalPages: Int
   }
+  type AllReviewResult {
+    reviews: [Review]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
 
   # Query Type Definitions
   type Query {
@@ -79,7 +86,15 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: AllBusinessesSortBy = createdAt
       sortOrder: SortOrder = desc
-    ): [Business]
+    ): AllBusinessResult
+
+    searchAllReviews(
+      search: String
+      page: Int = 1
+      limit: Int = 10
+      sortBy: SortByEnum = createdAt
+      sortOrder: OrderEnum = desc
+    ): AllReviewResult
   }
 
   # Mutation Type Definitions

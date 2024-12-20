@@ -36,6 +36,8 @@ import {
   ManageTestimonialSchema,
   ManageUserSubscriptionInput,
   ManageUserSubscriptionSchema,
+  SearchAllReviewsInput,
+  SearchAllReviewsSchema,
   VerifyBusinessesInput,
   VerifyBusinessesSchema,
 } from "./db";
@@ -271,6 +273,67 @@ export const allBusinesses = async (
     total,
     page: validatedData.page,
     limit: validatedData.limit,
+    totalPages,
+  };
+};
+
+export const searchAllReviews = async (
+  _: unknown,
+  args: SearchAllReviewsInput,
+  context: any
+) => {
+  // Validate the adminId in the context
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  // Validate and parse the input data
+  const validatedData = SearchAllReviewsSchema.parse(args);
+  if (!validatedData) return;
+
+  const { search, sortBy, sortOrder, page, limit } = validatedData;
+
+  // Calculate pagination values
+  const skip = (page - 1) * limit;
+
+  // Fetch reviews with filtering, sorting, and pagination
+  const reviews = await prisma.review.findMany({
+    where: {
+      comment: search
+        ? {
+            contains: search,
+            mode: "insensitive", // Case-insensitive search
+          }
+        : undefined,
+    },
+    orderBy: {
+      [sortBy]: sortOrder, // Dynamic sorting
+    },
+    skip,
+    take: limit,
+  });
+
+  // Count the total number of matching reviews
+  const total = await prisma.review.count({
+    where: {
+      comment: search
+        ? {
+            contains: search,
+            mode: "insensitive",
+          }
+        : undefined,
+    },
+  });
+
+  // Calculate total pages
+  const totalPages = Math.ceil(total / limit);
+
+  // Return the response in the desired format
+  return {
+    reviews,
+    total,
+    page,
+    limit,
     totalPages,
   };
 };
