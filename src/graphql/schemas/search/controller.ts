@@ -515,6 +515,7 @@ export const getBusinessById = async (
       id: true,
       name: true,
       slug: true,
+      isBusinessVerified: true,
       primaryContacts: {
         where: {
           deletedAt: null,
