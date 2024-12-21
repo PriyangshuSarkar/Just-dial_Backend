@@ -543,6 +543,7 @@ export const getBusinessById = async (
           license: true,
           teamSize: true,
           description: true,
+          primaryWebsite: true,
           addresses: {
             where: {
               deletedAt: null,
