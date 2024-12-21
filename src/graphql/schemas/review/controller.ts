@@ -58,7 +58,7 @@ export const reviewBusiness = async (
     };
   }
 
-  if (!validatedData.businessId || !validatedData.businessSlug) {
+  if (!validatedData.businessId && !validatedData.businessSlug) {
     throw new Error("Business Id is required");
   }
   if (!validatedData.rating) {
