@@ -541,6 +541,22 @@ export const getBusinessById = async (
           experience: true,
           teamSize: true,
           description: true,
+          addresses: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              updatedAt: "desc",
+            },
+            select: {
+              id: true,
+              pincode: true,
+              city: true,
+              state: true,
+              country: true,
+              order: true,
+            },
+          },
           websites: {
             where: {
               deletedAt: null,
@@ -699,6 +715,8 @@ export const getBusinessById = async (
   if (!business?.slug) {
     business.slug = business.id;
   }
+
+  console.log(business);
 
   return business;
 };
