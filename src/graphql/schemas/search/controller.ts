@@ -539,6 +539,7 @@ export const getBusinessById = async (
         select: {
           id: true,
           experience: true,
+          license: true,
           teamSize: true,
           description: true,
           addresses: {
