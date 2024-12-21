@@ -704,6 +704,14 @@ export const getBusinessById = async (
           comment: true,
           businessId: true,
           userId: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              avatar: true,
+            },
+          },
         },
       },
 
