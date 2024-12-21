@@ -1150,6 +1150,7 @@ export const updateBusinessDetails = async (
       latitude: validatedData.latitude,
       longitude: validatedData.longitude,
       gstNumber: validatedData.gstNumber,
+      primaryWebsite: validatedData.primaryWebsite,
       degrees: validatedData.degrees,
       categories: validatedData.categoryIds
         ? {
@@ -1214,6 +1215,7 @@ export const updateBusinessDetails = async (
       longitude: validatedData.longitude,
       gstNumber: validatedData.gstNumber,
       degrees: validatedData.degrees,
+      primaryWebsite: validatedData.primaryWebsite,
       categories: validatedData.categoryIds
         ? {
             connect: validatedData.categoryIds

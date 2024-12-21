@@ -107,6 +107,7 @@ export const UpdateBusinessDetailsSchema = object({
   longitude: number().optional(),
   additionalContacts: string().array().optional(),
   logo: any().optional(),
+  primaryWebsite: string().url().optional(),
 }).optional();
 export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema

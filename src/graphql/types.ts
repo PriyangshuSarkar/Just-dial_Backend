@@ -164,6 +164,7 @@ export const typeDefs = gql`
     teamSize: Int
     description: String
     websites: [BusinessWebsite]
+    primaryWebsite: String
     coverImages: [BusinessCoverImage]
     adBannerImages: [BusinessAdBannerImage]
     mobileAdBannerImages: [BusinessMobileAdBannerImage]

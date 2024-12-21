@@ -33,7 +33,7 @@ model User {
   password            String?
   salt                String?
   contacts            UserContact[]
-  hideDetails         Boolean           @default(true)
+  hideDetails         Boolean           @default(false)
   isBlocked           Boolean           @default(false)
   avatar              String?
   subscriptionId      String?
@@ -126,7 +126,7 @@ model Business {
   subscription                BusinessSubscription?         @relation(fields: [subscriptionId], references: [id])
   averageRating               Float?
   reviewCount                 Int                           @default(0)
-  isListed                    Boolean                       @default(false)
+  isListed                    Boolean                       @default(true)
   isBlocked                   Boolean                       @default(false)
   createdAt                   DateTime                      @default(now())
   updatedAt                   DateTime                      @updatedAt
@@ -194,6 +194,7 @@ model BusinessDetails {
   experience           Int?
   teamSize             Int?
   description          String?
+  primaryWebsite       String?
   websites             BusinessWebsite[]
   coverImages          BusinessCoverImage[]
   adBannerImages       BusinessAdBannerImage[]

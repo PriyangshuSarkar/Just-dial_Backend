@@ -121,6 +121,7 @@ export const typeDefs = gql`
       longitude: Float
       additionalContacts: [String!]
       logo: Upload
+      primaryWebsite: String
     ): Business
     deleteBusinessAccount: Business
     manageBusinessAddress(addresses: [BusinessAddressInput]): [BusinessAddress]

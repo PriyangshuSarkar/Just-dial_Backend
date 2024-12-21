@@ -495,11 +495,12 @@ export const getBusinessById = async (
 ) => {
   const validatedData = GetBusinessByIdSchema.parse(args);
 
-  const search = validatedData.businessSlug || validatedData.businessId;
-
   const business = await prisma.business.findFirst({
     where: {
-      OR: [{ slug: search }, { id: search }],
+      OR: [
+        { slug: validatedData.businessSlug },
+        { id: validatedData.businessId },
+      ],
       deletedAt: null,
       isListed: true,
       isBlocked: false,
