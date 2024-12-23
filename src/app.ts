@@ -15,7 +15,7 @@ async function startServer() {
   app.use(json({ limit: "100mb" }));
   app.use(urlencoded({ limit: "100mb", extended: true }));
   app.use(
-    graphqlUploadExpress({ maxFileSize: 10 * 1024 * 1024, maxFiles: 10 })
+    graphqlUploadExpress({ maxFileSize: 100 * 1024 * 1024, maxFiles: 10 })
   );
   app.use(auth);
   const server = new ApolloServer({
