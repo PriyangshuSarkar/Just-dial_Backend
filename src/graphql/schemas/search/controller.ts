@@ -347,7 +347,6 @@ const getBusinessWithPriority = async (
             logo: true,
           },
         },
-
         reviews: {
           where: {
             deletedAt: null,
@@ -690,7 +689,6 @@ export const getBusinessById = async (
           logo: true,
         },
       },
-
       reviews: {
         where: {
           deletedAt: null,
@@ -714,7 +712,6 @@ export const getBusinessById = async (
           },
         },
       },
-
       price: true,
     },
   });
