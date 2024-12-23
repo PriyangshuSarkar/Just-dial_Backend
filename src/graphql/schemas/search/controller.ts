@@ -727,8 +727,6 @@ export const getBusinessById = async (
     business.slug = business.id;
   }
 
-  console.log(business);
-
   return business;
 };
 

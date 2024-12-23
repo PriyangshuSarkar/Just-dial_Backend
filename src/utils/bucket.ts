@@ -18,7 +18,6 @@ export const uploadToSpaces = async (
   folder: string, // Dynamic folder name
   url: string | null | undefined
 ): Promise<string> => {
-  console.log(upload);
   const createReadStream = await upload.file.createReadStream;
   const stream = createReadStream();
 
@@ -53,7 +52,6 @@ export const uploadToSpaces = async (
   // key = `${folder}/${uniqueFileName}`; // Create file path with folder
 
   try {
-    console.log(upload.file.mimetype);
     await s3Client.putObject({
       Bucket: BUCKET_NAME,
       Key: key,
