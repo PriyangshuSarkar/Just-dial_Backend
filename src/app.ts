@@ -14,7 +14,9 @@ async function startServer() {
   app.use(cookieParser());
   app.use(json({ limit: "100mb" }));
   app.use(urlencoded({ limit: "100mb", extended: true }));
-  app.use(graphqlUploadExpress({ maxFileSize: 10 * 1024 * 1024, maxFiles: 1 }));
+  app.use(
+    graphqlUploadExpress({ maxFileSize: 10 * 1024 * 1024, maxFiles: 10 })
+  );
   app.use(auth);
   const server = new ApolloServer({
     typeDefs: schema.typeDefs,
