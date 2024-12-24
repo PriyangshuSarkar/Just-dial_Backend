@@ -1,4 +1,4 @@
-import express, { json, Express, Request, urlencoded } from "express";
+import express, { json, Express, Request } from "express";
 import cookieParser from "cookie-parser";
 import { dbConnect } from "./utils/dbConnect";
 import { ApolloServer } from "@apollo/server";
@@ -13,7 +13,6 @@ async function startServer() {
   app.use(morgan(process.env.LOG_LEVEL || "dev"));
   app.use(cookieParser());
   app.use(json());
-  app.use(urlencoded());
   app.use(
     graphqlUploadExpress({
       maxFileSize:
