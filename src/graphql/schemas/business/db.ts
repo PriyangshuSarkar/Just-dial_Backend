@@ -19,6 +19,17 @@ export const BusinessSignupSchema = object({
   .optional();
 export type BusinessSignupInput = infer_<typeof BusinessSignupSchema>;
 
+export const ResendBusinessOtpSchema = object({
+  email: string().email().optional(),
+  phone: string().optional(),
+})
+  .refine((data) => data.email || data.phone, {
+    message: "Either email or phone must be provided.",
+    path: ["email", "phone"],
+  })
+  .optional();
+export type ResendBusinessOtpInput = infer_<typeof ResendBusinessOtpSchema>;
+
 export const VerifyBusinessPrimaryContactSchema = object({
   email: string().optional(),
   phone: string().optional(),

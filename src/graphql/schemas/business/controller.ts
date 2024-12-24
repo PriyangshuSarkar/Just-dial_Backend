@@ -27,6 +27,8 @@ import {
   ManageBusinessMobileAdBannerImageSchema,
   ManageBusinessOperatingHoursInput,
   ManageBusinessOperatingHoursSchema,
+  ResendBusinessOtpInput,
+  ResendBusinessOtpSchema,
   // BusinessVerifyPaymentInput,
   // BusinessVerifyPaymentSchema,
   // BusinessSubscriptionInput,
@@ -45,8 +47,14 @@ import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
 
 // import { razorpay } from "../../../utils/razorpay";
 
-const MAX_CONTACTS_PER_TYPE = 1;
-const MAX_DAILY_VERIFICATION_ATTEMPTS = 5;
+const MAX_CONTACTS_PER_TYPE = parseInt(
+  process.env.MAX_CONTACTS_PER_TYPE || "1",
+  1
+);
+const MAX_DAILY_VERIFICATION_ATTEMPTS = parseInt(
+  process.env.MAX_DAILY_VERIFICATION_ATTEMPTS || "10",
+  10
+);
 
 const ensurePrimaryContact = async (
   tx: Prisma.TransactionClient,
@@ -374,6 +382,82 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
       }.`,
     };
   });
+};
+
+export const resendBusinessOtp = async (
+  _: unknown,
+  args: ResendBusinessOtpInput
+) => {
+  const validatedData = ResendBusinessOtpSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const type = validatedData.email ? "EMAIL" : "PHONE";
+  const value = validatedData.email || validatedData.phone;
+
+  if (!value) return;
+
+  const now = new Date();
+
+  // Start a transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Retrieve the user's current OTP details
+    const contact = await tx.businessPrimaryContact.findUnique({
+      where: { value },
+      select: { otpExpiresAt: true },
+    });
+
+    // Use the checkVerificationAttempts function to check the attempts
+    await checkVerificationAttempts(tx, value, type);
+
+    // Check if the user is allowed to resend an OTP
+    if (contact?.otpExpiresAt && now < new Date(contact.otpExpiresAt)) {
+      const timeRemaining = Math.ceil(
+        (new Date(contact.otpExpiresAt).getTime() - now.getTime()) / 1000
+      );
+      throw new Error(
+        `You can resend an OTP after ${timeRemaining} seconds. Please wait.`
+      );
+    }
+
+    // Create new OTP data
+    const otpData = createOtpData();
+
+    // Update the OTP and expiration time in the database
+    await tx.businessPrimaryContact.update({
+      where: {
+        value,
+        type,
+      },
+      data: {
+        otp: otpData?.otp,
+        otpExpiresAt: new Date(now.getTime() + 60 * 1000), // Set expiry 1 minute from now
+      },
+    });
+
+    // Optionally, send the OTP via email or phone
+    // try {
+    //   if (validatedData.email && otpData) {
+    //     await sendOtpEmail(null, validatedData.email, otpData.otp);
+    //   } else if (validatedData.phone && otpData) {
+    //     await sendOtpPhone(null, validatedData.phone, otpData.otp);
+    //   }
+    // } catch (error) {
+    //   console.error("Error sending OTP:", error);
+    // }
+
+    return {
+      message: `Verification code sent to your ${
+        validatedData.email && validatedData.phone
+          ? "email and phone"
+          : validatedData.email
+          ? "email"
+          : "phone"
+      }.`,
+    };
+  });
+
+  return result;
 };
 
 export const verifyBusinessPrimaryContact = async (

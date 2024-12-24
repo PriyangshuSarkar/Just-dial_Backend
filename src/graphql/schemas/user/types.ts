@@ -27,6 +27,7 @@ export const typeDefs = gql`
       phone: String
       password: String!
     ): UserContact
+    resendUserOtp(email: String, phone: String): UserContact
     addUserContact(email: String, phone: String): UserContact
     verifyUserContact(email: String, phone: String, otp: String!): User
     forgetUserPassword(email: String, phone: String): UserContact

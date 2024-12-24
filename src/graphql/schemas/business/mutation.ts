@@ -13,12 +13,15 @@ import {
   manageBusinessOperatingHours,
   manageBusinessSupportingDocuments,
   manageBusinessWebsite,
+  resendBusinessOtp,
   updateBusinessDetails,
   verifyBusinessPrimaryContact,
 } from "./controller";
 
 export const Mutation = {
   businessSignup,
+
+  resendBusinessOtp,
 
   verifyBusinessPrimaryContact,
 

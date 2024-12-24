@@ -1,6 +1,6 @@
 // import { randomBytes } from "crypto";
 
-const OTP_EXPIRY_MINUTES = 10;
+const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
 
 export const generateOtp = (): string => {
   // return (parseInt(randomBytes(3).toString("hex"), 16) % 1000000)

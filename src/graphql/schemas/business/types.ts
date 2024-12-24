@@ -84,6 +84,7 @@ export const typeDefs = gql`
 
   type Mutation {
     businessSignup(email: String, phone: String): BusinessPrimaryContact
+    resendBusinessOtp(email: String, phone: String): BusinessPrimaryContact
     verifyBusinessPrimaryContact(
       email: String
       phone: String

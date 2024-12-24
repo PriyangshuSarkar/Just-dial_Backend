@@ -4,6 +4,7 @@ import {
   deleteUserAccount,
   forgetUserPassword,
   manageUserAddress,
+  resendUserOtp,
   updateUserDetails,
   userGoogleOAuth,
   userSignup,
@@ -16,6 +17,8 @@ export const Mutation = {
   userGoogleOAuth,
 
   userSignup,
+
+  resendUserOtp,
 
   addUserContact,
 

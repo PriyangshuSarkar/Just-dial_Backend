@@ -10,19 +10,23 @@ import morgan from "morgan";
 
 async function startServer() {
   const app: Express = express();
-  app.use(morgan("dev"));
+  app.use(morgan(process.env.LOG_LEVEL || "dev"));
   app.use(cookieParser());
-  app.use(json({ limit: "100mb" }));
-  app.use(urlencoded({ limit: "100mb", extended: true }));
+  app.use(json());
+  app.use(urlencoded());
   app.use(
-    graphqlUploadExpress({ maxFileSize: 100 * 1024 * 1024, maxFiles: 10 })
+    graphqlUploadExpress({
+      maxFileSize:
+        parseInt(process.env.MAX_FILE_SIZE_MB || "100") * 1024 * 1024,
+      maxFiles: parseInt(process.env.MAX_FILES_UPLOAD || "10"),
+    })
   );
   app.use(auth);
   const server = new ApolloServer({
     typeDefs: schema.typeDefs,
     resolvers: schema.resolvers,
-    csrfPrevention: false,
-    introspection: true,
+    csrfPrevention: process.env.ENABLE_CSRF_PREVENTION === "true",
+    introspection: process.env.GRAPHQL_INTROSPECTION === "true",
   });
   await server.start();
 

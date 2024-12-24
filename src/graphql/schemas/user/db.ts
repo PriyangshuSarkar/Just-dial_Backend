@@ -13,6 +13,17 @@ export const UserSignupSchema = object({
   .optional();
 export type UserSignupInput = infer_<typeof UserSignupSchema>;
 
+export const ResendUserOtpSchema = object({
+  email: string().email().optional(),
+  phone: string().optional(),
+})
+  .refine((data) => data.email || data.phone, {
+    message: "Either email or phone must be provided.",
+    path: ["email", "phone"],
+  })
+  .optional();
+export type ResendUserOtpInput = infer_<typeof ResendUserOtpSchema>;
+
 export const AddUserContactSchema = object({
   email: string().email().optional(),
   phone: string().optional(),
