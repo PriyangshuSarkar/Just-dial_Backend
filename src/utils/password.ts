@@ -1,7 +1,4 @@
 import { pbkdf2Sync, randomBytes } from "crypto";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const HASH_ITERATIONS = parseInt(process.env.HASH_ITERATIONS || "100000", 10);
 const HASH_LENGTH = parseInt(process.env.HASH_LENGTH || "64", 10);
