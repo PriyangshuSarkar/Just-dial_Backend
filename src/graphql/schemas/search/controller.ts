@@ -159,7 +159,7 @@ const getBusinessWithPriority = async (
             deletedAt: null,
           },
           orderBy: {
-            updatedAt: "desc",
+            createdAt: "asc",
           },
           select: {
             id: true,
@@ -206,7 +206,7 @@ const getBusinessWithPriority = async (
                 ],
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -222,7 +222,7 @@ const getBusinessWithPriority = async (
                 deletedAt: null,
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -235,7 +235,7 @@ const getBusinessWithPriority = async (
                 deletedAt: null,
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -248,7 +248,7 @@ const getBusinessWithPriority = async (
                 deletedAt: null,
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -261,7 +261,7 @@ const getBusinessWithPriority = async (
                 deletedAt: null,
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -274,7 +274,7 @@ const getBusinessWithPriority = async (
                 deletedAt: null,
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -291,7 +291,7 @@ const getBusinessWithPriority = async (
                 deletedAt: null,
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -304,7 +304,7 @@ const getBusinessWithPriority = async (
                 deletedAt: null,
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -317,7 +317,7 @@ const getBusinessWithPriority = async (
                 deletedAt: null,
               },
               orderBy: {
-                updatedAt: "desc",
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -329,6 +329,9 @@ const getBusinessWithPriority = async (
               where: {
                 deletedAt: null,
               },
+              orderBy: {
+                createdAt: "asc",
+              },
               select: {
                 id: true,
                 name: true,
@@ -338,6 +341,9 @@ const getBusinessWithPriority = async (
             tags: {
               where: {
                 deletedAt: null,
+              },
+              orderBy: {
+                createdAt: "asc",
               },
               select: {
                 id: true,
@@ -520,7 +526,7 @@ export const getBusinessById = async (
           deletedAt: null,
         },
         orderBy: {
-          updatedAt: "desc",
+          createdAt: "asc",
         },
         select: {
           id: true,
@@ -548,7 +554,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -564,7 +570,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -577,7 +583,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -590,7 +596,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -603,7 +609,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -616,7 +622,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -633,7 +639,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -646,7 +652,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -659,7 +665,7 @@ export const getBusinessById = async (
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
             select: {
               id: true,
@@ -671,6 +677,9 @@ export const getBusinessById = async (
             where: {
               deletedAt: null,
             },
+            orderBy: {
+              createdAt: "asc",
+            },
             select: {
               id: true,
               name: true,
@@ -680,6 +689,9 @@ export const getBusinessById = async (
           tags: {
             where: {
               deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
             },
             select: {
               id: true,

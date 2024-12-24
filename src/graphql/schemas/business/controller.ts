@@ -146,7 +146,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           operatingHours: {
@@ -154,7 +154,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           addresses: {
@@ -162,7 +162,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           websites: {
@@ -170,7 +170,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           coverImages: {
@@ -178,7 +178,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           adBannerImages: {
@@ -186,7 +186,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           mobileAdBannerImages: {
@@ -194,7 +194,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           courts: {
@@ -202,7 +202,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           proficiencies: {
@@ -210,7 +210,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           languages: {
@@ -218,7 +218,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
           tags: {
@@ -226,7 +226,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              updatedAt: "desc",
+              createdAt: "asc",
             },
           },
         },
@@ -236,7 +236,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
           deletedAt: null,
         },
         orderBy: {
-          updatedAt: "desc",
+          createdAt: "asc",
         },
       },
       reviews: {
