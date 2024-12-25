@@ -77,8 +77,8 @@ export const typeDefs = gql`
 
   input BusinessOperatingHourInput {
     dayOfWeek: DayOfWeek!
-    openingTime: String! # Expecting HH:mm format
-    closingTime: String! # Expecting HH:mm format
+    openingTime: String # Expecting HH:mm format
+    closingTime: String # Expecting HH:mm format
     toDelete: Boolean
   }
 

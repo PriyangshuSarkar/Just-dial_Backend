@@ -285,8 +285,8 @@ model BusinessOperatingHours {
   id                String          @id @default(uuid())
   businessDetailsId String
   dayOfWeek         DayOfWeek
-  openingTime       String
-  closingTime       String
+  openingTime       String?
+  closingTime       String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   deletedAt         DateTime?

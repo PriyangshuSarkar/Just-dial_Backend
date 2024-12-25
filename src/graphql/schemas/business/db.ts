@@ -223,8 +223,8 @@ export const ManageBusinessOperatingHoursSchema = object({
       "FRIDAY",
       "SATURDAY",
     ]),
-    openingTime: string(),
-    closingTime: string(),
+    openingTime: string().optional(),
+    closingTime: string().optional(),
     toDelete: boolean().optional(),
   })
     .array()
