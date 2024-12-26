@@ -2316,6 +2316,7 @@ export const manageBusinessSupportingDocuments = async (
   }
   return updateResults;
 };
+
 export const manageBusinessOperatingHours = async (
   _: unknown,
   args: ManageBusinessOperatingHoursInput,

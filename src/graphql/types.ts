@@ -196,6 +196,8 @@ export const typeDefs = gql`
     updatedAt: Date
     deletedAt: Date
     business: Business
+    message: String
+    token: String
   }
 
   type BusinessCoverImage {
