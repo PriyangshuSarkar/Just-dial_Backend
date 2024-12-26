@@ -939,7 +939,7 @@ export const forgetBusinessPassword = async (
 
     // Create new contact
     const otpData = createOtpData();
-    const newContact = await tx.businessPrimaryContact.update({
+    const updatedContact = await tx.businessPrimaryContact.update({
       where: {
         businessId: existingContact.businessId,
         type,
@@ -953,7 +953,7 @@ export const forgetBusinessPassword = async (
       },
     });
 
-    console.log(!newContact);
+    console.log(!updatedContact);
     // Send OTP
     // try {
     //   if (type === "EMAIL") {
@@ -1035,6 +1035,17 @@ export const changeBusinessPassword = async (
       data: {
         password: hash,
         salt,
+        primaryContacts: {
+          update: {
+            where: {
+              id: existingContact.id,
+            },
+            data: {
+              otp: null,
+              otpExpiresAt: null,
+            },
+          },
+        },
       },
       include: {
         primaryContacts: true,

@@ -717,7 +717,7 @@ export const forgetUserPassword = async (
 
     // Create new contact
     const otpData = createOtpData();
-    const newContact = await tx.userContact.update({
+    const updatedContact = await tx.userContact.update({
       where: {
         userId: existingContact.userId,
         type,
@@ -731,7 +731,7 @@ export const forgetUserPassword = async (
       },
     });
 
-    console.log(!newContact);
+    console.log(!updatedContact);
 
     // Send OTP
     // try {
@@ -815,6 +815,17 @@ export const changeUserPassword = async (
       data: {
         password: hash,
         salt,
+        contacts: {
+          update: {
+            where: {
+              id: existingContact.id,
+            },
+            data: {
+              otp: null,
+              otpExpiresAt: null,
+            },
+          },
+        },
       },
     });
 
