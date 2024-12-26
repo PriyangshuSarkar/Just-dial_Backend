@@ -939,11 +939,13 @@ export const forgetBusinessPassword = async (
 
     // Create new contact
     const otpData = createOtpData();
-    const newContact = await tx.businessPrimaryContact.create({
-      data: {
+    const newContact = await tx.businessPrimaryContact.update({
+      where: {
         businessId: existingContact.businessId,
         type,
         value: value!,
+      },
+      data: {
         ...otpData,
       },
       include: {

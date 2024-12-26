@@ -717,11 +717,13 @@ export const forgetUserPassword = async (
 
     // Create new contact
     const otpData = createOtpData();
-    const newContact = await tx.userContact.create({
-      data: {
+    const newContact = await tx.userContact.update({
+      where: {
         userId: existingContact.userId,
         type,
         value: value!,
+      },
+      data: {
         ...otpData,
       },
       include: {
