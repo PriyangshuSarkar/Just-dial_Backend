@@ -5,8 +5,6 @@ import {
   boolean,
   number,
   string,
-  union,
-  null as null_,
 } from "zod";
 
 export const FilterSchema = object({
@@ -28,7 +26,10 @@ export const FilterSchema = object({
   languages: string().array().optional(),
   courts: string().array().optional(),
   proficiencies: string().array().optional(),
-  cityName: string().optional(),
+  pincode: string().optional(),
+  city: string().optional(),
+  state: string().optional(),
+  country: string().optional(),
 });
 export type FilterInput = infer_<typeof FilterSchema>;
 
@@ -38,18 +39,12 @@ export const SearchSchema = FilterSchema.extend({
 });
 export type SearchInput = infer_<typeof FilterSchema>;
 
-export const LocationPrioritySchema = union([
-  object({
-    city: string().optional(),
-    state: string().optional(),
-    country: string().optional(),
-  }),
-  object({
-    city: null_(),
-    state: null_(),
-    country: null_(),
-  }),
-]);
+export const LocationPrioritySchema = object({
+  pincode: string().array().optional(),
+  city: string().array().optional(),
+  state: string().array().optional(),
+  country: string().array().optional(),
+});
 export type LocationPriorityInput = infer_<typeof LocationPrioritySchema>;
 
 export const GetBusinessByIdSchema = object({

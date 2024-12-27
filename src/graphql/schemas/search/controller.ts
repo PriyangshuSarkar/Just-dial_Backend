@@ -15,9 +15,12 @@ export const search = async (_: unknown, args: SearchInput) => {
   const { page = 1, limit = 10, ...filters } = SearchSchema.parse(args);
 
   // Get location info only if cityName is provided
-  const locationInfo = filters.cityName
-    ? await getLocationHierarchy(filters.cityName)
-    : { city: null, state: null, country: null };
+  const locationInfo = await getLocationHierarchy({
+    pincodeInput: filters.pincode,
+    cityInput: filters.city,
+    stateInput: filters.state,
+    countryInput: filters.country,
+  });
 
   const baseConditions: Prisma.BusinessWhereInput = {
     isListed: true,
@@ -100,16 +103,61 @@ export const search = async (_: unknown, args: SearchInput) => {
 
   return result;
 };
+const getLocationHierarchy = async ({
+  pincodeInput,
+  cityInput,
+  stateInput,
+  countryInput,
+}: {
+  pincodeInput?: string;
+  cityInput?: string;
+  stateInput?: string;
+  countryInput?: string;
+}): Promise<LocationPriorityInput> => {
+  const result: {
+    pincode: string[];
+    city: string[];
+    state: string[];
+    country: string[];
+  } = {
+    pincode: [],
+    city: [],
+    state: [],
+    country: [],
+  };
 
-const getLocationHierarchy = async (
-  cityName: string
-): Promise<LocationPriorityInput> => {
+  // Helper function to push values if they exist
+  const pushIfExists = (arr: string[], value?: string) => {
+    if (value) arr.push(value);
+  };
+
+  const pincode = await prisma.pincode.findFirst({
+    where: {
+      code: { equals: pincodeInput, mode: "insensitive" },
+    },
+    include: {
+      city: {
+        include: {
+          state: {
+            include: {
+              country: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (pincode) {
+    pushIfExists(result.pincode, pincode.code);
+    pushIfExists(result.city, pincode.city?.name);
+    pushIfExists(result.state, pincode.city?.state?.name);
+    pushIfExists(result.country, pincode.city?.state?.country?.name);
+  }
+
   const city = await prisma.city.findFirst({
     where: {
-      name: {
-        equals: cityName,
-        mode: "insensitive",
-      },
+      name: { equals: cityInput, mode: "insensitive" },
     },
     include: {
       state: {
@@ -120,11 +168,37 @@ const getLocationHierarchy = async (
     },
   });
 
-  return {
-    city: city?.name,
-    state: city?.state?.name,
-    country: city?.state?.country?.name,
-  };
+  if (city) {
+    pushIfExists(result.city, city.name);
+    pushIfExists(result.state, city.state?.name);
+    pushIfExists(result.country, city.state?.country?.name);
+  }
+
+  const state = await prisma.state.findFirst({
+    where: {
+      name: { equals: stateInput, mode: "insensitive" },
+    },
+    include: {
+      country: true,
+    },
+  });
+
+  if (state) {
+    pushIfExists(result.state, state.name);
+    pushIfExists(result.country, state.country?.name);
+  }
+
+  const country = await prisma.country.findFirst({
+    where: {
+      name: { equals: countryInput, mode: "insensitive" },
+    },
+  });
+
+  if (country) {
+    pushIfExists(result.country, country.name);
+  }
+
+  return result;
 };
 
 const getBusinessWithPriority = async (
@@ -185,24 +259,46 @@ const getBusinessWithPriority = async (
               where: {
                 deletedAt: null,
                 OR: [
-                  {
-                    city: {
-                      contains: location.city || undefined,
-                      mode: "insensitive",
-                    },
-                  },
-                  {
-                    state: {
-                      contains: location.state || undefined,
-                      mode: "insensitive",
-                    },
-                  },
-                  {
-                    country: {
-                      contains: location.country || undefined,
-                      mode: "insensitive",
-                    },
-                  },
+                  ...(location.pincode && location.pincode.length > 0
+                    ? [
+                        {
+                          pincode: {
+                            in: location.pincode, // Checks if any value in the city array matches
+                            mode: Prisma.QueryMode.insensitive, // Corrected type
+                          },
+                        },
+                      ]
+                    : []),
+                  ...(location.city && location.city.length > 0
+                    ? [
+                        {
+                          city: {
+                            in: location.city, // Checks if any value in the city array matches
+                            mode: Prisma.QueryMode.insensitive, // Corrected type
+                          },
+                        },
+                      ]
+                    : []),
+                  ...(location.state && location.state.length > 0
+                    ? [
+                        {
+                          state: {
+                            in: location.state, // Checks if any value in the state array matches
+                            mode: Prisma.QueryMode.insensitive, // Corrected type
+                          },
+                        },
+                      ]
+                    : []),
+                  ...(location.country && location.country.length > 0
+                    ? [
+                        {
+                          country: {
+                            in: location.country, // Checks if any value in the country array matches
+                            mode: Prisma.QueryMode.insensitive, // Corrected type
+                          },
+                        },
+                      ]
+                    : []),
                 ],
               },
               orderBy: {
@@ -407,7 +503,7 @@ const getBusinessWithPriority = async (
       ? await prisma.category
           .findFirst({
             where: {
-              OR: [
+              AND: [
                 {
                   id: filters.categoryId,
                   deletedAt: null,
@@ -454,13 +550,34 @@ const getLocationScore = (
 
   // Use the first address for scoring
   const primaryAddress = businessAddresses[0];
-
-  if (primaryAddress.city.toLowerCase() === location.city?.toLowerCase())
+  if (
+    location.pincode?.some(
+      (p) => p.toLowerCase() === primaryAddress.pincode.toLowerCase()
+    )
+  ) {
+    return 5;
+  }
+  if (
+    location.city?.some(
+      (c) => c.toLowerCase() === primaryAddress.city.toLowerCase()
+    )
+  ) {
     return 4;
-  if (primaryAddress.state.toLowerCase() === location.state?.toLowerCase())
+  }
+  if (
+    location.state?.some(
+      (s) => s.toLowerCase() === primaryAddress.state.toLowerCase()
+    )
+  ) {
     return 3;
-  if (primaryAddress.country.toLowerCase() === location.country?.toLowerCase())
+  }
+  if (
+    location.country?.some(
+      (c) => c.toLowerCase() === primaryAddress.country.toLowerCase()
+    )
+  ) {
     return 2;
+  }
   return 1;
 };
 
@@ -817,40 +934,42 @@ export const allTags = async () => {
 
 export const location = async (_: unknown, args: LocationInput) => {
   const { search } = LocationSchema.parse(args);
-  const results = await prisma.pincode.findMany({
+
+  // Fetch pincodes
+  const pincodes = await prisma.pincode.findMany({
     where: search
       ? {
           OR: [
             { code: { contains: search, mode: "insensitive" } },
             { slug: { contains: search, mode: "insensitive" } },
-            {
-              city: {
-                OR: [
-                  { name: { contains: search, mode: "insensitive" } },
-                  { slug: { contains: search, mode: "insensitive" } },
-                  {
-                    state: {
-                      OR: [
-                        { name: { contains: search, mode: "insensitive" } },
-                        { slug: { contains: search, mode: "insensitive" } },
-                        {
-                          country: {
-                            OR: [
-                              {
-                                name: { contains: search, mode: "insensitive" },
-                              },
-                              {
-                                slug: { contains: search, mode: "insensitive" },
-                              },
-                            ],
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
+            // {
+            //   city: {
+            //     OR: [
+            //       { name: { contains: search, mode: "insensitive" } },
+            //       { slug: { contains: search, mode: "insensitive" } },
+            //       {
+            //         state: {
+            //           OR: [
+            //             { name: { contains: search, mode: "insensitive" } },
+            //             { slug: { contains: search, mode: "insensitive" } },
+            //             {
+            //               country: {
+            //                 OR: [
+            //                   {
+            //                     name: { contains: search, mode: "insensitive" },
+            //                   },
+            //                   {
+            //                     slug: { contains: search, mode: "insensitive" },
+            //                   },
+            //                 ],
+            //               },
+            //             },
+            //           ],
+            //         },
+            //       },
+            //     ],
+            //   },
+            // },
           ],
         }
       : {},
@@ -884,6 +1003,115 @@ export const location = async (_: unknown, args: LocationInput) => {
       },
     },
   });
+
+  // Fetch cities
+  const cities = await prisma.city.findMany({
+    where: search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
+            // {
+            //   state: {
+            //     OR: [
+            //       { name: { contains: search, mode: "insensitive" } },
+            //       { slug: { contains: search, mode: "insensitive" } },
+            //       {
+            //         country: {
+            //           OR: [
+            //             { name: { contains: search, mode: "insensitive" } },
+            //             { slug: { contains: search, mode: "insensitive" } },
+            //           ],
+            //         },
+            //       },
+            //     ],
+            //   },
+            // },
+          ],
+        }
+      : {},
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      stateId: true,
+      state: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          countryId: true,
+          country: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Fetch states
+  const states = await prisma.state.findMany({
+    where: search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
+            // {
+            //   country: {
+            //     OR: [
+            //       { name: { contains: search, mode: "insensitive" } },
+            //       { slug: { contains: search, mode: "insensitive" } },
+            //     ],
+            //   },
+            // },
+          ],
+        }
+      : {},
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      countryId: true,
+      country: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  });
+
+  // Fetch countries
+  const countries = await prisma.country.findMany({
+    where: search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {},
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  });
+
+  // Combine all results
+  const results = {
+    pincodes,
+    cities,
+    states,
+    countries,
+  };
+
+  console.log(results);
 
   return results;
 };

@@ -22,6 +22,14 @@ export const typeDefs = gql`
     limit: Int
     totalPages: Int
   }
+
+  type LocationResult {
+    pincodes: [Pincode]
+    cities: [City]
+    states: [State]
+    countries: [Country]
+  }
+
   type Query {
     status: String!
 
@@ -37,7 +45,10 @@ export const typeDefs = gql`
       languages: [String!]
       courts: [String!]
       proficiencies: [String!]
-      cityName: String
+      pincode: String
+      city: String
+      state: String
+      country: String
       search: String
       page: Int = 1
       limit: Int = 10
@@ -57,7 +68,7 @@ export const typeDefs = gql`
 
     allTestimonials: [Testimonial]
 
-    location(search: String): [Pincode]
+    location(search: String): LocationResult
 
     getAllAddBanners: [BusinessAdBannerImage]
 
