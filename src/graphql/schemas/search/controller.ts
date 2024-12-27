@@ -920,3 +920,33 @@ export const allTestimonials = async () => {
 
   return allTestimonials;
 };
+
+export const getAllAddBanners = async () => {
+  const allAdBanners = prisma.businessAdBannerImage.findMany({
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      url: true,
+      order: true,
+    },
+  });
+
+  return allAdBanners;
+};
+
+export const getAllMobileAddBanners = async () => {
+  const allMobileAdBanners = prisma.businessMobileAdBannerImage.findMany({
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      url: true,
+      order: true,
+    },
+  });
+
+  return allMobileAdBanners;
+};

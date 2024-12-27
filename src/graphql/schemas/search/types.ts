@@ -58,5 +58,9 @@ export const typeDefs = gql`
     allTestimonials: [Testimonial]
 
     location(search: String): [Pincode]
+
+    getAllAddBanners: [BusinessAdBannerImage]
+
+    getAllMobileAddBanners: [BusinessMobileAdBannerImage]
   }
 `;

@@ -8,6 +8,8 @@ import {
   search,
   location,
   allTestimonials,
+  getAllAddBanners,
+  getAllMobileAddBanners,
 } from "./controller";
 
 export const Query = {
@@ -30,4 +32,8 @@ export const Query = {
   allTestimonials,
 
   location,
+
+  getAllAddBanners,
+
+  getAllMobileAddBanners,
 };
