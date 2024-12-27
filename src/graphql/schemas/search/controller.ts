@@ -484,6 +484,8 @@ const buildOrderByClause = (
       return { averageRating: filters.order || "desc" };
     case "price":
       return { price: filters.order || "asc" };
+    case "experience":
+      return { businessDetails: { experience: filters.order || "desc" } };
     case "popularity":
       return [
         { reviewCount: filters.order || "desc" },
