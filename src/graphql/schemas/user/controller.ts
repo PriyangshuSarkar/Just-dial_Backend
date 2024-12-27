@@ -196,7 +196,7 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
             deletedAt: null,
           },
           {
-            value: validatedData.email,
+            value: validatedData.phone,
             type: "PHONE",
             isVerified: true,
             deletedAt: null,
