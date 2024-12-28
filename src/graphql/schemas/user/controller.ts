@@ -1106,8 +1106,6 @@ export const manageUserAddress = async (
         },
       });
 
-      console.log(updatedAddress);
-
       updatedAddresses.push({
         ...updatedAddress,
         message: "User address updated successfully.",
@@ -1132,8 +1130,6 @@ export const manageUserAddress = async (
         message: "User address added successfully.",
       });
     }
-
-    console.log(updatedAddresses);
   }
   return updatedAddresses;
 };
