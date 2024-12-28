@@ -44,7 +44,7 @@ export const typeDefs = gql`
       avatar: Upload
     ): User
     deleteUserAccount: User
-    manageUserAddress(addresses: [UserAddressInput!]!): UserAddress
+    manageUserAddress(addresses: [UserAddressInput!]!): [UserAddress]
     userSubscription(subscriptionId: ID!): Razorpay!
     userVerifyPayment(
       razorpay_order_id: String!
