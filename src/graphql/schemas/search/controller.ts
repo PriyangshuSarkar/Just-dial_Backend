@@ -1158,6 +1158,17 @@ export const getAllAddBanners = async () => {
       id: true,
       url: true,
       order: true,
+      businessDetails: {
+        select: {
+          business: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -1173,6 +1184,17 @@ export const getAllMobileAddBanners = async () => {
       id: true,
       url: true,
       order: true,
+      businessDetails: {
+        select: {
+          business: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+      },
     },
   });
 
