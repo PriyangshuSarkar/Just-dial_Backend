@@ -222,7 +222,58 @@ const getBusinessWithPriority = async (
   // Fetch businesses and total count in parallel
   const [businesses, total] = await prisma.$transaction([
     prisma.business.findMany({
-      where: whereConditions,
+      where: {
+        ...whereConditions,
+        businessDetails: {
+          addresses: {
+            some: {
+              deletedAt: null,
+              OR: [
+                ...(location.pincode && location.pincode.length > 0
+                  ? [
+                      {
+                        pincode: {
+                          in: location.pincode, // Checks if any value in the city array matches
+                          mode: Prisma.QueryMode.insensitive, // Corrected type
+                        },
+                      },
+                    ]
+                  : []),
+                ...(location.city && location.city.length > 0
+                  ? [
+                      {
+                        city: {
+                          in: location.city, // Checks if any value in the city array matches
+                          mode: Prisma.QueryMode.insensitive, // Corrected type
+                        },
+                      },
+                    ]
+                  : []),
+                ...(location.state && location.state.length > 0
+                  ? [
+                      {
+                        state: {
+                          in: location.state, // Checks if any value in the state array matches
+                          mode: Prisma.QueryMode.insensitive, // Corrected type
+                        },
+                      },
+                    ]
+                  : []),
+                ...(location.country && location.country.length > 0
+                  ? [
+                      {
+                        country: {
+                          in: location.country, // Checks if any value in the country array matches
+                          mode: Prisma.QueryMode.insensitive, // Corrected type
+                        },
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          },
+        },
+      },
       select: {
         id: true,
         name: true,
