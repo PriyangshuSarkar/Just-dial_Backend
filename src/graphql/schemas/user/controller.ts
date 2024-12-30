@@ -617,6 +617,17 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
           },
         },
       },
+      feedbacks: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          user: true,
+        },
+      },
       bookings: {
         where: {
           deletedAt: null,
