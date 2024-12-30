@@ -119,7 +119,7 @@ export const reviewBusiness = async (
     },
   });
 
-  return updatedBusiness;
+  return { ...updatedBusiness, message: "Review created successfully" };
 };
 
 export const feedback = async (
@@ -209,5 +209,5 @@ export const feedback = async (
     },
   });
 
-  return feedback;
+  return { ...feedback, message: "Feedback created successfully" };
 };
