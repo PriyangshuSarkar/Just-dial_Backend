@@ -78,9 +78,53 @@ export const search = async (_: unknown, args: SearchInput) => {
             },
           }
         : undefined,
-      // minPrice: filters.minPrice ? { gte: filters.minPrice } : undefined,
-      // maxPrice: filters.maxPrice ? { lte: filters.maxPrice } : undefined,
-      // minRating: filters.minRating ? { gte: filters.minRating } : undefined,
+      // addresses: {
+      //   some: {
+      //     deletedAt: null,
+      //     OR: [
+      //       ...(locationInfo.pincode?.length
+      //         ? [
+      //             {
+      //               pincode: {
+      //                 in: locationInfo.pincode,
+      //                 mode: Prisma.QueryMode.insensitive,
+      //               },
+      //             },
+      //           ]
+      //         : []),
+      //       ...(locationInfo.city?.length
+      //         ? [
+      //             {
+      //               city: {
+      //                 in: locationInfo.city,
+      //                 mode: Prisma.QueryMode.insensitive,
+      //               },
+      //             },
+      //           ]
+      //         : []),
+      //       ...(locationInfo.state?.length
+      //         ? [
+      //             {
+      //               state: {
+      //                 in: locationInfo.state,
+      //                 mode: Prisma.QueryMode.insensitive,
+      //               },
+      //             },
+      //           ]
+      //         : []),
+      //       ...(locationInfo.country?.length
+      //         ? [
+      //             {
+      //               country: {
+      //                 in: locationInfo.country,
+      //                 mode: Prisma.QueryMode.insensitive,
+      //               },
+      //             },
+      //           ]
+      //         : []),
+      //     ],
+      //   },
+      // },
     },
     price: {
       gte: filters.minPrice,
@@ -103,6 +147,7 @@ export const search = async (_: unknown, args: SearchInput) => {
 
   return result;
 };
+
 const getLocationHierarchy = async ({
   pincodeInput,
   cityInput,
@@ -213,67 +258,10 @@ const getBusinessWithPriority = async (
   // Build the orderBy clause based on filters
   const orderBy = buildOrderByClause(filters);
 
-  // Build additional where conditions based on filters
-  const whereConditions: Prisma.BusinessWhereInput = {
-    ...baseConditions,
-    // ... rest of your where conditions remain the same
-  };
-
   // Fetch businesses and total count in parallel
   const [businesses, total] = await prisma.$transaction([
     prisma.business.findMany({
-      where: {
-        ...whereConditions,
-        businessDetails: {
-          addresses: {
-            some: {
-              deletedAt: null,
-              OR: [
-                ...(location.pincode && location.pincode.length > 0
-                  ? [
-                      {
-                        pincode: {
-                          in: location.pincode, // Checks if any value in the city array matches
-                          mode: Prisma.QueryMode.insensitive, // Corrected type
-                        },
-                      },
-                    ]
-                  : []),
-                ...(location.city && location.city.length > 0
-                  ? [
-                      {
-                        city: {
-                          in: location.city, // Checks if any value in the city array matches
-                          mode: Prisma.QueryMode.insensitive, // Corrected type
-                        },
-                      },
-                    ]
-                  : []),
-                ...(location.state && location.state.length > 0
-                  ? [
-                      {
-                        state: {
-                          in: location.state, // Checks if any value in the state array matches
-                          mode: Prisma.QueryMode.insensitive, // Corrected type
-                        },
-                      },
-                    ]
-                  : []),
-                ...(location.country && location.country.length > 0
-                  ? [
-                      {
-                        country: {
-                          in: location.country, // Checks if any value in the country array matches
-                          mode: Prisma.QueryMode.insensitive, // Corrected type
-                        },
-                      },
-                    ]
-                  : []),
-              ],
-            },
-          },
-        },
-      },
+      where: baseConditions,
       select: {
         id: true,
         name: true,
@@ -521,7 +509,7 @@ const getBusinessWithPriority = async (
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.business.count({ where: whereConditions }),
+    prisma.business.count({ where: baseConditions }),
   ]);
 
   // Map businesses to include slug fallback
