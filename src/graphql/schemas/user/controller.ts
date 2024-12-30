@@ -602,6 +602,21 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
         orderBy: {
           createdAt: "desc",
         },
+        include: {
+          user: true,
+          business: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              businessDetails: {
+                select: {
+                  logo: true,
+                },
+              },
+            },
+          },
+        },
       },
       bookings: {
         where: {
