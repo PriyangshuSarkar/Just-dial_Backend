@@ -602,8 +602,7 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
         orderBy: {
           createdAt: "desc",
         },
-        include: {
-          user: true,
+        select: {
           business: {
             select: {
               id: true,
