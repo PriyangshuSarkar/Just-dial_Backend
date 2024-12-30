@@ -255,6 +255,17 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
           updatedAt: "desc",
         },
       },
+      feedbacks: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        include: {
+          business: true,
+        },
+      },
       subscription: {
         where: {
           deletedAt: null,
