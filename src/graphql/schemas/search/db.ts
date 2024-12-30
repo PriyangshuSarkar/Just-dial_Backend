@@ -9,7 +9,9 @@ import {
 
 export const FilterSchema = object({
   search: string().optional(),
-  verified: boolean().optional(),
+  verified: boolean()
+    .transform((value) => (value === true ? true : undefined))
+    .optional(),
   minPrice: number().optional(),
   maxPrice: number().optional(),
   minRating: number().optional(),
