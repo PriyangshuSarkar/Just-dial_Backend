@@ -254,7 +254,18 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
         orderBy: {
           updatedAt: "desc",
         },
+        select: {
+          user: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              avatar: true,
+            },
+          },
+        },
       },
+
       feedbacks: {
         where: {
           deletedAt: null,
