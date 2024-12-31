@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../utils/dbConnect";
 import {
+  AllTestimonialsInput,
   FilterInput,
   GetBusinessByIdInput,
   GetBusinessByIdSchema,
@@ -1215,10 +1216,16 @@ export const location = async (_: unknown, args: LocationInput) => {
   return results;
 };
 
-export const allTestimonials = async () => {
+export const allTestimonials = async (
+  _: unknown,
+  args: AllTestimonialsInput
+) => {
+  const { type, page, limit } = AllTestimonialsInput.parse(args);
   const allTestimonials = prisma.testimonial.findMany({
     where: {
       deletedAt: null,
+      reviewId: type === "review" ? { not: null } : undefined,
+      feedbackId: type === "feedback" ? { not: null } : undefined,
     },
     select: {
       id: true,
@@ -1243,6 +1250,8 @@ export const allTestimonials = async () => {
         },
       },
     },
+    skip: (page - 1) * limit,
+    take: limit,
   });
 
   return allTestimonials;

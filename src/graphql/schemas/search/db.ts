@@ -62,3 +62,11 @@ export const LocationSchema = object({
   search: string().optional(),
 });
 export type LocationInput = infer_<typeof LocationSchema>;
+
+export const AllTestimonialsInput = object({
+  type: enum_(["review", "feedback"]).optional(),
+  page: number().optional().default(1),
+  limit: number().optional().default(10),
+});
+
+export type AllTestimonialsInput = infer_<typeof AllTestimonialsInput>;

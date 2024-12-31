@@ -130,7 +130,7 @@ export const typeDefs = gql`
     manageState(states: [StateInput]): [State]
     manageCity(cities: [CityInput]): [City]
     managePincode(pincodes: [PincodeInput]): [Pincode]
-    manageTestimonial(review: [ReviewInput]): [Testimonial]
+    manageTestimonial(testimonials: [TestimonialInput]): [Testimonial]
   }
 
   input LanguageInput {
@@ -194,8 +194,11 @@ export const typeDefs = gql`
     slug: ID
     cityId: ID!
   }
-  input ReviewInput {
+
+  input TestimonialInput {
     id: ID
+    reviewId: ID
+    feedbackId: ID
     order: Int
     toDelete: Boolean
   }

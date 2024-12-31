@@ -11,6 +11,7 @@ import {
   manageProficiency,
   manageState,
   manageTag,
+  manageTestimonial,
   manageUserSubscription,
   verifyBusinesses,
 } from "./controller";
@@ -43,4 +44,6 @@ export const Mutation = {
   manageCity,
 
   managePincode,
+
+  manageTestimonial,
 };

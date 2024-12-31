@@ -14,6 +14,11 @@ export const typeDefs = gql`
     desc
   }
 
+  enum AllTestimonialType {
+    review
+    feedback
+  }
+
   type SearchResult {
     businesses: [Business]
     categories: [Category]
@@ -66,7 +71,11 @@ export const typeDefs = gql`
 
     allTags: [Tag]
 
-    allTestimonials: [Testimonial]
+    allTestimonials(
+      type: AllTestimonialType
+      page: Int = 1
+      limit: Int = 10
+    ): [Testimonial]
 
     location(search: String): LocationResult
 

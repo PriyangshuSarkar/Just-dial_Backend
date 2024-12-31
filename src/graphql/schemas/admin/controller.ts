@@ -893,12 +893,12 @@ export const managePincode = async (
 
 export const manageTestimonial = async (
   _: unknown,
-  args: ManageTestimonialInput,
-  context: any
+  args: ManageTestimonialInput
+  // context: any
 ) => {
-  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
-    throw new Error("Invalid or missing token");
-  }
+  // if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+  //   throw new Error("Invalid or missing token");
+  // }
   const validatedData = ManageTestimonialSchema.parse(args);
 
   if (!validatedData?.testimonials) return;
