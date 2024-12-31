@@ -64,7 +64,7 @@ export const LocationSchema = object({
 export type LocationInput = infer_<typeof LocationSchema>;
 
 export const AllTestimonialsInput = object({
-  type: enum_(["review", "feedback"]).optional(),
+  type: enum_(["REVIEW", "FEEDBACK"]).optional(),
   page: number().optional().default(1),
   limit: number().optional().default(10),
 });

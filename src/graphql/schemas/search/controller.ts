@@ -1224,11 +1224,11 @@ export const allTestimonials = async (
   const allTestimonials = prisma.testimonial.findMany({
     where: {
       deletedAt: null,
-      reviewId: type === "review" ? { not: null } : undefined,
-      feedbackId: type === "feedback" ? { not: null } : undefined,
+      type: type,
     },
     select: {
       id: true,
+      type: true,
       rating: true,
       reviewId: true,
       feedbackId: true,

@@ -15,8 +15,8 @@ export const typeDefs = gql`
   }
 
   enum AllTestimonialType {
-    review
-    feedback
+    REVIEW
+    FEEDBACK
   }
 
   type SearchResult {
