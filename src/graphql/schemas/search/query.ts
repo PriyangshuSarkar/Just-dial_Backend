@@ -5,17 +5,20 @@ import {
   allProficiencies,
   allTags,
   getBusinessById,
-  search,
   location,
   allTestimonials,
   getAllAddBanners,
   getAllMobileAddBanners,
+  getAllBusinesses,
 } from "./controller";
+import { search } from "./searchController";
 
 export const Query = {
   status: () => "Server is running",
 
   search,
+
+  getAllBusinesses,
 
   getBusinessById,
 

@@ -23,7 +23,11 @@
     "lib": ["ESNext", "DOM"],
     "noEmit": false // Changed to false to enable emission of compiled files
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*",
+    "un_Used_Code/oldSearchController.ts",
+    "un_Used_Code/newSearchController.ts"
+  ],
   "exclude": ["node_modules", "dist", "un_Used_Code"],
   "ts-node": {
     "esm": true,

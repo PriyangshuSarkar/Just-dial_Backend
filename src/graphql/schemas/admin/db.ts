@@ -15,7 +15,7 @@ export const AdminLoginSchema = object({
 export type AdminLoginInput = infer_<typeof AdminLoginSchema>;
 
 export const SearchAllReviewsSchema = object({
-  search: string().optional(),
+  search: string().toLowerCase().optional(),
   sortBy: enum_(["rating", "createdAt"]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
   page: number().int().positive().default(1),

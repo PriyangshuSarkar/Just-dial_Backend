@@ -51,6 +51,7 @@ model User {
   subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
   testimonials        Testimonial[]
 
+  @@index([id, name, slug])
   @@index([subscriptionId])
 }
 
@@ -73,7 +74,7 @@ model UserContact {
   @@unique([userId, type, isPrimary])
   @@index([type])
   @@index([value])
-  @@index([userId])
+  @@index([userId, isVerified])
 }
 
 model UserAddress {
@@ -89,6 +90,9 @@ model UserAddress {
   country   String
   pincode   String
   state     String
+
+  @@index([userId])
+  @@index([country, state, city, pincode])
 }
 
 model BusinessSubscription {
@@ -142,11 +146,8 @@ model Business {
   businessDetails             BusinessDetails?
   price                       Float?
 
-  @@index([name])
-  @@index([isListed])
-  @@index([averageRating])
-  @@index([isBusinessVerified])
-  @@index([reviewCount])
+  @@index([id, name, slug, isBusinessVerified, isListed, isBlocked])
+  @@index([averageRating, reviewCount])
   @@index([subscriptionId])
 }
 
@@ -169,6 +170,7 @@ model BusinessPrimaryContact {
   @@unique([businessId, type, isPrimary])
   @@index([type])
   @@index([value])
+  @@index([businessId, isVerified])
 }
 
 model BusinessAddress {
@@ -184,6 +186,9 @@ model BusinessAddress {
   country           String
   pincode           String
   state             String
+
+  @@index([businessDetailsId])
+  @@index([country, state, city, pincode])
 }
 
 model BusinessDetails {
@@ -214,6 +219,8 @@ model BusinessDetails {
   createdAt            DateTime                      @default(now())
   updatedAt            DateTime                      @updatedAt
   deletedAt            DateTime?
+
+  @@index([id])
 }
 
 model BusinessSupportingDocuments {
@@ -236,6 +243,8 @@ model BusinessCoverImage {
   updatedAt         DateTime         @updatedAt
   businessDetailsId String?
   businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+
+  @@index([businessDetailsId, url])
 }
 
 model BusinessAdBannerImage {
@@ -247,6 +256,8 @@ model BusinessAdBannerImage {
   updatedAt         DateTime         @updatedAt
   businessDetailsId String?
   businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+
+  @@index([businessDetailsId, url])
 }
 
 model BusinessMobileAdBannerImage {
@@ -258,6 +269,8 @@ model BusinessMobileAdBannerImage {
   updatedAt         DateTime         @updatedAt
   businessDetailsId String?
   businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+
+  @@index([businessDetailsId, url])
 }
 
 model BusinessWebsite {
@@ -269,6 +282,8 @@ model BusinessWebsite {
   updatedAt         DateTime         @updatedAt
   businessDetailsId String?
   businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+
+  @@index([businessDetailsId, url])
 }
 
 enum DayOfWeek {
@@ -293,6 +308,7 @@ model BusinessOperatingHours {
   businessDetails   BusinessDetails @relation(fields: [businessDetailsId], references: [id])
 
   @@unique([businessDetailsId, dayOfWeek])
+  @@index([businessDetailsId, dayOfWeek, openingTime, closingTime])
 }
 
 model Language {
@@ -303,6 +319,8 @@ model Language {
   deletedAt       DateTime?
   updatedAt       DateTime          @updatedAt
   businessDetails BusinessDetails[]
+
+  @@index([id, name, slug])
 }
 
 model Proficiency {
@@ -313,6 +331,8 @@ model Proficiency {
   deletedAt       DateTime?
   updatedAt       DateTime          @updatedAt
   businessDetails BusinessDetails[]
+
+  @@index([id, name, slug])
 }
 
 model Court {
@@ -323,6 +343,8 @@ model Court {
   deletedAt       DateTime?
   updatedAt       DateTime          @updatedAt
   businessDetails BusinessDetails[]
+
+  @@index([id, name, slug])
 }
 
 model Admin {
@@ -344,6 +366,8 @@ model Category {
   categoryImage     String?
   updatedAt         DateTime          @updatedAt
   businessesDetails BusinessDetails[] @relation()
+
+  @@index([id, name, slug])
 }
 
 model Tag {
@@ -353,6 +377,8 @@ model Tag {
   deletedAt       DateTime?
   updatedAt       DateTime          @updatedAt
   BusinessDetails BusinessDetails[]
+
+  @@index([id, name])
 }
 
 model Review {
@@ -366,6 +392,8 @@ model Review {
   updatedAt  DateTime  @updatedAt
   business   Business? @relation(fields: [businessId], references: [id])
   user       User?     @relation(fields: [userId], references: [id])
+
+  @@index([id, userId, businessId])
 }
 
 model Feedback {
@@ -379,6 +407,8 @@ model Feedback {
   updatedAt  DateTime  @updatedAt
   business   Business? @relation(fields: [businessId], references: [id])
   user       User?     @relation(fields: [userId], references: [id])
+
+  @@index([id, userId, businessId])
 }
 
 enum TestimonialType {
@@ -452,6 +482,8 @@ model Pincode {
   slug   String? @unique
   cityId String
   city   City    @relation(fields: [cityId], references: [id])
+
+  @@index([id, code, slug])
 }
 
 model City {
@@ -461,6 +493,8 @@ model City {
   stateId  String
   state    State     @relation(fields: [stateId], references: [id])
   pincodes Pincode[]
+
+  @@index([id, name, slug])
 }
 
 model State {
@@ -470,6 +504,8 @@ model State {
   countryId String
   country   Country @relation(fields: [countryId], references: [id])
   cities    City[]
+
+  @@index([id, name, slug])
 }
 
 model Country {
@@ -477,4 +513,6 @@ model Country {
   name  String
   slug  String? @unique
   state State[]
+
+  @@index([id, name, slug])
 }

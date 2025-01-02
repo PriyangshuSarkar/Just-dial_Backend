@@ -61,6 +61,8 @@ export const typeDefs = gql`
 
     getBusinessById(businessId: String, businessSlug: String): Business
 
+    getAllBusinesses: [Business]
+
     allLanguages: [Language]
 
     allProficiencies: [Proficiency]

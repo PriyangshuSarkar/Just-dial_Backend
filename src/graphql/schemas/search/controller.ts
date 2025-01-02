@@ -1,716 +1,240 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "../../../utils/dbConnect";
 import {
   AllTestimonialsInput,
-  FilterInput,
   GetBusinessByIdInput,
   GetBusinessByIdSchema,
   LocationInput,
-  LocationPriorityInput,
   LocationSchema,
-  SearchInput,
-  SearchSchema,
 } from "./db";
 
-export const search = async (_: unknown, args: SearchInput) => {
-  const { page = 1, limit = 10, ...filters } = SearchSchema.parse(args);
+const requestCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 100; // Max number of items in cache
 
-  // Get location info only if cityName is provided
-  const locationInfo = await getLocationHierarchy({
-    pincodeInput: filters.pincode,
-    cityInput: filters.city,
-    stateInput: filters.state,
-    countryInput: filters.country,
-  });
+export const getAllBusinesses = async () => {
+  const cachedResult = getCachedResult("allBusinesses");
 
-  const baseConditions: Prisma.BusinessWhereInput = {
-    isListed: true,
-    deletedAt: null,
-    isBlocked: false,
-    primaryContacts: {
-      some: {
-        isVerified: true,
-        deletedAt: null,
-      },
-    },
-    name: filters.search
-      ? {
-          contains: filters.search,
-          mode: "insensitive",
-        }
-      : undefined,
-    isBusinessVerified: filters.verified,
-    businessDetails: {
-      categories:
-        filters.categoryId || filters.categorySlug
-          ? {
-              some: {
-                OR: [
-                  { id: filters.categoryId },
-                  { slug: filters.categorySlug },
-                ],
-              },
-            }
-          : undefined,
-      languages: filters.languages?.length
-        ? {
-            some: {
-              name: {
-                in: filters.languages,
-              },
-            },
-          }
-        : undefined,
-      courts: filters.courts?.length
-        ? {
-            some: {
-              name: {
-                in: filters.courts,
-              },
-            },
-          }
-        : undefined,
-      proficiencies: filters.proficiencies?.length
-        ? {
-            some: {
-              name: {
-                in: filters.proficiencies,
-              },
-            },
-          }
-        : undefined,
-      // minPrice: filters.minPrice ? { gte: filters.minPrice } : undefined,
-      // maxPrice: filters.maxPrice ? { lte: filters.maxPrice } : undefined,
-      // minRating: filters.minRating ? { gte: filters.minRating } : undefined,
-      // addresses: {
-      //   some: {
-      //     deletedAt: null,
-      //     OR: [
-      //       ...(locationInfo.pincode && locationInfo.pincode.length > 0
-      //         ? [
-      //             {
-      //               pincode: {
-      //                 in: locationInfo.pincode, // Checks if any value in the city array matches
-      //                 mode: Prisma.QueryMode.insensitive, // Corrected type
-      //               },
-      //             },
-      //           ]
-      //         : []),
-      //       ...(locationInfo.city && locationInfo.city.length > 0
-      //         ? [
-      //             {
-      //               city: {
-      //                 in: locationInfo.city, // Checks if any value in the city array matches
-      //                 mode: Prisma.QueryMode.insensitive, // Corrected type
-      //               },
-      //             },
-      //           ]
-      //         : []),
-      //       ...(locationInfo.state && locationInfo.state.length > 0
-      //         ? [
-      //             {
-      //               state: {
-      //                 in: locationInfo.state, // Checks if any value in the state array matches
-      //                 mode: Prisma.QueryMode.insensitive, // Corrected type
-      //               },
-      //             },
-      //           ]
-      //         : []),
-      //       ...(locationInfo.country && locationInfo.country.length > 0
-      //         ? [
-      //             {
-      //               country: {
-      //                 in: locationInfo.country, // Checks if any value in the country array matches
-      //                 mode: Prisma.QueryMode.insensitive, // Corrected type
-      //               },
-      //             },
-      //           ]
-      //         : []),
-      //     ],
-      //   },
-      // },
-    },
-    price: {
-      gte: filters.minPrice,
-      lte: filters.maxPrice,
-    },
-    averageRating: filters.minRating
-      ? {
-          gte: filters.minRating,
-        }
-      : undefined,
-  };
+  if (cachedResult) return cachedResult;
 
-  const result = await getBusinessWithPriority(
-    baseConditions,
-    locationInfo,
-    filters,
-    page,
-    limit
-  );
-
-  return result;
-};
-
-const getLocationHierarchy = async ({
-  pincodeInput,
-  cityInput,
-  stateInput,
-  countryInput,
-}: {
-  pincodeInput?: string;
-  cityInput?: string;
-  stateInput?: string;
-  countryInput?: string;
-}): Promise<LocationPriorityInput> => {
-  const result: {
-    pincode: string[];
-    city: string[];
-    state: string[];
-    country: string[];
-  } = {
-    pincode: [],
-    city: [],
-    state: [],
-    country: [],
-  };
-
-  // Helper function to push values if they exist
-  const pushIfExists = (arr: string[], value?: string) => {
-    if (value) arr.push(value);
-  };
-
-  const pincode = await prisma.pincode.findFirst({
+  const allBusinesses = prisma.business.findMany({
     where: {
-      code: { equals: pincodeInput, mode: "insensitive" },
+      deletedAt: null,
     },
-    include: {
-      city: {
-        include: {
-          state: {
-            include: {
-              country: true,
-            },
-          },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      isBusinessVerified: true,
+      primaryContacts: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          id: true,
+          value: true,
+          type: true,
         },
       },
-    },
-  });
-
-  if (pincode) {
-    pushIfExists(result.pincode, pincode.code);
-    pushIfExists(result.city, pincode.city?.name);
-    pushIfExists(result.state, pincode.city?.state?.name);
-    pushIfExists(result.country, pincode.city?.state?.country?.name);
-  }
-
-  const city = await prisma.city.findFirst({
-    where: {
-      name: { equals: cityInput, mode: "insensitive" },
-    },
-    include: {
-      state: {
-        include: {
-          country: true,
+      additionalContacts: true,
+      type: true,
+      averageRating: true,
+      reviewCount: true,
+      price: true,
+      businessDetails: {
+        where: {
+          deletedAt: null,
         },
-      },
-    },
-  });
-
-  if (city) {
-    pushIfExists(result.city, city.name);
-    pushIfExists(result.state, city.state?.name);
-    pushIfExists(result.country, city.state?.country?.name);
-  }
-
-  const state = await prisma.state.findFirst({
-    where: {
-      name: { equals: stateInput, mode: "insensitive" },
-    },
-    include: {
-      country: true,
-    },
-  });
-
-  if (state) {
-    pushIfExists(result.state, state.name);
-    pushIfExists(result.country, state.country?.name);
-  }
-
-  const country = await prisma.country.findFirst({
-    where: {
-      name: { equals: countryInput, mode: "insensitive" },
-    },
-  });
-
-  if (country) {
-    pushIfExists(result.country, country.name);
-  }
-
-  return result;
-};
-
-const getBusinessWithPriority = async (
-  baseConditions: Prisma.BusinessWhereInput,
-  location: LocationPriorityInput,
-  filters: FilterInput,
-  page: number,
-  limit: number
-) => {
-  const now = new Date();
-
-  // Build the orderBy clause based on filters
-  const orderBy = buildOrderByClause(filters);
-
-  // Build additional where conditions based on filters
-  const whereConditions: Prisma.BusinessWhereInput = {
-    ...baseConditions,
-    // ... rest of your where conditions remain the same
-  };
-
-  // Fetch businesses and total count in parallel
-  const [businesses, total] = await prisma.$transaction([
-    prisma.business.findMany({
-      where: {
-        ...whereConditions,
-        businessDetails: {
+        select: {
+          id: true,
+          experience: true,
+          license: true,
+          teamSize: true,
+          description: true,
+          primaryWebsite: true,
           addresses: {
-            some: {
+            where: {
               deletedAt: null,
-              OR: [
-                ...(location.pincode && location.pincode.length > 0
-                  ? [
-                      {
-                        pincode: {
-                          in: location.pincode, // Checks if any value in the city array matches
-                          mode: Prisma.QueryMode.insensitive, // Corrected type
-                        },
-                      },
-                    ]
-                  : []),
-                ...(location.city && location.city.length > 0
-                  ? [
-                      {
-                        city: {
-                          in: location.city, // Checks if any value in the city array matches
-                          mode: Prisma.QueryMode.insensitive, // Corrected type
-                        },
-                      },
-                    ]
-                  : []),
-                ...(location.state && location.state.length > 0
-                  ? [
-                      {
-                        state: {
-                          in: location.state, // Checks if any value in the state array matches
-                          mode: Prisma.QueryMode.insensitive, // Corrected type
-                        },
-                      },
-                    ]
-                  : []),
-                ...(location.country && location.country.length > 0
-                  ? [
-                      {
-                        country: {
-                          in: location.country, // Checks if any value in the country array matches
-                          mode: Prisma.QueryMode.insensitive, // Corrected type
-                        },
-                      },
-                    ]
-                  : []),
-              ],
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              pincode: true,
+              city: true,
+              state: true,
+              country: true,
+              order: true,
+            },
+          },
+          websites: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              type: true,
+              url: true,
+            },
+          },
+          coverImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              url: true,
+              order: true,
+            },
+          },
+          adBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              url: true,
+              order: true,
+            },
+          },
+          mobileAdBannerImages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              url: true,
+              order: true,
+            },
+          },
+          operatingHours: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              dayOfWeek: true,
+              openingTime: true,
+              closingTime: true,
+            },
+          },
+          latitude: true,
+          longitude: true,
+          degrees: true,
+          languages: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          proficiencies: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          courts: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          categories: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          tags: {
+            where: {
+              deletedAt: null,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          logo: true,
+        },
+      },
+      reviews: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          businessId: true,
+          userId: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              avatar: true,
             },
           },
         },
       },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        updatedAt: true,
-        primaryContacts: {
-          where: {
-            deletedAt: null,
-          },
-          orderBy: {
-            createdAt: "asc",
-          },
-          select: {
-            id: true,
-            value: true,
-            type: true,
-          },
-        },
-        additionalContacts: true,
-        type: true,
-        averageRating: true,
-        reviewCount: true,
-        businessDetails: {
-          where: {
-            deletedAt: null,
-          },
-          select: {
-            id: true,
-            experience: true,
-            teamSize: true,
-            description: true,
-            updatedAt: true,
-            addresses: {
-              where: {
-                deletedAt: null,
-                OR: [
-                  ...(location.pincode && location.pincode.length > 0
-                    ? [
-                        {
-                          pincode: {
-                            in: location.pincode, // Checks if any value in the city array matches
-                            mode: Prisma.QueryMode.insensitive, // Corrected type
-                          },
-                        },
-                      ]
-                    : []),
-                  ...(location.city && location.city.length > 0
-                    ? [
-                        {
-                          city: {
-                            in: location.city, // Checks if any value in the city array matches
-                            mode: Prisma.QueryMode.insensitive, // Corrected type
-                          },
-                        },
-                      ]
-                    : []),
-                  ...(location.state && location.state.length > 0
-                    ? [
-                        {
-                          state: {
-                            in: location.state, // Checks if any value in the state array matches
-                            mode: Prisma.QueryMode.insensitive, // Corrected type
-                          },
-                        },
-                      ]
-                    : []),
-                  ...(location.country && location.country.length > 0
-                    ? [
-                        {
-                          country: {
-                            in: location.country, // Checks if any value in the country array matches
-                            mode: Prisma.QueryMode.insensitive, // Corrected type
-                          },
-                        },
-                      ]
-                    : []),
-                ],
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                pincode: true,
-                city: true,
-                state: true,
-                country: true,
-                order: true,
-              },
-            },
-            websites: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                type: true,
-                url: true,
-              },
-            },
-            coverImages: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                url: true,
-                order: true,
-              },
-            },
-            adBannerImages: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                url: true,
-                order: true,
-              },
-            },
-            mobileAdBannerImages: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                url: true,
-                order: true,
-              },
-            },
-            operatingHours: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                dayOfWeek: true,
-                openingTime: true,
-                closingTime: true,
-              },
-            },
-            latitude: true,
-            longitude: true,
-            degrees: true,
-            languages: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            proficiencies: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            courts: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            categories: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            tags: {
-              where: {
-                deletedAt: null,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            logo: true,
-          },
-        },
-        reviews: {
-          where: {
-            deletedAt: null,
-          },
-          orderBy: {
-            updatedAt: "desc",
-          },
-          select: {
-            id: true,
-            rating: true,
-            comment: true,
-            businessId: true,
-            userId: true,
-          },
-        },
-        price: true,
-      },
-      orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.business.count({ where: whereConditions }),
-  ]);
-
-  // Map businesses to include slug fallback
-  const mappedBusinesses = businesses.map((business) => ({
-    ...business,
-    slug: business.slug || business.id,
-  }));
-
-  // Sort businesses based on location priority and featured status
-  const sortedBusinesses = mappedBusinesses.sort((a, b) => {
-    if (location.city || location.state || location.country) {
-      const scoreA = getLocationScore(a, location);
-      const scoreB = getLocationScore(b, location);
-      if (scoreA !== scoreB) return scoreB - scoreA;
-    }
-
-    const isFeatureA = isBusinessFeatured(a, now);
-    const isFeatureB = isBusinessFeatured(b, now);
-    if (isFeatureA !== isFeatureB) return isFeatureB ? 1 : -1;
-
-    const ratingA = a.averageRating || 0;
-    const ratingB = b.averageRating || 0;
-    if (ratingA !== ratingB) return ratingB - ratingA;
-
-    return b.updatedAt.getTime() - a.updatedAt.getTime();
+    },
   });
 
-  const categories =
-    filters.categoryId || filters.categorySlug
-      ? await prisma.category
-          .findFirst({
-            where: {
-              AND: [
-                {
-                  id: filters.categoryId,
-                  deletedAt: null,
-                },
-                {
-                  slug: filters.categorySlug,
-                  deletedAt: null,
-                },
-              ],
-            },
-          })
-          .then((category) => (category ? [category] : null))
-      : await prisma.category.findMany({
-          where: {
-            OR: [
-              {
-                name: { contains: filters.search, mode: "insensitive" },
-                deletedAt: null,
-              },
-              {
-                slug: { contains: filters.search, mode: "insensitive" },
-                deletedAt: null,
-              },
-            ],
-          },
-        });
+  setCachedResult("allBusinesses", allBusinesses);
 
-  return {
-    businesses: sortedBusinesses,
-    categories,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
-  };
-};
-
-const getLocationScore = (
-  business: any,
-  location: LocationPriorityInput
-): number => {
-  const businessAddresses = business.businessDetails?.addresses || [];
-  if (!businessAddresses.length) return 1;
-
-  // Use the first address for scoring
-  const primaryAddress = businessAddresses[0];
-  if (
-    location.pincode?.some(
-      (p) => p.toLowerCase() === primaryAddress.pincode.toLowerCase()
-    )
-  ) {
-    return 5;
-  }
-  if (
-    location.city?.some(
-      (c) => c.toLowerCase() === primaryAddress.city.toLowerCase()
-    )
-  ) {
-    return 4;
-  }
-  if (
-    location.state?.some(
-      (s) => s.toLowerCase() === primaryAddress.state.toLowerCase()
-    )
-  ) {
-    return 3;
-  }
-  if (
-    location.country?.some(
-      (c) => c.toLowerCase() === primaryAddress.country.toLowerCase()
-    )
-  ) {
-    return 2;
-  }
-  return 1;
-};
-
-const isBusinessFeatured = (business: any, currentDate: Date): boolean => {
-  return (
-    business.subscription?.id != null &&
-    business.subscriptionExpire != null &&
-    business.subscriptionExpire > currentDate
-  );
-};
-
-const buildOrderByClause = (
-  filters: FilterInput
-):
-  | Prisma.BusinessOrderByWithRelationInput
-  | Prisma.BusinessOrderByWithRelationInput[] => {
-  switch (filters.sortBy) {
-    case "alphabetical":
-      return { name: filters.order || "asc" };
-    case "rating":
-      return { averageRating: filters.order || "desc" };
-    case "price":
-      return { price: filters.order || "asc" };
-    case "experience":
-      return { businessDetails: { experience: filters.order || "desc" } };
-    case "popularity":
-      return [
-        { reviewCount: filters.order || "desc" },
-        { averageRating: "desc" },
-      ];
-    default:
-      return [{ updatedAt: "desc" }];
-  }
+  return allBusinesses;
 };
 
 export const getBusinessById = async (
@@ -959,6 +483,10 @@ export const getBusinessById = async (
 };
 
 export const allLanguages = async () => {
+  const cachedResult = getCachedResult("allLanguages");
+
+  if (cachedResult) return cachedResult;
+
   const allLanguages = prisma.language.findMany({
     where: {
       deletedAt: null,
@@ -970,10 +498,16 @@ export const allLanguages = async () => {
     },
   });
 
+  setCachedResult("allLanguages", allLanguages);
+
   return allLanguages;
 };
 
 export const allProficiencies = async () => {
+  const cachedResult = getCachedResult("allProficiencies");
+
+  if (cachedResult) return cachedResult;
+
   const allProficiency = prisma.proficiency.findMany({
     where: {
       deletedAt: null,
@@ -985,10 +519,16 @@ export const allProficiencies = async () => {
     },
   });
 
+  setCachedResult("allProficiencies", allProficiency);
+
   return allProficiency;
 };
 
 export const allCourts = async () => {
+  const cachedResult = getCachedResult("allCourts");
+
+  if (cachedResult) return cachedResult;
+
   const allCourt = prisma.court.findMany({
     where: {
       deletedAt: null,
@@ -1000,10 +540,16 @@ export const allCourts = async () => {
     },
   });
 
+  setCachedResult("allCourts", allCourt);
+
   return allCourt;
 };
 
 export const allCategories = async () => {
+  const cachedResult = getCachedResult("allCategories");
+
+  if (cachedResult) return cachedResult;
+
   const allCategory = prisma.category.findMany({
     where: {
       deletedAt: null,
@@ -1015,10 +561,16 @@ export const allCategories = async () => {
     },
   });
 
+  setCachedResult("allCategories", allCategory);
+
   return allCategory;
 };
 
 export const allTags = async () => {
+  const cachedResult = getCachedResult("allTags");
+
+  if (cachedResult) return cachedResult;
+
   const allTag = prisma.tag.findMany({
     where: {
       deletedAt: null,
@@ -1029,179 +581,129 @@ export const allTags = async () => {
     },
   });
 
+  setCachedResult("allTags", allTag);
+
   return allTag;
 };
 
 export const location = async (_: unknown, args: LocationInput) => {
   const { search } = LocationSchema.parse(args);
 
-  // Fetch pincodes
-  const pincodes = await prisma.pincode.findMany({
-    where: search
-      ? {
-          OR: [
-            { code: { contains: search, mode: "insensitive" } },
-            { slug: { contains: search, mode: "insensitive" } },
-            // {
-            //   city: {
-            //     OR: [
-            //       { name: { contains: search, mode: "insensitive" } },
-            //       { slug: { contains: search, mode: "insensitive" } },
-            //       {
-            //         state: {
-            //           OR: [
-            //             { name: { contains: search, mode: "insensitive" } },
-            //             { slug: { contains: search, mode: "insensitive" } },
-            //             {
-            //               country: {
-            //                 OR: [
-            //                   {
-            //                     name: { contains: search, mode: "insensitive" },
-            //                   },
-            //                   {
-            //                     slug: { contains: search, mode: "insensitive" },
-            //                   },
-            //                 ],
-            //               },
-            //             },
-            //           ],
-            //         },
-            //       },
-            //     ],
-            //   },
-            // },
-          ],
-        }
-      : {},
-    select: {
-      id: true,
-      code: true,
-      slug: true,
-      cityId: true,
-      city: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          stateId: true,
-          state: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              countryId: true,
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
+  const cachedResult = getCachedResult(`location-${search}`);
+
+  if (cachedResult) return cachedResult;
+
+  // Run all queries in parallel using Promise.all
+  const [pincodes, cities, states, countries] = await Promise.all([
+    prisma.pincode.findMany({
+      where: search
+        ? {
+            OR: [
+              { code: { contains: search, mode: "insensitive" } },
+              { slug: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {},
+      select: {
+        id: true,
+        code: true,
+        slug: true,
+        cityId: true,
+        city: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            stateId: true,
+            state: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                countryId: true,
+                country: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-  });
-
-  // Fetch cities
-  const cities = await prisma.city.findMany({
-    where: search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { slug: { contains: search, mode: "insensitive" } },
-            // {
-            //   state: {
-            //     OR: [
-            //       { name: { contains: search, mode: "insensitive" } },
-            //       { slug: { contains: search, mode: "insensitive" } },
-            //       {
-            //         country: {
-            //           OR: [
-            //             { name: { contains: search, mode: "insensitive" } },
-            //             { slug: { contains: search, mode: "insensitive" } },
-            //           ],
-            //         },
-            //       },
-            //     ],
-            //   },
-            // },
-          ],
-        }
-      : {},
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      stateId: true,
-      state: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          countryId: true,
-          country: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
+    }),
+    prisma.city.findMany({
+      where: search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { slug: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {},
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        stateId: true,
+        state: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            countryId: true,
+            country: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
             },
           },
         },
       },
-    },
-  });
-
-  // Fetch states
-  const states = await prisma.state.findMany({
-    where: search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { slug: { contains: search, mode: "insensitive" } },
-            // {
-            //   country: {
-            //     OR: [
-            //       { name: { contains: search, mode: "insensitive" } },
-            //       { slug: { contains: search, mode: "insensitive" } },
-            //     ],
-            //   },
-            // },
-          ],
-        }
-      : {},
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      countryId: true,
-      country: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
+    }),
+    prisma.state.findMany({
+      where: search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { slug: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {},
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        countryId: true,
+        country: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
         },
       },
-    },
-  });
-
-  // Fetch countries
-  const countries = await prisma.country.findMany({
-    where: search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { slug: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {},
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-    },
-  });
+    }),
+    prisma.country.findMany({
+      where: search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { slug: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {},
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    }),
+  ]);
 
   // Combine all results
   const results = {
@@ -1211,7 +713,7 @@ export const location = async (_: unknown, args: LocationInput) => {
     countries,
   };
 
-  console.log(results);
+  setCachedResult(`location-${search}`, results);
 
   return results;
 };
@@ -1220,7 +722,14 @@ export const allTestimonials = async (
   _: unknown,
   args: AllTestimonialsInput
 ) => {
-  const { type, page, limit } = AllTestimonialsInput.parse(args);
+  const { page, limit, type } = AllTestimonialsInput.parse(args);
+
+  const cacheKey = JSON.stringify({ page, limit, type });
+
+  const cachedResult = getCachedResult(`allTestimonials-${cacheKey}`);
+
+  if (cachedResult) return cachedResult;
+
   const allTestimonials = prisma.testimonial.findMany({
     where: {
       deletedAt: null,
@@ -1254,10 +763,16 @@ export const allTestimonials = async (
     take: limit,
   });
 
+  setCachedResult(`allTestimonials-${cacheKey}`, allTestimonials);
+
   return allTestimonials;
 };
 
 export const getAllAddBanners = async () => {
+  const cachedResult = getCachedResult("allAdBanners");
+
+  if (cachedResult) return cachedResult;
+
   const allAdBanners = prisma.businessAdBannerImage.findMany({
     where: {
       deletedAt: null,
@@ -1280,10 +795,16 @@ export const getAllAddBanners = async () => {
     },
   });
 
+  setCachedResult("allAdBanners", allAdBanners);
+
   return allAdBanners;
 };
 
 export const getAllMobileAddBanners = async () => {
+  const cachedResult = getCachedResult("allMobileAdBanners");
+
+  if (cachedResult) return cachedResult;
+
   const allMobileAdBanners = prisma.businessMobileAdBannerImage.findMany({
     where: {
       deletedAt: null,
@@ -1306,5 +827,32 @@ export const getAllMobileAddBanners = async () => {
     },
   });
 
+  setCachedResult("allMobileAdBanners", allMobileAdBanners);
+
   return allMobileAdBanners;
+};
+
+const getCachedResult = (key: string) => {
+  const cached = requestCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    // Move the cached item to the end to mark it as recently used
+    requestCache.delete(key);
+    requestCache.set(key, cached);
+    return cached.data;
+  }
+  requestCache.delete(key);
+  return null;
+};
+
+const setCachedResult = (key: string, data: any) => {
+  if (requestCache.size >= MAX_CACHE_SIZE) {
+    // Remove the first (least recently used) entry
+    const firstKey = requestCache.keys().next().value;
+    requestCache.delete(firstKey);
+  }
+
+  requestCache.set(key, {
+    data,
+    timestamp: Date.now(),
+  });
 };
