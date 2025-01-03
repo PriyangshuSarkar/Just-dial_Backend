@@ -18,7 +18,14 @@ export const getAllBusinesses = async () => {
 
   const allBusinesses = prisma.business.findMany({
     where: {
+      // isListed: true,
+      // isBlocked: false,
       deletedAt: null,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+        },
+      },
     },
     select: {
       id: true,
