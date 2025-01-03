@@ -2,44 +2,44 @@ import { uploadToSpaces } from "../../../utils/bucket";
 import { prisma } from "../../../utils/dbConnect";
 import { generateToken } from "../../../utils/token";
 import {
+  AdminAllBusinessesInput,
+  AdminAllBusinessesSchema,
+  AdminAllUserInput,
+  AdminAllUsersSchema,
+  AdminBlockBusinessesInput,
+  AdminBlockBusinessesSchema,
+  AdminBlockUserInput,
+  AdminBlockUserSchema,
   AdminLoginInput,
   AdminLoginSchema,
-  AllBusinessesInput,
-  AllBusinessesSchema,
-  AllUserInput,
-  AllUsersSchema,
-  BlockBusinessesInput,
-  BlockBusinessesSchema,
-  BlockUserInput,
-  BlockUserSchema,
-  ManageBusinessSubscriptionInput,
-  ManageBusinessSubscriptionSchema,
-  ManageCategoryInput,
-  ManageCategorySchema,
-  ManageCityInput,
-  ManageCitySchema,
-  ManageCountryInput,
-  ManageCountrySchema,
-  ManageCourtInput,
-  ManageCourtSchema,
-  ManageLanguageInput,
-  ManageLanguageSchema,
-  ManagePincodeInput,
-  ManagePincodeSchema,
-  ManageProficiencyInput,
-  ManageProficiencySchema,
-  ManageStateInput,
-  ManageStateSchema,
-  ManageTagInput,
-  ManageTagSchema,
-  ManageTestimonialInput,
-  ManageTestimonialSchema,
-  ManageUserSubscriptionInput,
-  ManageUserSubscriptionSchema,
-  SearchAllReviewsInput,
-  SearchAllReviewsSchema,
-  VerifyBusinessesInput,
-  VerifyBusinessesSchema,
+  AdminManageBusinessSubscriptionInput,
+  AdminManageBusinessSubscriptionSchema,
+  AdminManageCategoryInput,
+  AdminManageCategorySchema,
+  AdminManageCityInput,
+  AdminManageCitySchema,
+  AdminManageCountryInput,
+  AdminManageCountrySchema,
+  AdminManageCourtInput,
+  AdminManageCourtSchema,
+  AdminManageLanguageInput,
+  AdminManageLanguageSchema,
+  AdminManagePincodeInput,
+  AdminManagePincodeSchema,
+  AdminManageProficiencyInput,
+  AdminManageProficiencySchema,
+  AdminManageStateInput,
+  AdminManageStateSchema,
+  AdminManageTagInput,
+  AdminManageTagSchema,
+  AdminManageTestimonialInput,
+  AdminManageTestimonialSchema,
+  AdminManageUserSubscriptionInput,
+  AdminManageUserSubscriptionSchema,
+  AdminSearchAllReviewsInput,
+  AdminSearchAllReviewsSchema,
+  AdminVerifyBusinessesInput,
+  AdminVerifyBusinessesSchema,
 } from "./db";
 
 export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
@@ -70,16 +70,16 @@ export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
   }
 };
 
-export const allUsers = async (
+export const adminAllUsers = async (
   _: unknown,
-  args: AllUserInput,
+  args: AdminAllUserInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
-  const validatedData = AllUsersSchema.parse(args);
+  const validatedData = AdminAllUsersSchema.parse(args);
 
   if (!validatedData) return;
 
@@ -155,16 +155,16 @@ export const allUsers = async (
   };
 };
 
-export const allBusinesses = async (
+export const adminAllBusinesses = async (
   _: unknown,
-  args: AllBusinessesInput,
+  args: AdminAllBusinessesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
-  const validatedData = AllBusinessesSchema.parse(args);
+  const validatedData = AdminAllBusinessesSchema.parse(args);
   if (!validatedData) return;
 
   const skip = (validatedData.page - 1) * validatedData.limit;
@@ -277,9 +277,9 @@ export const allBusinesses = async (
   };
 };
 
-export const searchAllReviews = async (
+export const adminSearchAllReviews = async (
   _: unknown,
-  args: SearchAllReviewsInput,
+  args: AdminSearchAllReviewsInput,
   context: any
 ) => {
   // Validate the adminId in the context
@@ -288,7 +288,7 @@ export const searchAllReviews = async (
   }
 
   // Validate and parse the input data
-  const validatedData = SearchAllReviewsSchema.parse(args);
+  const validatedData = AdminSearchAllReviewsSchema.parse(args);
   if (!validatedData) return;
 
   const { search, sortBy, sortOrder, page, limit } = validatedData;
@@ -338,16 +338,16 @@ export const searchAllReviews = async (
   };
 };
 
-export const blockUsers = async (
+export const adminBlockUsers = async (
   _: unknown,
-  args: BlockUserInput,
+  args: AdminBlockUserInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
-  const validatedData = BlockUserSchema.parse(args);
+  const validatedData = AdminBlockUserSchema.parse(args);
   if (!validatedData) return;
 
   const { userIds } = validatedData;
@@ -368,16 +368,16 @@ export const blockUsers = async (
   };
 };
 
-export const blockBusinesses = async (
+export const adminBlockBusinesses = async (
   _: unknown,
-  args: BlockBusinessesInput,
+  args: AdminBlockBusinessesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
 
-  const validatedData = BlockBusinessesSchema.parse(args);
+  const validatedData = AdminBlockBusinessesSchema.parse(args);
 
   if (!validatedData) return;
 
@@ -399,15 +399,15 @@ export const blockBusinesses = async (
   };
 };
 
-export const verifyBusinesses = async (
+export const adminVerifyBusinesses = async (
   _: unknown,
-  args: VerifyBusinessesInput,
+  args: AdminVerifyBusinessesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = VerifyBusinessesSchema.parse(args);
+  const validatedData = AdminVerifyBusinessesSchema.parse(args);
 
   if (!validatedData) return;
 
@@ -425,15 +425,15 @@ export const verifyBusinesses = async (
   };
 };
 
-export const manageUserSubscription = async (
+export const adminManageUserSubscription = async (
   _: unknown,
-  args: ManageUserSubscriptionInput,
+  args: AdminManageUserSubscriptionInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageUserSubscriptionSchema.parse(args);
+  const validatedData = AdminManageUserSubscriptionSchema.parse(args);
 
   if (!validatedData) return;
 
@@ -475,15 +475,15 @@ export const manageUserSubscription = async (
   }
 };
 
-export const manageBusinessSubscription = async (
+export const adminManageBusinessSubscription = async (
   _: unknown,
-  args: ManageBusinessSubscriptionInput,
+  args: AdminManageBusinessSubscriptionInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageBusinessSubscriptionSchema.parse(args);
+  const validatedData = AdminManageBusinessSubscriptionSchema.parse(args);
 
   if (!validatedData) return;
 
@@ -529,15 +529,15 @@ export const manageBusinessSubscription = async (
   }
 };
 
-export const manageLanguage = async (
+export const adminManageLanguage = async (
   _: unknown,
-  args: ManageLanguageInput,
+  args: AdminManageLanguageInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageLanguageSchema.parse(args);
+  const validatedData = AdminManageLanguageSchema.parse(args);
 
   if (!validatedData?.languages) return;
 
@@ -568,15 +568,15 @@ export const manageLanguage = async (
   return results;
 };
 
-export const manageProficiency = async (
+export const adminManageProficiency = async (
   _: unknown,
-  args: ManageProficiencyInput,
+  args: AdminManageProficiencyInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageProficiencySchema.parse(args);
+  const validatedData = AdminManageProficiencySchema.parse(args);
 
   if (!validatedData?.proficiencies) return;
 
@@ -605,15 +605,15 @@ export const manageProficiency = async (
   return results;
 };
 
-export const manageCourt = async (
+export const adminManageCourt = async (
   _: unknown,
-  args: ManageCourtInput,
+  args: AdminManageCourtInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageCourtSchema.parse(args);
+  const validatedData = AdminManageCourtSchema.parse(args);
 
   if (!validatedData?.courts) return;
 
@@ -642,15 +642,15 @@ export const manageCourt = async (
   return results;
 };
 
-export const manageCategory = async (
+export const adminManageCategory = async (
   _: unknown,
-  args: ManageCategoryInput,
+  args: AdminManageCategoryInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageCategorySchema.parse(args);
+  const validatedData = AdminManageCategorySchema.parse(args);
 
   if (!validatedData?.categories) return;
 
@@ -707,15 +707,15 @@ export const manageCategory = async (
   return results;
 };
 
-export const manageTag = async (
+export const adminManageTag = async (
   _: unknown,
-  args: ManageTagInput,
+  args: AdminManageTagInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageTagSchema.parse(args);
+  const validatedData = AdminManageTagSchema.parse(args);
 
   if (!validatedData?.tags) return;
 
@@ -741,15 +741,15 @@ export const manageTag = async (
   return results;
 };
 
-export const manageCountry = async (
+export const adminManageCountry = async (
   _: unknown,
-  args: ManageCountryInput,
+  args: AdminManageCountryInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageCountrySchema.parse(args);
+  const validatedData = AdminManageCountrySchema.parse(args);
 
   if (!validatedData?.countries) return;
 
@@ -777,15 +777,15 @@ export const manageCountry = async (
   return results;
 };
 
-export const manageState = async (
+export const adminManageState = async (
   _: unknown,
-  args: ManageStateInput,
+  args: AdminManageStateInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageStateSchema.parse(args);
+  const validatedData = AdminManageStateSchema.parse(args);
 
   if (!validatedData?.states) return;
 
@@ -815,15 +815,15 @@ export const manageState = async (
   return results;
 };
 
-export const manageCity = async (
+export const adminManageCity = async (
   _: unknown,
-  args: ManageCityInput,
+  args: AdminManageCityInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageCitySchema.parse(args);
+  const validatedData = AdminManageCitySchema.parse(args);
 
   if (!validatedData?.cities) return;
 
@@ -853,15 +853,15 @@ export const manageCity = async (
   return results;
 };
 
-export const managePincode = async (
+export const adminManagePincode = async (
   _: unknown,
-  args: ManagePincodeInput,
+  args: AdminManagePincodeInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManagePincodeSchema.parse(args);
+  const validatedData = AdminManagePincodeSchema.parse(args);
 
   if (!validatedData?.pincodes) return;
 
@@ -891,15 +891,15 @@ export const managePincode = async (
   return results;
 };
 
-export const manageTestimonial = async (
+export const adminManageTestimonial = async (
   _: unknown,
-  args: ManageTestimonialInput,
+  args: AdminManageTestimonialInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = ManageTestimonialSchema.parse(args);
+  const validatedData = AdminManageTestimonialSchema.parse(args);
 
   if (!validatedData?.testimonials) return;
 

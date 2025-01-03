@@ -1,8 +1,8 @@
 import {
+  adminAllBusinesses,
+  adminAllUsers,
   adminLogin,
-  allBusinesses,
-  allUsers,
-  searchAllReviews,
+  adminSearchAllReviews,
 } from "./controller";
 
 export const Query = {
@@ -10,9 +10,9 @@ export const Query = {
 
   adminLogin,
 
-  allUsers,
+  adminAllUsers,
 
-  allBusinesses,
+  adminAllBusinesses,
 
-  searchAllReviews,
+  adminSearchAllReviews,
 };

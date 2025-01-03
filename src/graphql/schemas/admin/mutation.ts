@@ -1,49 +1,49 @@
 import {
-  blockBusinesses,
-  blockUsers,
-  manageBusinessSubscription,
-  manageCategory,
-  manageCity,
-  manageCountry,
-  manageCourt,
-  manageLanguage,
-  managePincode,
-  manageProficiency,
-  manageState,
-  manageTag,
-  manageTestimonial,
-  manageUserSubscription,
-  verifyBusinesses,
+  adminBlockBusinesses,
+  adminBlockUsers,
+  adminManageBusinessSubscription,
+  adminManageCategory,
+  adminManageCity,
+  adminManageCountry,
+  adminManageCourt,
+  adminManageLanguage,
+  adminManagePincode,
+  adminManageProficiency,
+  adminManageState,
+  adminManageTag,
+  adminManageTestimonial,
+  adminManageUserSubscription,
+  adminVerifyBusinesses,
 } from "./controller";
 
 export const Mutation = {
-  blockUsers,
+  adminBlockUsers,
 
-  blockBusinesses,
+  adminBlockBusinesses,
 
-  verifyBusinesses,
+  adminVerifyBusinesses,
 
-  manageUserSubscription,
+  adminManageUserSubscription,
 
-  manageBusinessSubscription,
+  adminManageBusinessSubscription,
 
-  manageLanguage,
+  adminManageLanguage,
 
-  manageProficiency,
+  adminManageProficiency,
 
-  manageCourt,
+  adminManageCourt,
 
-  manageCategory,
+  adminManageCategory,
 
-  manageTag,
+  adminManageTag,
 
-  manageCountry,
+  adminManageCountry,
 
-  manageState,
+  adminManageState,
 
-  manageCity,
+  adminManageCity,
 
-  managePincode,
+  adminManagePincode,
 
-  manageTestimonial,
+  adminManageTestimonial,
 };

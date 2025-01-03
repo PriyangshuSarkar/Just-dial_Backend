@@ -54,7 +54,7 @@ export const typeDefs = gql`
 
     adminLogin(email: String!, password: String!): Admin
 
-    allUsers(
+    adminAllUsers(
       name: String
       email: String
       phone: String
@@ -69,7 +69,7 @@ export const typeDefs = gql`
       sortOrder: SortOrder = desc
     ): AllUserResult
 
-    allBusinesses(
+    adminAllBusinesses(
       name: String
       email: String
       phone: String
@@ -88,7 +88,7 @@ export const typeDefs = gql`
       sortOrder: SortOrder = desc
     ): AllBusinessResult
 
-    searchAllReviews(
+    adminSearchAllReviews(
       search: String
       page: Int = 1
       limit: Int = 10
@@ -99,10 +99,10 @@ export const typeDefs = gql`
 
   # Mutation Type Definitions
   type Mutation {
-    blockUsers(userIds: [ID]): [User]
-    blockBusinesses(businessIds: [ID]): [Business]
-    verifyBusinesses(businessIds: [ID]): [Business]
-    manageUserSubscription(
+    adminBlockUsers(userIds: [ID]): [User]
+    adminBlockBusinesses(businessIds: [ID]): [Business]
+    adminVerifyBusinesses(businessIds: [ID]): [Business]
+    adminManageUserSubscription(
       id: ID
       name: String!
       description: String
@@ -111,7 +111,7 @@ export const typeDefs = gql`
       features: [String!]!
       toDelete: Boolean
     ): UserSubscription
-    manageBusinessSubscription(
+    adminManageBusinessSubscription(
       id: ID
       name: String!
       description: String
@@ -121,16 +121,16 @@ export const typeDefs = gql`
       tierLevel: Int
       toDelete: Boolean
     ): BusinessSubscription
-    manageLanguage(languages: [LanguageInput]): [Language]
-    manageProficiency(proficiencies: [ProficiencyInput]): [Proficiency]
-    manageCourt(courts: [CourtInput]): [Court]
-    manageCategory(categories: [CategoryInput]): [Category]
-    manageTag(tags: [TagInput]): [Tag]
-    manageCountry(countries: [CountryInput]): [Country]
-    manageState(states: [StateInput]): [State]
-    manageCity(cities: [CityInput]): [City]
-    managePincode(pincodes: [PincodeInput]): [Pincode]
-    manageTestimonial(testimonials: [TestimonialInput]): [Testimonial]
+    adminManageLanguage(languages: [LanguageInput]): [Language]
+    adminManageProficiency(proficiencies: [ProficiencyInput]): [Proficiency]
+    adminManageCourt(courts: [CourtInput]): [Court]
+    adminManageCategory(categories: [CategoryInput]): [Category]
+    adminManageTag(tags: [TagInput]): [Tag]
+    adminManageCountry(countries: [CountryInput]): [Country]
+    adminManageState(states: [StateInput]): [State]
+    adminManageCity(cities: [CityInput]): [City]
+    adminManagePincode(pincodes: [PincodeInput]): [Pincode]
+    adminManageTestimonial(testimonials: [TestimonialInput]): [Testimonial]
   }
 
   input LanguageInput {

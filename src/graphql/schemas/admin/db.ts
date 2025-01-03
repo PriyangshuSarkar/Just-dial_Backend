@@ -14,16 +14,18 @@ export const AdminLoginSchema = object({
 }).optional();
 export type AdminLoginInput = infer_<typeof AdminLoginSchema>;
 
-export const SearchAllReviewsSchema = object({
+export const AdminSearchAllReviewsSchema = object({
   search: string().toLowerCase().optional(),
   sortBy: enum_(["rating", "createdAt"]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
   page: number().int().positive().default(1),
   limit: number().int().positive().default(10),
 }).optional();
-export type SearchAllReviewsInput = infer_<typeof SearchAllReviewsSchema>;
+export type AdminSearchAllReviewsInput = infer_<
+  typeof AdminSearchAllReviewsSchema
+>;
 
-export const AllUsersSchema = object({
+export const AdminAllUsersSchema = object({
   name: string().optional(),
   email: string().optional(),
   phone: string().optional(),
@@ -37,9 +39,9 @@ export const AllUsersSchema = object({
   sortBy: enum_(["name", "createdAt", "updatedAt"]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
 }).optional();
-export type AllUserInput = infer_<typeof AllUsersSchema>;
+export type AdminAllUserInput = infer_<typeof AdminAllUsersSchema>;
 
-export const AllBusinessesSchema = object({
+export const AdminAllBusinessesSchema = object({
   name: string().optional(),
   email: string().optional(),
   phone: string().optional(),
@@ -59,24 +61,28 @@ export const AllBusinessesSchema = object({
   ),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
 }).optional();
-export type AllBusinessesInput = infer_<typeof AllBusinessesSchema>;
+export type AdminAllBusinessesInput = infer_<typeof AdminAllBusinessesSchema>;
 
-export const VerifyBusinessesSchema = object({
+export const AdminVerifyBusinessesSchema = object({
   businessIds: string().array().optional(),
 });
-export type VerifyBusinessesInput = infer_<typeof VerifyBusinessesSchema>;
+export type AdminVerifyBusinessesInput = infer_<
+  typeof AdminVerifyBusinessesSchema
+>;
 
-export const BlockBusinessesSchema = object({
+export const AdminBlockBusinessesSchema = object({
   businessIds: string().array(),
 }).optional();
-export type BlockBusinessesInput = infer_<typeof BlockBusinessesSchema>;
+export type AdminBlockBusinessesInput = infer_<
+  typeof AdminBlockBusinessesSchema
+>;
 
-export const BlockUserSchema = object({
+export const AdminBlockUserSchema = object({
   userIds: string().array(),
 }).optional();
-export type BlockUserInput = infer_<typeof BlockUserSchema>;
+export type AdminBlockUserInput = infer_<typeof AdminBlockUserSchema>;
 
-export const ManageUserSubscriptionSchema = object({
+export const AdminManageUserSubscriptionSchema = object({
   id: string().optional(),
   name: string().optional(),
   description: string().optional(),
@@ -85,11 +91,11 @@ export const ManageUserSubscriptionSchema = object({
   features: string().array().optional(),
   toDelete: boolean().optional().default(false),
 }).optional();
-export type ManageUserSubscriptionInput = infer_<
-  typeof ManageUserSubscriptionSchema
+export type AdminManageUserSubscriptionInput = infer_<
+  typeof AdminManageUserSubscriptionSchema
 >;
 
-export const ManageBusinessSubscriptionSchema = object({
+export const AdminManageBusinessSubscriptionSchema = object({
   id: string().optional(),
   name: string().optional(),
   description: string().optional(),
@@ -99,11 +105,11 @@ export const ManageBusinessSubscriptionSchema = object({
   tierLevel: number().optional(),
   toDelete: boolean().optional().default(false),
 }).optional();
-export type ManageBusinessSubscriptionInput = infer_<
-  typeof ManageBusinessSubscriptionSchema
+export type AdminManageBusinessSubscriptionInput = infer_<
+  typeof AdminManageBusinessSubscriptionSchema
 >;
 
-export const ManageLanguageSchema = object({
+export const AdminManageLanguageSchema = object({
   languages: object({
     id: string().optional(),
     name: string(),
@@ -113,9 +119,9 @@ export const ManageLanguageSchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageLanguageInput = infer_<typeof ManageLanguageSchema>;
+export type AdminManageLanguageInput = infer_<typeof AdminManageLanguageSchema>;
 
-export const ManageProficiencySchema = object({
+export const AdminManageProficiencySchema = object({
   proficiencies: object({
     id: string().optional(),
     name: string(),
@@ -125,9 +131,11 @@ export const ManageProficiencySchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageProficiencyInput = infer_<typeof ManageProficiencySchema>;
+export type AdminManageProficiencyInput = infer_<
+  typeof AdminManageProficiencySchema
+>;
 
-export const ManageCourtSchema = object({
+export const AdminManageCourtSchema = object({
   courts: object({
     id: string().optional(),
     name: string(),
@@ -137,9 +145,9 @@ export const ManageCourtSchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageCourtInput = infer_<typeof ManageCourtSchema>;
+export type AdminManageCourtInput = infer_<typeof AdminManageCourtSchema>;
 
-export const ManageCategorySchema = object({
+export const AdminManageCategorySchema = object({
   categories: object({
     id: string().optional(),
     name: string(),
@@ -150,9 +158,9 @@ export const ManageCategorySchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageCategoryInput = infer_<typeof ManageCategorySchema>;
+export type AdminManageCategoryInput = infer_<typeof AdminManageCategorySchema>;
 
-export const ManageTagSchema = object({
+export const AdminManageTagSchema = object({
   tags: object({
     id: string().optional(),
     name: string(),
@@ -160,9 +168,9 @@ export const ManageTagSchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageTagInput = infer_<typeof ManageTagSchema>;
+export type AdminManageTagInput = infer_<typeof AdminManageTagSchema>;
 
-export const ManageCountrySchema = object({
+export const AdminManageCountrySchema = object({
   countries: object({
     id: string().optional(),
     name: string(),
@@ -171,9 +179,9 @@ export const ManageCountrySchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageCountryInput = infer_<typeof ManageCountrySchema>;
+export type AdminManageCountryInput = infer_<typeof AdminManageCountrySchema>;
 
-export const ManageStateSchema = object({
+export const AdminManageStateSchema = object({
   states: object({
     id: string().optional(),
     name: string(),
@@ -183,9 +191,9 @@ export const ManageStateSchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageStateInput = infer_<typeof ManageStateSchema>;
+export type AdminManageStateInput = infer_<typeof AdminManageStateSchema>;
 
-export const ManageCitySchema = object({
+export const AdminManageCitySchema = object({
   cities: object({
     id: string().optional(),
     name: string(),
@@ -195,9 +203,9 @@ export const ManageCitySchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageCityInput = infer_<typeof ManageCitySchema>;
+export type AdminManageCityInput = infer_<typeof AdminManageCitySchema>;
 
-export const ManagePincodeSchema = object({
+export const AdminManagePincodeSchema = object({
   pincodes: object({
     id: string().optional(),
     code: string(),
@@ -207,9 +215,9 @@ export const ManagePincodeSchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManagePincodeInput = infer_<typeof ManagePincodeSchema>;
+export type AdminManagePincodeInput = infer_<typeof AdminManagePincodeSchema>;
 
-export const ManageTestimonialSchema = object({
+export const AdminManageTestimonialSchema = object({
   testimonials: object({
     id: string().optional(),
     reviewId: string().optional(),
@@ -220,4 +228,6 @@ export const ManageTestimonialSchema = object({
     .array()
     .optional(),
 }).optional();
-export type ManageTestimonialInput = infer_<typeof ManageTestimonialSchema>;
+export type AdminManageTestimonialInput = infer_<
+  typeof AdminManageTestimonialSchema
+>;
