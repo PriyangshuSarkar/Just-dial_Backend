@@ -99,9 +99,9 @@ export const typeDefs = gql`
 
   # Mutation Type Definitions
   type Mutation {
-    adminBlockUsers(userIds: [ID]): [User]
-    adminBlockBusinesses(businessIds: [ID]): [Business]
-    adminVerifyBusinesses(businessIds: [ID]): [Business]
+    adminBlockUsers(users: [UsersBlock]): [User]
+    adminBlockBusinesses(businesses: [BusinessesBlock]): [Business]
+    adminVerifyBusinesses(businesses: [BusinessesVerify]): [Business]
     adminManageUserSubscription(
       id: ID
       name: String!
@@ -131,6 +131,24 @@ export const typeDefs = gql`
     adminManageCity(cities: [CityInput]): [City]
     adminManagePincode(pincodes: [PincodeInput]): [Pincode]
     adminManageTestimonial(testimonials: [TestimonialInput]): [Testimonial]
+  }
+
+  input BusinessesVerify {
+    businessSlug: ID
+    businessId: ID
+    verify: Boolean
+  }
+
+  input BusinessesBlock {
+    businessSlug: ID
+    businessId: ID
+    block: Boolean
+  }
+
+  input UsersBlock {
+    userSlug: ID
+    userId: ID
+    block: Boolean
   }
 
   input LanguageInput {

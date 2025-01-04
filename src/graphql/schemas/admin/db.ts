@@ -64,21 +64,51 @@ export const AdminAllBusinessesSchema = object({
 export type AdminAllBusinessesInput = infer_<typeof AdminAllBusinessesSchema>;
 
 export const AdminVerifyBusinessesSchema = object({
-  businessIds: string().array().optional(),
-});
+  businesses: object({
+    businessSlug: string().optional(),
+    businessId: string().optional(),
+    verify: boolean(),
+  })
+    .refine((data) => data.businessSlug || data.businessId, {
+      message: "Either businessSlug or businessId must be provided.",
+      path: ["businessSlug", "businessId"], // Pointing to both fields for clarity
+    })
+    .array()
+    .optional(),
+}).optional();
 export type AdminVerifyBusinessesInput = infer_<
   typeof AdminVerifyBusinessesSchema
 >;
 
 export const AdminBlockBusinessesSchema = object({
-  businessIds: string().array(),
+  businesses: object({
+    businessSlug: string().optional(),
+    businessId: string().optional(),
+    block: boolean(),
+  })
+    .refine((data) => data.businessSlug || data.businessId, {
+      message: "Either businessSlug or businessId must be provided.",
+      path: ["businessSlug", "businessId"], // Pointing to both fields for clarity
+    })
+    .array()
+    .optional(),
 }).optional();
 export type AdminBlockBusinessesInput = infer_<
   typeof AdminBlockBusinessesSchema
 >;
 
 export const AdminBlockUserSchema = object({
-  userIds: string().array(),
+  users: object({
+    userSlug: string().optional(),
+    userId: string().optional(),
+    block: boolean(),
+  })
+    .refine((data) => data.userSlug || data.userSlug, {
+      message: "Either userSlug or userId must be provided.",
+      path: ["userSlug", "userId "], // Pointing to both fields for clarity
+    })
+    .array()
+    .optional(),
 }).optional();
 export type AdminBlockUserInput = infer_<typeof AdminBlockUserSchema>;
 

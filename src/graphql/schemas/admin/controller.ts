@@ -79,6 +79,14 @@ export const adminAllUsers = async (
     throw new Error("Invalid or missing token");
   }
 
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminAllUsersSchema.parse(args);
 
   if (!validatedData) return;
@@ -162,6 +170,14 @@ export const adminAllBusinesses = async (
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
   }
 
   const validatedData = AdminAllBusinessesSchema.parse(args);
@@ -287,6 +303,14 @@ export const adminSearchAllReviews = async (
     throw new Error("Invalid or missing token");
   }
 
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   // Validate and parse the input data
   const validatedData = AdminSearchAllReviewsSchema.parse(args);
   if (!validatedData) return;
@@ -296,34 +320,36 @@ export const adminSearchAllReviews = async (
   // Calculate pagination values
   const skip = (page - 1) * limit;
 
-  // Fetch reviews with filtering, sorting, and pagination
-  const reviews = await prisma.review.findMany({
-    where: {
-      comment: search
-        ? {
-            contains: search,
-            mode: "insensitive", // Case-insensitive search
-          }
-        : undefined,
-    },
-    orderBy: {
-      [sortBy]: sortOrder, // Dynamic sorting
-    },
-    skip,
-    take: limit,
-  });
+  const [reviews, total] = await Promise.all([
+    prisma.review.findMany({
+      where: {
+        comment: search
+          ? {
+              contains: search,
+              mode: "insensitive", // Case-insensitive search
+            }
+          : undefined,
+      },
+      orderBy: {
+        [sortBy]: sortOrder, // Dynamic sorting
+      },
+      skip,
+      take: limit,
+    }),
+    prisma.review.count({
+      where: {
+        comment: search
+          ? {
+              contains: search,
+              mode: "insensitive",
+            }
+          : undefined,
+      },
+    }),
+  ]);
 
-  // Count the total number of matching reviews
-  const total = await prisma.review.count({
-    where: {
-      comment: search
-        ? {
-            contains: search,
-            mode: "insensitive",
-          }
-        : undefined,
-    },
-  });
+  // `reviews` contains the paginated reviews
+  // `total` contains the total count of matching reviews
 
   // Calculate total pages
   const totalPages = Math.ceil(total / limit);
@@ -347,25 +373,49 @@ export const adminBlockUsers = async (
     throw new Error("Invalid or missing token");
   }
 
-  const validatedData = AdminBlockUserSchema.parse(args);
-  if (!validatedData) return;
-
-  const { userIds } = validatedData;
-
-  const blockedUsers = await prisma.user.updateMany({
-    where: {
-      id: {
-        in: userIds,
-      },
-    },
-    data: {
-      isBlocked: true,
-    },
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
   });
 
-  return {
-    ...blockedUsers,
-  };
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminBlockUserSchema.parse(args);
+  if (!validatedData?.users) return;
+
+  const result = [];
+
+  const { users } = validatedData;
+
+  for (const user of users) {
+    let updatedUser: any;
+    if (user.userId) {
+      updatedUser = await prisma.user.update({
+        where: {
+          id: user.userId,
+        },
+        data: {
+          isBlocked: user.block,
+        },
+      });
+    } else if (user.userSlug) {
+      updatedUser = await prisma.user.update({
+        where: {
+          slug: user.userSlug,
+        },
+        data: {
+          isBlocked: user.block,
+        },
+      });
+    } else {
+      updatedUser.message = "User not found";
+    }
+
+    result.push(updatedUser);
+  }
+
+  return result;
 };
 
 export const adminBlockBusinesses = async (
@@ -377,26 +427,50 @@ export const adminBlockBusinesses = async (
     throw new Error("Invalid or missing token");
   }
 
-  const validatedData = AdminBlockBusinessesSchema.parse(args);
-
-  if (!validatedData) return;
-
-  const { businessIds } = validatedData;
-
-  const blockedBusinesses = await prisma.business.updateMany({
-    where: {
-      id: {
-        in: businessIds,
-      },
-    },
-    data: {
-      isBlocked: true,
-    },
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
   });
 
-  return {
-    ...blockedBusinesses,
-  };
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminBlockBusinessesSchema.parse(args);
+
+  if (!validatedData?.businesses) return;
+
+  const { businesses } = validatedData;
+
+  const result = [];
+
+  for (const business of businesses) {
+    let updatedBusinesses: any;
+    if (business.businessId) {
+      updatedBusinesses = await prisma.business.update({
+        where: {
+          id: business.businessId,
+        },
+        data: {
+          isBlocked: business.block,
+        },
+      });
+    } else if (business.businessSlug) {
+      updatedBusinesses = await prisma.business.update({
+        where: {
+          slug: business.businessSlug,
+        },
+        data: {
+          isBlocked: business.block,
+        },
+      });
+    } else {
+      updatedBusinesses.message = "Business not found";
+    }
+
+    result.push(updatedBusinesses);
+  }
+
+  return result;
 };
 
 export const adminVerifyBusinesses = async (
@@ -407,22 +481,51 @@ export const adminVerifyBusinesses = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
-  const validatedData = AdminVerifyBusinessesSchema.parse(args);
 
-  if (!validatedData) return;
-
-  const verifiedBusinesses = await prisma.business.updateMany({
-    where: {
-      id: { in: validatedData.businessIds },
-    },
-    data: {
-      isBusinessVerified: true,
-    },
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
   });
 
-  return {
-    ...verifiedBusinesses,
-  };
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminVerifyBusinessesSchema.parse(args);
+
+  if (!validatedData?.businesses) return;
+
+  const { businesses } = validatedData;
+
+  const result = [];
+
+  for (const business of businesses) {
+    let updatedBusinesses: any;
+    if (business.businessId) {
+      updatedBusinesses = await prisma.business.update({
+        where: {
+          id: business.businessId,
+        },
+        data: {
+          isBusinessVerified: business.verify,
+        },
+      });
+    } else if (business.businessSlug) {
+      updatedBusinesses = await prisma.business.update({
+        where: {
+          slug: business.businessSlug,
+        },
+        data: {
+          isBusinessVerified: business.verify,
+        },
+      });
+    } else {
+      updatedBusinesses.message = "Business not found";
+    }
+
+    result.push(updatedBusinesses);
+  }
+
+  return result;
 };
 
 export const adminManageUserSubscription = async (
@@ -433,6 +536,15 @@ export const adminManageUserSubscription = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageUserSubscriptionSchema.parse(args);
 
   if (!validatedData) return;
@@ -483,6 +595,15 @@ export const adminManageBusinessSubscription = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageBusinessSubscriptionSchema.parse(args);
 
   if (!validatedData) return;
@@ -537,6 +658,15 @@ export const adminManageLanguage = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageLanguageSchema.parse(args);
 
   if (!validatedData?.languages) return;
@@ -576,6 +706,15 @@ export const adminManageProficiency = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageProficiencySchema.parse(args);
 
   if (!validatedData?.proficiencies) return;
@@ -613,6 +752,15 @@ export const adminManageCourt = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageCourtSchema.parse(args);
 
   if (!validatedData?.courts) return;
@@ -650,6 +798,15 @@ export const adminManageCategory = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageCategorySchema.parse(args);
 
   if (!validatedData?.categories) return;
@@ -715,6 +872,15 @@ export const adminManageTag = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageTagSchema.parse(args);
 
   if (!validatedData?.tags) return;
@@ -749,6 +915,15 @@ export const adminManageCountry = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageCountrySchema.parse(args);
 
   if (!validatedData?.countries) return;
@@ -785,6 +960,15 @@ export const adminManageState = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageStateSchema.parse(args);
 
   if (!validatedData?.states) return;
@@ -823,6 +1007,15 @@ export const adminManageCity = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageCitySchema.parse(args);
 
   if (!validatedData?.cities) return;
@@ -861,6 +1054,15 @@ export const adminManagePincode = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManagePincodeSchema.parse(args);
 
   if (!validatedData?.pincodes) return;
@@ -899,6 +1101,15 @@ export const adminManageTestimonial = async (
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
     throw new Error("Invalid or missing token");
   }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
   const validatedData = AdminManageTestimonialSchema.parse(args);
 
   if (!validatedData?.testimonials) return;
