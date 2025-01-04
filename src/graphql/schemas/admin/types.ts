@@ -48,6 +48,14 @@ export const typeDefs = gql`
     totalPages: Int
   }
 
+  type AllFeedbackResult {
+    reviews: [Review]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+
   # Query Type Definitions
   type Query {
     status: String!
@@ -69,6 +77,8 @@ export const typeDefs = gql`
       sortOrder: SortOrder = desc
     ): AllUserResult
 
+    adminGetUserById(userId: ID, userSlug: ID): User
+
     adminAllBusinesses(
       name: String
       email: String
@@ -88,6 +98,8 @@ export const typeDefs = gql`
       sortOrder: SortOrder = desc
     ): AllBusinessResult
 
+    adminGetBusinessById(businessId: ID, businessSlug: ID): Business
+
     adminSearchAllReviews(
       search: String
       page: Int = 1
@@ -95,6 +107,38 @@ export const typeDefs = gql`
       sortBy: SortByEnum = createdAt
       sortOrder: OrderEnum = desc
     ): AllReviewResult
+
+    adminSearchAllFeedbacks(
+      search: String
+      page: Int = 1
+      limit: Int = 10
+      sortBy: SortByEnum = createdAt
+      sortOrder: OrderEnum = desc
+    ): AllFeedbackResult
+
+    adminGetAllUserSubscriptions: [UserSubscription]
+
+    adminGetAllBusinessSubscriptions: [BusinessSubscription]
+
+    adminGetAllLanguages: [Language]
+
+    adminGetAllProficiencies: [Proficiency]
+
+    adminGetAllCourts: [Court]
+
+    adminGetAllCategories: [Category]
+
+    adminGetAllTags: [Tag]
+
+    adminGetAllCountries: [Country]
+
+    adminGetAllStates: [State]
+
+    adminGetAllCities: [City]
+
+    adminGetAllPincodes: [Pincode]
+
+    adminGetAllTestimonials: [Testimonial]
   }
 
   # Mutation Type Definitions
@@ -102,7 +146,7 @@ export const typeDefs = gql`
     adminBlockUsers(users: [UsersBlock]): [User]
     adminBlockBusinesses(businesses: [BusinessesBlock]): [Business]
     adminVerifyBusinesses(businesses: [BusinessesVerify]): [Business]
-    adminManageUserSubscription(
+    adminManageUserSubscriptions(
       id: ID
       name: String!
       description: String
@@ -111,7 +155,7 @@ export const typeDefs = gql`
       features: [String!]!
       toDelete: Boolean
     ): UserSubscription
-    adminManageBusinessSubscription(
+    adminManageBusinessSubscriptions(
       id: ID
       name: String!
       description: String
@@ -121,16 +165,16 @@ export const typeDefs = gql`
       tierLevel: Int
       toDelete: Boolean
     ): BusinessSubscription
-    adminManageLanguage(languages: [LanguageInput]): [Language]
-    adminManageProficiency(proficiencies: [ProficiencyInput]): [Proficiency]
-    adminManageCourt(courts: [CourtInput]): [Court]
-    adminManageCategory(categories: [CategoryInput]): [Category]
-    adminManageTag(tags: [TagInput]): [Tag]
-    adminManageCountry(countries: [CountryInput]): [Country]
-    adminManageState(states: [StateInput]): [State]
-    adminManageCity(cities: [CityInput]): [City]
-    adminManagePincode(pincodes: [PincodeInput]): [Pincode]
-    adminManageTestimonial(testimonials: [TestimonialInput]): [Testimonial]
+    adminManageLanguages(languages: [LanguageInput]): [Language]
+    adminManageProficiencies(proficiencies: [ProficiencyInput]): [Proficiency]
+    adminManageCourts(courts: [CourtInput]): [Court]
+    adminManageCategories(categories: [CategoryInput]): [Category]
+    adminManageTags(tags: [TagInput]): [Tag]
+    adminManageCountries(countries: [CountryInput]): [Country]
+    adminManageStates(states: [StateInput]): [State]
+    adminManageCities(cities: [CityInput]): [City]
+    adminManagePincodes(pincodes: [PincodeInput]): [Pincode]
+    adminManageTestimonials(testimonials: [TestimonialInput]): [Testimonial]
   }
 
   input BusinessesVerify {

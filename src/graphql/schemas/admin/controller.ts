@@ -4,38 +4,42 @@ import { generateToken } from "../../../utils/token";
 import {
   AdminAllBusinessesInput,
   AdminAllBusinessesSchema,
-  AdminAllUserInput,
+  AdminAllUsersInput,
   AdminAllUsersSchema,
   AdminBlockBusinessesInput,
   AdminBlockBusinessesSchema,
-  AdminBlockUserInput,
-  AdminBlockUserSchema,
+  AdminBlockUsersInput,
+  AdminBlockUsersSchema,
+  AdminGetBusinessByIdInput,
+  AdminGetBusinessByIdSchema,
+  AdminGetUserByIdInput,
+  AdminGetUserByIdSchema,
   AdminLoginInput,
   AdminLoginSchema,
-  AdminManageBusinessSubscriptionInput,
-  AdminManageBusinessSubscriptionSchema,
-  AdminManageCategoryInput,
-  AdminManageCategorySchema,
-  AdminManageCityInput,
-  AdminManageCitySchema,
-  AdminManageCountryInput,
-  AdminManageCountrySchema,
-  AdminManageCourtInput,
-  AdminManageCourtSchema,
-  AdminManageLanguageInput,
-  AdminManageLanguageSchema,
-  AdminManagePincodeInput,
-  AdminManagePincodeSchema,
-  AdminManageProficiencyInput,
-  AdminManageProficiencySchema,
-  AdminManageStateInput,
-  AdminManageStateSchema,
-  AdminManageTagInput,
-  AdminManageTagSchema,
-  AdminManageTestimonialInput,
-  AdminManageTestimonialSchema,
-  AdminManageUserSubscriptionInput,
-  AdminManageUserSubscriptionSchema,
+  AdminManageBusinessSubscriptionsInput,
+  AdminManageBusinessSubscriptionsSchema,
+  AdminManageCategoriesInput,
+  AdminManageCategoriesSchema,
+  AdminManageCitiesInput,
+  AdminManageCitiesSchema,
+  AdminManageCountriesInput,
+  AdminManageCountriesSchema,
+  AdminManageCourtsInput,
+  AdminManageCourtsSchema,
+  AdminManageLanguagesInput,
+  AdminManageLanguagesSchema,
+  AdminManagePincodesInput,
+  AdminManagePincodesSchema,
+  AdminManageProficienciesInput,
+  AdminManageProficienciesSchema,
+  AdminManageStatesInput,
+  AdminManageStatesSchema,
+  AdminManageTagsInput,
+  AdminManageTagsSchema,
+  AdminManageTestimonialsInput,
+  AdminManageTestimonialsSchema,
+  AdminManageUserSubscriptionsInput,
+  AdminManageUserSubscriptionsSchema,
   AdminSearchAllReviewsInput,
   AdminSearchAllReviewsSchema,
   AdminVerifyBusinessesInput,
@@ -72,7 +76,7 @@ export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
 
 export const adminAllUsers = async (
   _: unknown,
-  args: AdminAllUserInput,
+  args: AdminAllUsersInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -161,6 +165,45 @@ export const adminAllUsers = async (
     limit: validatedData.limit,
     totalPages,
   };
+};
+
+export const adminGetUserById = async (
+  _: unknown,
+  args: AdminGetUserByIdInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminGetUserByIdSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [{ id: validatedData.userId }, { slug: validatedData.userSlug }],
+    },
+    include: {
+      contacts: true,
+      subscription: true,
+      addresses: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
 };
 
 export const adminAllBusinesses = async (
@@ -293,6 +336,58 @@ export const adminAllBusinesses = async (
   };
 };
 
+export const adminGetBusinessById = async (
+  _: unknown,
+  args: AdminGetBusinessByIdInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminGetBusinessByIdSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const business = await prisma.business.findFirst({
+    where: {
+      OR: [
+        { id: validatedData.businessId },
+        { slug: validatedData.businessSlug },
+      ],
+    },
+    include: {
+      primaryContacts: true,
+      subscription: true,
+      businessDetails: {
+        include: {
+          addresses: true,
+          categories: true,
+          tags: true,
+          coverImages: true,
+          adBannerImages: true,
+          mobileAdBannerImages: true,
+          websites: true,
+        },
+      },
+    },
+  });
+
+  if (!business) {
+    throw new Error("User not found");
+  }
+
+  return business;
+};
+
 export const adminSearchAllReviews = async (
   _: unknown,
   args: AdminSearchAllReviewsInput,
@@ -364,9 +459,70 @@ export const adminSearchAllReviews = async (
   };
 };
 
+export const adminSearchAllFeedbacks = async (
+  _: unknown,
+  args: AdminSearchAllReviewsInput,
+  context: any
+) => {
+  // Validate the adminId in the context
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  // Validate and parse the input data
+  const validatedData = AdminSearchAllReviewsSchema.parse(args);
+  if (!validatedData) return;
+
+  const { search, sortBy, sortOrder, page, limit } = validatedData;
+
+  // Calculate pagination values
+  const skip = (page - 1) * limit;
+
+  const [feedbacks, total] = await Promise.all([
+    prisma.feedback.findMany({
+      where: {
+        comment: search ? { contains: search, mode: "insensitive" } : undefined,
+      },
+      orderBy: {
+        [sortBy]: sortOrder, // Dynamic sorting
+      },
+      skip,
+      take: limit,
+    }),
+    prisma.feedback.count({
+      where: {
+        comment: search ? { contains: search, mode: "insensitive" } : undefined,
+      },
+    }),
+  ]);
+
+  // `feedbacks` contains the paginated feedbacks
+  // `total` contains the total count of matching feedbacks
+
+  // Calculate total pages
+  const totalPages = Math.ceil(total / limit);
+
+  // Return the response in the desired format
+  return {
+    feedbacks,
+    total,
+    page,
+    limit,
+    totalPages,
+  };
+};
+
 export const adminBlockUsers = async (
   _: unknown,
-  args: AdminBlockUserInput,
+  args: AdminBlockUsersInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -381,7 +537,7 @@ export const adminBlockUsers = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminBlockUserSchema.parse(args);
+  const validatedData = AdminBlockUsersSchema.parse(args);
   if (!validatedData?.users) return;
 
   const result = [];
@@ -528,9 +684,30 @@ export const adminVerifyBusinesses = async (
   return result;
 };
 
-export const adminManageUserSubscription = async (
+export const adminGetAllUserSubscriptions = async (
   _: unknown,
-  args: AdminManageUserSubscriptionInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const userSubscriptions = await prisma.userSubscription.findMany({});
+
+  return userSubscriptions;
+};
+
+export const adminManageUserSubscriptions = async (
+  _: unknown,
+  args: AdminManageUserSubscriptionsInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -545,7 +722,7 @@ export const adminManageUserSubscription = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageUserSubscriptionSchema.parse(args);
+  const validatedData = AdminManageUserSubscriptionsSchema.parse(args);
 
   if (!validatedData) return;
 
@@ -587,9 +764,30 @@ export const adminManageUserSubscription = async (
   }
 };
 
-export const adminManageBusinessSubscription = async (
+export const adminGetAllBusinessSubscriptions = async (
   _: unknown,
-  args: AdminManageBusinessSubscriptionInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const businessSubscriptions = await prisma.businessSubscription.findMany({});
+
+  return businessSubscriptions;
+};
+
+export const adminManageBusinessSubscriptions = async (
+  _: unknown,
+  args: AdminManageBusinessSubscriptionsInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -604,7 +802,7 @@ export const adminManageBusinessSubscription = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageBusinessSubscriptionSchema.parse(args);
+  const validatedData = AdminManageBusinessSubscriptionsSchema.parse(args);
 
   if (!validatedData) return;
 
@@ -650,9 +848,30 @@ export const adminManageBusinessSubscription = async (
   }
 };
 
-export const adminManageLanguage = async (
+export const adminGetAllLanguages = async (
   _: unknown,
-  args: AdminManageLanguageInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const languages = await prisma.language.findMany({});
+
+  return languages;
+};
+
+export const adminManageLanguages = async (
+  _: unknown,
+  args: AdminManageLanguagesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -667,7 +886,7 @@ export const adminManageLanguage = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageLanguageSchema.parse(args);
+  const validatedData = AdminManageLanguagesSchema.parse(args);
 
   if (!validatedData?.languages) return;
 
@@ -698,9 +917,30 @@ export const adminManageLanguage = async (
   return results;
 };
 
-export const adminManageProficiency = async (
+export const adminGetAllProficiencies = async (
   _: unknown,
-  args: AdminManageProficiencyInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const proficiencies = await prisma.proficiency.findMany({});
+
+  return proficiencies;
+};
+
+export const adminManageProficiencies = async (
+  _: unknown,
+  args: AdminManageProficienciesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -715,7 +955,7 @@ export const adminManageProficiency = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageProficiencySchema.parse(args);
+  const validatedData = AdminManageProficienciesSchema.parse(args);
 
   if (!validatedData?.proficiencies) return;
 
@@ -744,9 +984,30 @@ export const adminManageProficiency = async (
   return results;
 };
 
-export const adminManageCourt = async (
+export const adminGetAllCourts = async (
   _: unknown,
-  args: AdminManageCourtInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const courts = await prisma.court.findMany({});
+
+  return courts;
+};
+
+export const adminManageCourts = async (
+  _: unknown,
+  args: AdminManageCourtsInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -761,7 +1022,7 @@ export const adminManageCourt = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageCourtSchema.parse(args);
+  const validatedData = AdminManageCourtsSchema.parse(args);
 
   if (!validatedData?.courts) return;
 
@@ -790,9 +1051,30 @@ export const adminManageCourt = async (
   return results;
 };
 
-export const adminManageCategory = async (
+export const adminGetAllCategories = async (
   _: unknown,
-  args: AdminManageCategoryInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const categories = await prisma.category.findMany({});
+
+  return categories;
+};
+
+export const adminManageCategories = async (
+  _: unknown,
+  args: AdminManageCategoriesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -807,7 +1089,7 @@ export const adminManageCategory = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageCategorySchema.parse(args);
+  const validatedData = AdminManageCategoriesSchema.parse(args);
 
   if (!validatedData?.categories) return;
 
@@ -864,9 +1146,30 @@ export const adminManageCategory = async (
   return results;
 };
 
-export const adminManageTag = async (
+export const adminGetAllTags = async (
   _: unknown,
-  args: AdminManageTagInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const tags = await prisma.tag.findMany({});
+
+  return tags;
+};
+
+export const adminManageTags = async (
+  _: unknown,
+  args: AdminManageTagsInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -881,7 +1184,7 @@ export const adminManageTag = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageTagSchema.parse(args);
+  const validatedData = AdminManageTagsSchema.parse(args);
 
   if (!validatedData?.tags) return;
 
@@ -907,9 +1210,30 @@ export const adminManageTag = async (
   return results;
 };
 
-export const adminManageCountry = async (
+export const adminGetAllCountries = async (
   _: unknown,
-  args: AdminManageCountryInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const countries = await prisma.country.findMany({});
+
+  return countries;
+};
+
+export const adminManageCountries = async (
+  _: unknown,
+  args: AdminManageCountriesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -924,7 +1248,7 @@ export const adminManageCountry = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageCountrySchema.parse(args);
+  const validatedData = AdminManageCountriesSchema.parse(args);
 
   if (!validatedData?.countries) return;
 
@@ -952,9 +1276,30 @@ export const adminManageCountry = async (
   return results;
 };
 
-export const adminManageState = async (
+export const adminGetAllStates = async (
   _: unknown,
-  args: AdminManageStateInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const states = await prisma.state.findMany({});
+
+  return states;
+};
+
+export const adminManageStates = async (
+  _: unknown,
+  args: AdminManageStatesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -969,7 +1314,7 @@ export const adminManageState = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageStateSchema.parse(args);
+  const validatedData = AdminManageStatesSchema.parse(args);
 
   if (!validatedData?.states) return;
 
@@ -999,9 +1344,30 @@ export const adminManageState = async (
   return results;
 };
 
-export const adminManageCity = async (
+export const adminGetAllCities = async (
   _: unknown,
-  args: AdminManageCityInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const cities = await prisma.city.findMany({});
+
+  return cities;
+};
+
+export const adminManageCities = async (
+  _: unknown,
+  args: AdminManageCitiesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -1016,7 +1382,7 @@ export const adminManageCity = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageCitySchema.parse(args);
+  const validatedData = AdminManageCitiesSchema.parse(args);
 
   if (!validatedData?.cities) return;
 
@@ -1046,9 +1412,30 @@ export const adminManageCity = async (
   return results;
 };
 
-export const adminManagePincode = async (
+export const adminGetAllPincodes = async (
   _: unknown,
-  args: AdminManagePincodeInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const pincodes = await prisma.pincode.findMany({});
+
+  return pincodes;
+};
+
+export const adminManagePincodes = async (
+  _: unknown,
+  args: AdminManagePincodesInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -1063,7 +1450,7 @@ export const adminManagePincode = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManagePincodeSchema.parse(args);
+  const validatedData = AdminManagePincodesSchema.parse(args);
 
   if (!validatedData?.pincodes) return;
 
@@ -1093,9 +1480,30 @@ export const adminManagePincode = async (
   return results;
 };
 
-export const adminManageTestimonial = async (
+export const adminGetAllTestimonials = async (
   _: unknown,
-  args: AdminManageTestimonialInput,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+  const testimonials = await prisma.testimonial.findMany({});
+
+  return testimonials;
+};
+
+export const adminManageTestimonials = async (
+  _: unknown,
+  args: AdminManageTestimonialsInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -1110,7 +1518,7 @@ export const adminManageTestimonial = async (
     throw new Error("Unauthorized access");
   }
 
-  const validatedData = AdminManageTestimonialSchema.parse(args);
+  const validatedData = AdminManageTestimonialsSchema.parse(args);
 
   if (!validatedData?.testimonials) return;
 

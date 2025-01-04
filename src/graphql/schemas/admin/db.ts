@@ -25,6 +25,28 @@ export type AdminSearchAllReviewsInput = infer_<
   typeof AdminSearchAllReviewsSchema
 >;
 
+export const AdminSearchAllFeedbacksSchema = object({
+  search: string().toLowerCase().optional(),
+  sortBy: enum_(["rating", "createdAt"]).default("createdAt"),
+  sortOrder: enum_(["asc", "desc"]).default("desc"),
+  page: number().int().positive().default(1),
+  limit: number().int().positive().default(10),
+}).optional();
+export type AdminSearchAllFeedbacksInput = infer_<
+  typeof AdminSearchAllFeedbacksSchema
+>;
+
+export const AdminGetUserByIdSchema = object({
+  userId: string().optional(),
+  userSlug: string().optional(),
+})
+  .refine((data) => data.userSlug || data.userId, {
+    message: "Either userSlug or userId must be provided.",
+    path: ["userSlug", "userId "], // Pointing to both fields for clarity
+  })
+  .optional();
+export type AdminGetUserByIdInput = infer_<typeof AdminGetUserByIdSchema>;
+
 export const AdminAllUsersSchema = object({
   name: string().optional(),
   email: string().optional(),
@@ -39,7 +61,20 @@ export const AdminAllUsersSchema = object({
   sortBy: enum_(["name", "createdAt", "updatedAt"]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
 }).optional();
-export type AdminAllUserInput = infer_<typeof AdminAllUsersSchema>;
+export type AdminAllUsersInput = infer_<typeof AdminAllUsersSchema>;
+
+export const AdminGetBusinessByIdSchema = object({
+  businessId: string().optional(),
+  businessSlug: string().optional(),
+})
+  .refine((data) => data.businessId || data.businessSlug, {
+    message: "Either businessSlug or businessId must be provided.",
+    path: ["businessSlug", "businessId"], // Pointing to both fields for clarity
+  })
+  .optional();
+export type AdminGetBusinessByIdInput = infer_<
+  typeof AdminGetBusinessByIdSchema
+>;
 
 export const AdminAllBusinessesSchema = object({
   name: string().optional(),
@@ -97,22 +132,22 @@ export type AdminBlockBusinessesInput = infer_<
   typeof AdminBlockBusinessesSchema
 >;
 
-export const AdminBlockUserSchema = object({
+export const AdminBlockUsersSchema = object({
   users: object({
     userSlug: string().optional(),
     userId: string().optional(),
     block: boolean(),
   })
-    .refine((data) => data.userSlug || data.userSlug, {
+    .refine((data) => data.userSlug || data.userId, {
       message: "Either userSlug or userId must be provided.",
       path: ["userSlug", "userId "], // Pointing to both fields for clarity
     })
     .array()
     .optional(),
 }).optional();
-export type AdminBlockUserInput = infer_<typeof AdminBlockUserSchema>;
+export type AdminBlockUsersInput = infer_<typeof AdminBlockUsersSchema>;
 
-export const AdminManageUserSubscriptionSchema = object({
+export const AdminManageUserSubscriptionsSchema = object({
   id: string().optional(),
   name: string().optional(),
   description: string().optional(),
@@ -121,11 +156,11 @@ export const AdminManageUserSubscriptionSchema = object({
   features: string().array().optional(),
   toDelete: boolean().optional().default(false),
 }).optional();
-export type AdminManageUserSubscriptionInput = infer_<
-  typeof AdminManageUserSubscriptionSchema
+export type AdminManageUserSubscriptionsInput = infer_<
+  typeof AdminManageUserSubscriptionsSchema
 >;
 
-export const AdminManageBusinessSubscriptionSchema = object({
+export const AdminManageBusinessSubscriptionsSchema = object({
   id: string().optional(),
   name: string().optional(),
   description: string().optional(),
@@ -135,11 +170,11 @@ export const AdminManageBusinessSubscriptionSchema = object({
   tierLevel: number().optional(),
   toDelete: boolean().optional().default(false),
 }).optional();
-export type AdminManageBusinessSubscriptionInput = infer_<
-  typeof AdminManageBusinessSubscriptionSchema
+export type AdminManageBusinessSubscriptionsInput = infer_<
+  typeof AdminManageBusinessSubscriptionsSchema
 >;
 
-export const AdminManageLanguageSchema = object({
+export const AdminManageLanguagesSchema = object({
   languages: object({
     id: string().optional(),
     name: string(),
@@ -149,9 +184,11 @@ export const AdminManageLanguageSchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageLanguageInput = infer_<typeof AdminManageLanguageSchema>;
+export type AdminManageLanguagesInput = infer_<
+  typeof AdminManageLanguagesSchema
+>;
 
-export const AdminManageProficiencySchema = object({
+export const AdminManageProficienciesSchema = object({
   proficiencies: object({
     id: string().optional(),
     name: string(),
@@ -161,11 +198,11 @@ export const AdminManageProficiencySchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageProficiencyInput = infer_<
-  typeof AdminManageProficiencySchema
+export type AdminManageProficienciesInput = infer_<
+  typeof AdminManageProficienciesSchema
 >;
 
-export const AdminManageCourtSchema = object({
+export const AdminManageCourtsSchema = object({
   courts: object({
     id: string().optional(),
     name: string(),
@@ -175,9 +212,9 @@ export const AdminManageCourtSchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageCourtInput = infer_<typeof AdminManageCourtSchema>;
+export type AdminManageCourtsInput = infer_<typeof AdminManageCourtsSchema>;
 
-export const AdminManageCategorySchema = object({
+export const AdminManageCategoriesSchema = object({
   categories: object({
     id: string().optional(),
     name: string(),
@@ -188,9 +225,11 @@ export const AdminManageCategorySchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageCategoryInput = infer_<typeof AdminManageCategorySchema>;
+export type AdminManageCategoriesInput = infer_<
+  typeof AdminManageCategoriesSchema
+>;
 
-export const AdminManageTagSchema = object({
+export const AdminManageTagsSchema = object({
   tags: object({
     id: string().optional(),
     name: string(),
@@ -198,9 +237,9 @@ export const AdminManageTagSchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageTagInput = infer_<typeof AdminManageTagSchema>;
+export type AdminManageTagsInput = infer_<typeof AdminManageTagsSchema>;
 
-export const AdminManageCountrySchema = object({
+export const AdminManageCountriesSchema = object({
   countries: object({
     id: string().optional(),
     name: string(),
@@ -209,9 +248,11 @@ export const AdminManageCountrySchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageCountryInput = infer_<typeof AdminManageCountrySchema>;
+export type AdminManageCountriesInput = infer_<
+  typeof AdminManageCountriesSchema
+>;
 
-export const AdminManageStateSchema = object({
+export const AdminManageStatesSchema = object({
   states: object({
     id: string().optional(),
     name: string(),
@@ -221,9 +262,9 @@ export const AdminManageStateSchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageStateInput = infer_<typeof AdminManageStateSchema>;
+export type AdminManageStatesInput = infer_<typeof AdminManageStatesSchema>;
 
-export const AdminManageCitySchema = object({
+export const AdminManageCitiesSchema = object({
   cities: object({
     id: string().optional(),
     name: string(),
@@ -233,9 +274,9 @@ export const AdminManageCitySchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageCityInput = infer_<typeof AdminManageCitySchema>;
+export type AdminManageCitiesInput = infer_<typeof AdminManageCitiesSchema>;
 
-export const AdminManagePincodeSchema = object({
+export const AdminManagePincodesSchema = object({
   pincodes: object({
     id: string().optional(),
     code: string(),
@@ -245,9 +286,9 @@ export const AdminManagePincodeSchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManagePincodeInput = infer_<typeof AdminManagePincodeSchema>;
+export type AdminManagePincodesInput = infer_<typeof AdminManagePincodesSchema>;
 
-export const AdminManageTestimonialSchema = object({
+export const AdminManageTestimonialsSchema = object({
   testimonials: object({
     id: string().optional(),
     reviewId: string().optional(),
@@ -258,6 +299,6 @@ export const AdminManageTestimonialSchema = object({
     .array()
     .optional(),
 }).optional();
-export type AdminManageTestimonialInput = infer_<
-  typeof AdminManageTestimonialSchema
+export type AdminManageTestimonialsInput = infer_<
+  typeof AdminManageTestimonialsSchema
 >;

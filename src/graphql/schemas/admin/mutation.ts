@@ -1,18 +1,18 @@
 import {
   adminBlockBusinesses,
   adminBlockUsers,
-  adminManageBusinessSubscription,
-  adminManageCategory,
-  adminManageCity,
-  adminManageCountry,
-  adminManageCourt,
-  adminManageLanguage,
-  adminManagePincode,
-  adminManageProficiency,
-  adminManageState,
-  adminManageTag,
-  adminManageTestimonial,
-  adminManageUserSubscription,
+  adminManageBusinessSubscriptions,
+  adminManageCategories,
+  adminManageCities,
+  adminManageCountries,
+  adminManageCourts,
+  adminManageLanguages,
+  adminManagePincodes,
+  adminManageProficiencies,
+  adminManageStates,
+  adminManageTags,
+  adminManageTestimonials,
+  adminManageUserSubscriptions,
   adminVerifyBusinesses,
 } from "./controller";
 
@@ -23,27 +23,27 @@ export const Mutation = {
 
   adminVerifyBusinesses,
 
-  adminManageUserSubscription,
+  adminManageUserSubscriptions,
 
-  adminManageBusinessSubscription,
+  adminManageBusinessSubscriptions,
 
-  adminManageLanguage,
+  adminManageLanguages,
 
-  adminManageProficiency,
+  adminManageProficiencies,
 
-  adminManageCourt,
+  adminManageCourts,
 
-  adminManageCategory,
+  adminManageCategories,
 
-  adminManageTag,
+  adminManageTags,
 
-  adminManageCountry,
+  adminManageCountries,
 
-  adminManageState,
+  adminManageStates,
 
-  adminManageCity,
+  adminManageCities,
 
-  adminManagePincode,
+  adminManagePincodes,
 
-  adminManageTestimonial,
+  adminManageTestimonials,
 };
