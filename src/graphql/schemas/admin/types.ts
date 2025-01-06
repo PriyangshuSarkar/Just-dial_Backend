@@ -220,6 +220,7 @@ export const typeDefs = gql`
     id: ID
     name: String!
     slug: ID
+    description: String
     categoryImage: Upload
     toDelete: Boolean
   }

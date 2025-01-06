@@ -326,6 +326,7 @@ export const typeDefs = gql`
     id: ID
     name: String
     slug: ID
+    description: String
     createdAt: Date
     deletedAt: Date
     categoryImage: String

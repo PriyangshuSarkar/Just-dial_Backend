@@ -1123,6 +1123,7 @@ export const adminManageCategories = async (
         data: {
           name: category.name,
           slug: category.slug,
+          description: category.description,
           categoryImage,
         },
       });
@@ -1133,6 +1134,7 @@ export const adminManageCategories = async (
         data: {
           name: category.name,
           slug: category.slug,
+          description: category.description,
           categoryImage,
           deletedAt: category.toDelete ? new Date() : null,
         },
