@@ -196,6 +196,8 @@ export const getAllBusinesses = async () => {
               id: true,
               name: true,
               slug: true,
+              description: true,
+              categoryImage: true,
             },
           },
           tags: {
@@ -434,6 +436,8 @@ export const getBusinessById = async (
               id: true,
               name: true,
               slug: true,
+              description: true,
+              categoryImage: true,
             },
           },
           tags: {
