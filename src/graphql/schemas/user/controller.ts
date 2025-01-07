@@ -348,7 +348,7 @@ export const resendUserOtp = async (_: unknown, args: ResendUserOtpInput) => {
       },
       data: {
         otp: otpData?.otp,
-        otpExpiresAt: new Date(now.getTime() + 60 * 1000), // Set expiry 1 minute from now
+        otpExpiresAt: otpData?.otpExpiresAt, // Set expiry 1 minute from now
       },
     });
 
