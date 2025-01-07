@@ -394,7 +394,7 @@ const getCategoriesForSearch = async (filters: FilterInput) => {
         ],
       },
       orderBy: {
-        name: "asc",
+        order: "asc",
       },
     });
   }

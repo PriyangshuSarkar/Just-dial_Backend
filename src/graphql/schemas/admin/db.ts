@@ -218,6 +218,7 @@ export const AdminManageCategoriesSchema = object({
   categories: object({
     id: string().optional(),
     name: string().optional(),
+    order: number().optional(),
     description: string().optional(),
     slug: string().optional(),
     categoryImage: any().optional(),

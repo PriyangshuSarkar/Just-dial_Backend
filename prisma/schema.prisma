@@ -361,6 +361,7 @@ model Category {
   id                String            @id @default(uuid())
   name              String
   slug              String?           @unique
+  order             Int?
   description       String?
   createdAt         DateTime          @default(now())
   deletedAt         DateTime?

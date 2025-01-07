@@ -573,7 +573,7 @@ export const allCategories = async () => {
       categoryImage: true,
     },
     orderBy: {
-      name: "asc",
+      order: "asc",
     },
   });
 

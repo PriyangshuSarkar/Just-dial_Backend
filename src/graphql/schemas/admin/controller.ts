@@ -1104,7 +1104,6 @@ export const adminManageCategories = async (
         });
         if (existingCategory?.categoryImage && category.toDelete) {
           await deleteFromSpaces(existingCategory?.categoryImage);
-          categoryImage = null;
         } else {
           categoryImage = await uploadToSpaces(
             category.categoryImage,
@@ -1113,12 +1112,14 @@ export const adminManageCategories = async (
           );
         }
       } else {
-        // Upload new image if no category ID exists
-        categoryImage = await uploadToSpaces(
-          category.categoryImage,
-          "category_image",
-          null
-        );
+        if (category.categoryImage) {
+          // Upload new image if no category ID exists
+          categoryImage = await uploadToSpaces(
+            category.categoryImage,
+            "category_image",
+            null
+          );
+        }
       }
     }
 
@@ -1128,6 +1129,7 @@ export const adminManageCategories = async (
         data: {
           name: category.name,
           slug: category.slug,
+          order: category.order,
           description: category.description,
           categoryImage,
         },
@@ -1139,6 +1141,7 @@ export const adminManageCategories = async (
         data: {
           name: category.name,
           slug: category.slug,
+          order: category.order,
           description: category.description,
           categoryImage,
           deletedAt: category.toDelete ? new Date() : null,
