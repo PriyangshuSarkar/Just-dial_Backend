@@ -565,6 +565,8 @@ export const allCategories = async () => {
       id: true,
       name: true,
       slug: true,
+      description: true,
+      categoryImage: true,
     },
   });
 
