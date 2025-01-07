@@ -201,6 +201,7 @@ const buildSelectObject = (
   },
   additionalContacts: true,
   type: true,
+  isBusinessVerified: true,
   averageRating: true,
   reviewCount: true,
   businessDetails: {
@@ -226,6 +227,16 @@ const buildBusinessDetailsSelect = (location: LocationPriorityInput) => ({
   experience: true,
   teamSize: true,
   description: true,
+  primaryWebsite: true,
+  coverImage: {
+    url: true,
+  },
+  getAllAddBanners: {
+    url: true,
+  },
+  getAllMobileAddBanners: {
+    url: true,
+  },
   addresses: {
     where: {
       ...ACTIVE_RECORD,
