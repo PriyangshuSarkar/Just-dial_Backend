@@ -16,11 +16,11 @@ const LOCATION_SCORES = {
   DEFAULT: 1,
 } as const;
 
-const DEFAULT_SELECT = {
-  id: true,
-  name: true,
-  slug: true,
-} as const;
+// const DEFAULT_SELECT = {
+//   id: true,
+//   name: true,
+//   slug: true,
+// } as const;
 
 const ACTIVE_RECORD = {
   deletedAt: null,
@@ -189,10 +189,17 @@ const getBusinessWithPriority = async (
 const buildSelectObject = (
   location: LocationPriorityInput
 ): Prisma.BusinessSelect => ({
-  ...DEFAULT_SELECT,
+  id: true,
+  name: true,
+  slug: true,
+  isBusinessVerified: true,
   primaryContacts: {
-    where: ACTIVE_RECORD,
-    orderBy: { createdAt: "asc" },
+    where: {
+      deletedAt: null,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
     select: {
       id: true,
       value: true,
@@ -201,9 +208,9 @@ const buildSelectObject = (
   },
   additionalContacts: true,
   type: true,
-  isBusinessVerified: true,
   averageRating: true,
   reviewCount: true,
+  price: true,
   businessDetails: {
     where: ACTIVE_RECORD,
     select: buildBusinessDetailsSelect(location),
@@ -219,7 +226,6 @@ const buildSelectObject = (
       userId: true,
     },
   },
-  price: true,
 });
 
 const buildBusinessDetailsSelect = (location: LocationPriorityInput) => ({
@@ -227,20 +233,20 @@ const buildBusinessDetailsSelect = (location: LocationPriorityInput) => ({
   experience: true,
   teamSize: true,
   description: true,
-  primaryWebsite: true,
-  coverImage: {
-    url: true,
-  },
-  getAllAddBanners: {
-    url: true,
-  },
-  getAllMobileAddBanners: {
-    url: true,
-  },
   addresses: {
     where: {
       ...ACTIVE_RECORD,
       ...buildLocationFilter(location),
+    },
+  },
+  coverImages: {
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      url: true,
+      order: true,
     },
   },
   // Add other business detail selects...
@@ -403,9 +409,6 @@ const getCategoriesForSearch = async (filters: FilterInput) => {
             ...ACTIVE_RECORD,
           },
         ],
-      },
-      orderBy: {
-        order: "asc",
       },
     });
   }
