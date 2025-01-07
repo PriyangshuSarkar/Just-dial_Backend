@@ -217,7 +217,7 @@ export type AdminManageCourtsInput = infer_<typeof AdminManageCourtsSchema>;
 export const AdminManageCategoriesSchema = object({
   categories: object({
     id: string().optional(),
-    name: string(),
+    name: string().optional(),
     description: string().optional(),
     slug: string().optional(),
     categoryImage: any().optional(),

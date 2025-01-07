@@ -1,4 +1,4 @@
-import { uploadToSpaces } from "../../../utils/bucket";
+import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
 import { prisma } from "../../../utils/dbConnect";
 import { generateToken } from "../../../utils/token";
 import {
@@ -1094,7 +1094,7 @@ export const adminManageCategories = async (
   if (!validatedData?.categories) return;
 
   const processCategory = async (category: any) => {
-    let categoryImage = null;
+    let categoryImage: string | null = null;
 
     if (category.categoryImage) {
       if (category.id) {
@@ -1102,11 +1102,16 @@ export const adminManageCategories = async (
         const existingCategory = await prisma.category.findUnique({
           where: { id: category.id },
         });
-        categoryImage = await uploadToSpaces(
-          category.categoryImage,
-          "category_image",
-          existingCategory?.categoryImage
-        );
+        if (existingCategory?.categoryImage && category.toDelete) {
+          await deleteFromSpaces(existingCategory?.categoryImage);
+          categoryImage = null;
+        } else {
+          categoryImage = await uploadToSpaces(
+            category.categoryImage,
+            "category_image",
+            existingCategory?.categoryImage
+          );
+        }
       } else {
         // Upload new image if no category ID exists
         categoryImage = await uploadToSpaces(

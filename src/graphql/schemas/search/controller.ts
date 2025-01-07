@@ -572,6 +572,9 @@ export const allCategories = async () => {
       description: true,
       categoryImage: true,
     },
+    orderBy: {
+      name: "asc",
+    },
   });
 
   setCachedResult("allCategories", allCategory);

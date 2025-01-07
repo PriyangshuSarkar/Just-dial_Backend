@@ -218,7 +218,7 @@ export const typeDefs = gql`
 
   input CategoryInput {
     id: ID
-    name: String!
+    name: String
     slug: ID
     description: String
     categoryImage: Upload

@@ -1,4 +1,6 @@
 import { S3 } from "@aws-sdk/client-s3";
+import { lookup } from "mime-types";
+
 import { v4 as uuid } from "uuid";
 
 export const s3Client = new S3({
@@ -20,13 +22,12 @@ export const uploadToSpaces = async (
 ): Promise<string> => {
   const createReadStream = await upload.file.createReadStream;
   const stream = createReadStream();
-
-  // Convert stream to buffer
   const chunks: any[] = [];
   for await (const chunk of stream) {
     chunks.push(chunk);
   }
   const buffer = Buffer.concat(chunks);
+  const mimeType = lookup(upload.file.filename) || "application/octet-stream";
 
   let key: string;
   if (url) {
@@ -57,7 +58,7 @@ export const uploadToSpaces = async (
       Key: key,
       Body: buffer,
       ACL: "public-read", // Make the file publicly accessible
-      ContentType: upload.file.mimetype || "application/octet-stream", // Set proper content type)
+      ContentType: mimeType, // Set proper content type)
     });
 
     // Return the CDN URL
