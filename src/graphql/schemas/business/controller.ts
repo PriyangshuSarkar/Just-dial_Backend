@@ -433,9 +433,15 @@ export const resendBusinessOtp = async (
     await checkVerificationAttempts(tx, value, type);
 
     // Check if the user is allowed to resend an OTP
-    if (contact?.otpExpiresAt && now < new Date(contact.otpExpiresAt)) {
+    if (
+      contact?.otpExpiresAt &&
+      now.getTime() < new Date(contact.otpExpiresAt).getTime() - 9 * 60 * 1000
+    ) {
       const timeRemaining = Math.ceil(
-        (new Date(contact.otpExpiresAt).getTime() - now.getTime()) / 1000
+        (new Date(contact.otpExpiresAt).getTime() -
+          9 * 60 * 1000 -
+          now.getTime()) /
+          1000
       );
       throw new Error(
         `You can resend an OTP after ${timeRemaining} seconds. Please wait.`
