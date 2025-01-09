@@ -29,7 +29,7 @@ export const typeDefs = gql`
     ): UserContact
     resendUserOtp(email: String, phone: String): UserContact
     addUserContact(email: String, phone: String): UserContact
-    verifyUserContact(email: String, phone: String, otp: String!): User
+    verifyUserContact(email: String, phone: String, otp: String!): UserContact
     forgetUserPassword(email: String, phone: String): UserContact
     changeUserPassword(
       email: String

@@ -663,7 +663,7 @@ export const verifyBusinessPrimaryContact = async (
     const token = generateToken(verifiedContact.businessId, "BUSINESS");
 
     return {
-      ...verifiedContact.business,
+      ...verifiedContact,
       token,
       message: `${type === "EMAIL" ? "Email" : "Phone"} verified successfully!`,
     };

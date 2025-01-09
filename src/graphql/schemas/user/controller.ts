@@ -560,7 +560,7 @@ export const verifyUserContact = async (
     const token = generateToken(verifiedContact.userId, "USER");
 
     return {
-      ...verifiedContact.user,
+      ...verifiedContact,
       token,
       message: `${type === "EMAIL" ? "Email" : "Phone"} verified successfully!`,
     };
