@@ -66,7 +66,7 @@ export const getAllBusinesses = async () => {
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "asc",
+              order: "asc",
             },
             select: {
               id: true,

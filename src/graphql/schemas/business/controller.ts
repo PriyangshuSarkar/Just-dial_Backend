@@ -170,7 +170,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "asc",
+              order: "asc",
             },
           },
           websites: {
@@ -1708,7 +1708,7 @@ export const manageBusinessAddress = async (
               deletedAt: null,
             },
             orderBy: {
-              createdAt: "desc",
+              order: "asc",
             },
           },
         },
