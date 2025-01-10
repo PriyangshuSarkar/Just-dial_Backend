@@ -1,5 +1,6 @@
 import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
 import { prisma } from "../../../utils/dbConnect";
+import { hashPassword, verifyPassword } from "../../../utils/password";
 import { generateToken } from "../../../utils/token";
 import {
   AdminAllBusinessesInput,
@@ -10,6 +11,8 @@ import {
   AdminBlockBusinessesSchema,
   AdminBlockUsersInput,
   AdminBlockUsersSchema,
+  AdminChangePasswordInput,
+  AdminChangePasswordSchema,
   AdminGetBusinessByIdInput,
   AdminGetBusinessByIdSchema,
   AdminGetUserByIdInput,
@@ -58,8 +61,13 @@ export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
   if (!admin) {
     throw new Error("Email doesn't exit!");
   }
+  const verify = verifyPassword(
+    validatedData.password,
+    admin.salt!,
+    admin.password!
+  );
 
-  if (admin.password === validatedData.password) {
+  if (verify) {
     const token = generateToken(admin.id, "ADMIN");
 
     return {
@@ -72,6 +80,49 @@ export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
   } else {
     throw new Error("Wrong password!");
   }
+};
+
+export const adminChangePassword = async (
+  _: unknown,
+  args: AdminChangePasswordInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminChangePasswordSchema.parse(args);
+
+  if (!validatedData) return;
+
+  let passwordUpdate = {};
+
+  if (validatedData.password) {
+    const { salt, hash } = hashPassword(validatedData.password);
+    passwordUpdate = { password: hash, salt };
+  }
+
+  await prisma.admin.update({
+    where: { id: admin.id },
+    data: {
+      ...passwordUpdate,
+    },
+  });
+
+  return {
+    id: admin.id,
+    name: admin.name,
+    email: admin.email,
+    message: "Password changed successfully.",
+  };
 };
 
 export const adminAllUsers = async (

@@ -50,6 +50,7 @@ model User {
   feedbacks           Feedback[]
   subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
   testimonials        Testimonial[]
+  adminNotices        AdminNotice?
 
   @@index([id, name, slug])
   @@index([subscriptionId])
@@ -144,6 +145,7 @@ model Business {
   testimonials                Testimonial[]
   businessSupportingDocuments BusinessSupportingDocuments[]
   businessDetails             BusinessDetails?
+  adminNotice                 AdminNotice?
   price                       Float?
 
   @@index([id, name, slug, isBusinessVerified, isListed, isBlocked])
@@ -351,10 +353,31 @@ model Admin {
   id        String    @id @default(uuid())
   name      String
   email     String    @unique
-  password  String
+  password  String?
+  salt      String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+}
+
+enum NoticeType {
+  GLOBAL
+  USER
+  BUSINESS
+  INDIVIDUAL
+}
+
+model AdminNotice {
+  id         String     @id @default(uuid())
+  businessId String?    @unique // Ensures the one-to-one relationship
+  business   Business?  @relation(fields: [businessId], references: [id])
+  userId     String?    @unique // Ensures the one-to-one relationship
+  user       User?      @relation(fields: [userId], references: [id])
+  type       NoticeType
+  content    String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deletedAt  DateTime?
 }
 
 model Category {
