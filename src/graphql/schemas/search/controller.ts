@@ -849,6 +849,20 @@ export const getAllMobileAddBanners = async () => {
   return allMobileAdBanners;
 };
 
+export const getAllGlobalAdminNotice = async () => {
+  const globalAdminNotice = prisma.adminNotice.findMany({
+    where: {
+      deletedAt: null,
+      type: "GLOBAL",
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return globalAdminNotice;
+};
+
 const getCachedResult = (key: string) => {
   const cached = requestCache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {

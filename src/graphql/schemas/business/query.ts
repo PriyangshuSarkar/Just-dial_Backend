@@ -1,4 +1,8 @@
-import { businessLogin, businessMe } from "./controller";
+import {
+  businessLogin,
+  businessMe,
+  getBusinessAdminNotices,
+} from "./controller";
 
 export const Query = {
   status: () => "Server is running",
@@ -6,4 +10,6 @@ export const Query = {
   businessMe,
 
   businessLogin,
+
+  getBusinessAdminNotices,
 };
