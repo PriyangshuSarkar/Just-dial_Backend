@@ -1124,7 +1124,11 @@ export const adminGetAllCategories = async (
   if (!admin) {
     throw new Error("Unauthorized access");
   }
-  const categories = await prisma.category.findMany({});
+  const categories = await prisma.category.findMany({
+    where: {
+      deletedAt: null,
+    },
+  });
 
   return categories;
 };
@@ -1202,27 +1206,66 @@ export const adminManageCategories = async (
         }
       }
       // Create a new category
-      return prisma.category.create({
-        data: {
-          name: category.name,
-          slug: slug,
-          order: category.order,
-          description: category.description,
-          categoryImage,
-        },
-      });
+      return {
+        ...prisma.category.create({
+          data: {
+            name: category.name,
+            slug: slug,
+            order: category.order,
+            description: category.description,
+            categoryImage,
+          },
+        }),
+        message: "Category created successfully!",
+      };
     } else {
-      return prisma.category.update({
-        where: { id: category.id },
-        data: {
-          name: category.name,
-          slug: category.toDelete ? null : category.slug,
-          order: category.order,
-          description: category.description,
-          categoryImage,
-          deletedAt: category.toDelete ? new Date() : null,
+      const existingCategory = await prisma.category.findUnique({
+        where: {
+          id: category.id,
         },
       });
+
+      if (!existingCategory) {
+        return {
+          message: "Category not found!",
+        };
+      }
+
+      let slug = category.slug;
+      if (!category.slug && existingCategory?.slug) {
+        slug = slugify(category.name!, { lower: true, strict: true });
+        let uniqueSuffixLength = 2;
+        let existingSlug = await prisma.category.findFirst({ where: { slug } });
+
+        while (existingSlug) {
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+          slug = `${slugify(category.name!, {
+            lower: true,
+            strict: true,
+          })}-${uniqueSuffix}`;
+          existingSlug = await prisma.category.findFirst({ where: { slug } });
+          uniqueSuffixLength += 1;
+        }
+      }
+
+      return {
+        ...prisma.category.update({
+          where: { id: category.id },
+          data: {
+            name: category.name,
+            slug: category.toDelete ? null : slug,
+            order: category.order,
+            description: category.description,
+            categoryImage,
+            deletedAt: category.toDelete ? new Date() : null,
+          },
+        }),
+        message: category.toDelete
+          ? "Category deleted successfully!"
+          : "Category updated successfully!",
+      };
     }
   };
 
