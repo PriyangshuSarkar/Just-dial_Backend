@@ -1187,9 +1187,13 @@ export const adminManageCategories = async (
 
     if (!category.id) {
       // Update an existing category
-      let slug = category.slug;
-      if (!category.slug) {
-        slug = slugify(category.name!, { lower: true, strict: true });
+      let slug = undefined;
+      const initialSlug = category.slug || category.name;
+      if (initialSlug) {
+        slug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
         let uniqueSuffixLength = 2;
         let existingSlug = await prisma.category.findFirst({ where: { slug } });
 
@@ -1197,7 +1201,7 @@ export const adminManageCategories = async (
           const uniqueSuffix = Math.random()
             .toString(16)
             .slice(2, 2 + uniqueSuffixLength);
-          slug = `${slugify(category.name!, {
+          slug = `${slugify(initialSlug, {
             lower: true,
             strict: true,
           })}-${uniqueSuffix}`;
@@ -1205,6 +1209,7 @@ export const adminManageCategories = async (
           uniqueSuffixLength += 1;
         }
       }
+
       // Create a new category
       return {
         ...prisma.category.create({
@@ -1231,9 +1236,13 @@ export const adminManageCategories = async (
         };
       }
 
-      let slug = category.slug;
-      if (!category.slug && existingCategory?.slug) {
-        slug = slugify(category.name!, { lower: true, strict: true });
+      let slug = undefined;
+      const initialSlug = category.slug || category.name;
+      if (!existingCategory?.slug && initialSlug) {
+        slug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
         let uniqueSuffixLength = 2;
         let existingSlug = await prisma.category.findFirst({ where: { slug } });
 
@@ -1241,7 +1250,7 @@ export const adminManageCategories = async (
           const uniqueSuffix = Math.random()
             .toString(16)
             .slice(2, 2 + uniqueSuffixLength);
-          slug = `${slugify(category.name!, {
+          slug = `${slugify(initialSlug, {
             lower: true,
             strict: true,
           })}-${uniqueSuffix}`;

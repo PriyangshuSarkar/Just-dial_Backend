@@ -424,7 +424,7 @@ export const resendBusinessOtp = async (
 
   // Start a transaction
   const result = await prisma.$transaction(async (tx) => {
-    // Retrieve the user's current OTP details
+    // Retrieve the business's current OTP details
     const contact = await tx.businessPrimaryContact.findUnique({
       where: { value },
       select: { otpExpiresAt: true },
@@ -433,7 +433,7 @@ export const resendBusinessOtp = async (
     // Use the checkVerificationAttempts function to check the attempts
     await checkVerificationAttempts(tx, value, type);
 
-    // Check if the user is allowed to resend an OTP
+    // Check if the business is allowed to resend an OTP
     if (
       contact?.otpExpiresAt &&
       now.getTime() < new Date(contact.otpExpiresAt).getTime() - 9 * 60 * 1000
@@ -1225,16 +1225,18 @@ export const updateBusinessDetails = async (
   }
 
   // if (validatedData.slug) {
-  //   const existingSlug = await prisma.user.findFirst({
+  //   const existingSlug = await prisma.business.findFirst({
   //     where: { slug: validatedData.slug },
   //   });
   //   if (existingSlug) throw new Error("Slug already exists.");
   // }
 
-  let slug = validatedData.slug;
+  let slug = undefined;
 
-  if (!slug && name) {
-    slug = slugify(name, { lower: true, strict: true });
+  const initialSlug = validatedData.slug || name;
+
+  if (initialSlug) {
+    slug = slugify(initialSlug, { lower: true, strict: true });
     let uniqueSuffixLength = 2;
     let existingSlug = await prisma.business.findFirst({ where: { slug } });
 
@@ -1242,7 +1244,7 @@ export const updateBusinessDetails = async (
       const uniqueSuffix = Math.random()
         .toString(16)
         .slice(2, 2 + uniqueSuffixLength);
-      slug = `${slugify(name, {
+      slug = `${slugify(initialSlug, {
         lower: true,
         strict: true,
       })}-${uniqueSuffix}`;
@@ -2464,6 +2466,55 @@ export const manageBusinessOperatingHours = async (
   }
 
   return updateResults;
+};
+
+export const getBusinessAdminNotices = async (
+  _: unknown,
+  args: unknown,
+  context: any
+) => {
+  if (
+    !context.owner?.businessId ||
+    typeof context.owner.businessId !== "string"
+  ) {
+    throw new Error("Invalid or missing token");
+  }
+
+  const business = await prisma.business.findFirstOrThrow({
+    where: {
+      id: context.owner.businessId,
+      deletedAt: null,
+      isBlocked: false,
+      primaryContacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      adminNotice: true,
+    },
+  });
+
+  if (!business) {
+    throw new Error("Business not found!");
+  }
+
+  const result = [];
+
+  result.push(business.adminNotice);
+
+  const allBusinessNotice = await prisma.adminNotice.findMany({
+    where: {
+      deletedAt: null,
+      type: "ALL_BUSINESS",
+    },
+  });
+
+  result.push(...allBusinessNotice);
+
+  return result;
 };
 
 export const businessSubscription = async () =>

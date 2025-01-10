@@ -1,4 +1,4 @@
-import { userLogin, userMe } from "./controller";
+import { getUserAdminNotices, userLogin, userMe } from "./controller";
 
 export const Query = {
   status: () => "Server is running",
@@ -6,4 +6,6 @@ export const Query = {
   userMe,
 
   userLogin,
+
+  getUserAdminNotices,
 };

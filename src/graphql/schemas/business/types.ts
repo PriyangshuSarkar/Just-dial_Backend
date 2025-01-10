@@ -7,6 +7,7 @@ export const typeDefs = gql`
     status: String!
     businessMe: Business
     businessLogin(email: String, phone: String, password: String!): Business
+    getBusinessAdminNotices: [AdminNotice]
   }
 
   enum BusinessType {

@@ -641,7 +641,7 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
           createdAt: "desc",
         },
       },
-      adminNotices: true,
+      adminNotice: true,
     },
   });
 
@@ -921,10 +921,12 @@ export const updateUserDetails = async (
   //   if (existingSlug) throw new Error("Slug already exists.");
   // }
 
-  let slug = validatedData.slug;
+  let slug = undefined;
 
-  if (!slug && name) {
-    slug = slugify(name, { lower: true, strict: true });
+  const initialSlug = validatedData.slug || name;
+
+  if (initialSlug) {
+    slug = slugify(initialSlug, { lower: true, strict: true });
     let uniqueSuffixLength = 2;
     let existingSlug = await prisma.user.findFirst({ where: { slug } });
 
@@ -932,7 +934,7 @@ export const updateUserDetails = async (
       const uniqueSuffix = Math.random()
         .toString(16)
         .slice(2, 2 + uniqueSuffixLength);
-      slug = `${slugify(name, {
+      slug = `${slugify(initialSlug, {
         lower: true,
         strict: true,
       })}-${uniqueSuffix}`;
@@ -1163,6 +1165,52 @@ export const manageUserAddress = async (
     }
   }
   return updatedAddresses;
+};
+
+export const getUserAdminNotices = async (
+  _: unknown,
+  args: unknown,
+  context: any
+) => {
+  if (!context.owner?.userId || typeof context.owner.userId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const user = await prisma.user.findFirstOrThrow({
+    where: {
+      id: context.owner.userId,
+      deletedAt: null,
+      isBlocked: false,
+      contacts: {
+        some: {
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+    include: {
+      adminNotice: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found!");
+  }
+
+  const result = [];
+
+  result.push(user.adminNotice);
+
+  const allUserNotice = await prisma.adminNotice.findMany({
+    where: {
+      deletedAt: null,
+      type: "ALL_USER",
+    },
+  });
+
+  result.push(...allUserNotice);
+
+  return result;
 };
 
 export const userSubscription = async () =>

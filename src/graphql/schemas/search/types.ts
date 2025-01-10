@@ -84,5 +84,7 @@ export const typeDefs = gql`
     getAllAddBanners: [BusinessAdBannerImage]
 
     getAllMobileAddBanners: [BusinessMobileAdBannerImage]
+
+    getAllGlobalAdminNotice: [AdminNotice]
   }
 `;

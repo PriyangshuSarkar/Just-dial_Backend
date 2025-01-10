@@ -7,6 +7,7 @@ export const typeDefs = gql`
     status: String!
     userMe: User
     userLogin(email: String, phone: String, password: String!): User
+    getUserAdminNotices: [AdminNotice]
   }
 
   input UserAddressInput {

@@ -50,7 +50,7 @@ model User {
   feedbacks           Feedback[]
   subscription        UserSubscription? @relation(fields: [subscriptionId], references: [id])
   testimonials        Testimonial[]
-  adminNotices        AdminNotice?
+  adminNotice         AdminNotice?
 
   @@index([id, name, slug])
   @@index([subscriptionId])

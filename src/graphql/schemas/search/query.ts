@@ -10,6 +10,7 @@ import {
   getAllAddBanners,
   getAllMobileAddBanners,
   getAllBusinesses,
+  getAllGlobalAdminNotice,
 } from "./controller";
 import { search } from "./searchController";
 
@@ -39,4 +40,6 @@ export const Query = {
   getAllAddBanners,
 
   getAllMobileAddBanners,
+
+  getAllGlobalAdminNotice,
 };
