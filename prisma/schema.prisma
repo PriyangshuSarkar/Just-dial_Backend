@@ -360,23 +360,24 @@ model Admin {
   deletedAt DateTime?
 }
 
-enum NoticeType {
+enum AdminNoticeType {
   GLOBAL
-  USER
-  BUSINESS
-  INDIVIDUAL
+  ALL_USER
+  INDIVIDUAL_USER
+  ALL_BUSINESS
+  INDIVIDUAL_BUSINESS
 }
 
 model AdminNotice {
-  id         String     @id @default(uuid())
-  businessId String?    @unique // Ensures the one-to-one relationship
-  business   Business?  @relation(fields: [businessId], references: [id])
-  userId     String?    @unique // Ensures the one-to-one relationship
-  user       User?      @relation(fields: [userId], references: [id])
-  type       NoticeType
-  content    String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id         String           @id @default(uuid())
+  businessId String?          @unique // Ensures the one-to-one relationship
+  business   Business?        @relation(fields: [businessId], references: [id])
+  userId     String?          @unique // Ensures the one-to-one relationship
+  user       User?            @relation(fields: [userId], references: [id])
+  type       AdminNoticeType?
+  note       String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
   deletedAt  DateTime?
 }
 

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
@@ -13,12 +14,16 @@ import {
   AdminBlockUsersSchema,
   AdminChangePasswordInput,
   AdminChangePasswordSchema,
+  AdminGetAllAdminNoticesInput,
+  AdminGetAllAdminNoticesSchema,
   AdminGetBusinessByIdInput,
   AdminGetBusinessByIdSchema,
   AdminGetUserByIdInput,
   AdminGetUserByIdSchema,
   AdminLoginInput,
   AdminLoginSchema,
+  AdminManageAdminNoticesInput,
+  AdminManageAdminNoticesSchema,
   AdminManageBusinessSubscriptionsInput,
   AdminManageBusinessSubscriptionsSchema,
   AdminManageCategoriesInput,
@@ -48,6 +53,7 @@ import {
   AdminVerifyBusinessesInput,
   AdminVerifyBusinessesSchema,
 } from "./db";
+import slugify from "slugify";
 
 export const adminLogin = async (_: unknown, args: AdminLoginInput) => {
   const validatedData = AdminLoginSchema.parse(args);
@@ -1145,7 +1151,7 @@ export const adminManageCategories = async (
   if (!validatedData?.categories) return;
 
   const processCategory = async (category: any) => {
-    let categoryImage: string | null = null;
+    let categoryImage: string | undefined = undefined;
 
     if (category.categoryImage) {
       if (category.id) {
@@ -1155,6 +1161,7 @@ export const adminManageCategories = async (
         });
         if (existingCategory?.categoryImage && category.toDelete) {
           await deleteFromSpaces(existingCategory?.categoryImage);
+          categoryImage = undefined;
         } else {
           categoryImage = await uploadToSpaces(
             category.categoryImage,
@@ -1175,23 +1182,41 @@ export const adminManageCategories = async (
     }
 
     if (!category.id) {
+      // Update an existing category
+      let slug = category.slug;
+      if (!category.slug) {
+        slug = slugify(category.name!, { lower: true, strict: true });
+        let uniqueSuffixLength = 2;
+        let existingSlug = await prisma.category.findFirst({ where: { slug } });
+
+        while (existingSlug) {
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+          slug = `${slugify(category.name!, {
+            lower: true,
+            strict: true,
+          })}-${uniqueSuffix}`;
+          existingSlug = await prisma.category.findFirst({ where: { slug } });
+          uniqueSuffixLength += 1;
+        }
+      }
       // Create a new category
       return prisma.category.create({
         data: {
           name: category.name,
-          slug: category.slug,
+          slug: slug,
           order: category.order,
           description: category.description,
           categoryImage,
         },
       });
     } else {
-      // Update an existing category
       return prisma.category.update({
         where: { id: category.id },
         data: {
           name: category.name,
-          slug: category.slug,
+          slug: category.toDelete ? null : category.slug,
           order: category.order,
           description: category.description,
           categoryImage,
@@ -1650,4 +1675,159 @@ export const adminManageTestimonials = async (
   );
 
   return testimonial;
+};
+
+export const adminGetAllAdminNotices = async (
+  _: unknown,
+  args: AdminGetAllAdminNoticesInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminGetAllAdminNoticesSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const skip = (validatedData.page - 1) * validatedData.limit;
+
+  const [notices, total] = await Promise.all([
+    prisma.adminNotice.findMany({
+      where: {
+        deletedAt: null,
+        type: validatedData.type,
+      },
+      skip,
+      take: validatedData.limit,
+      orderBy: {
+        [validatedData.sortBy]: validatedData.sortOrder,
+      },
+    }),
+    prisma.adminNotice.count({
+      where: {
+        deletedAt: null,
+        type: validatedData.type,
+      },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / validatedData.limit);
+
+  return {
+    notices,
+    total,
+    page: validatedData.page,
+    limit: validatedData.limit,
+    totalPages,
+  };
+};
+
+export const adminManageAdminNotices = async (
+  _: unknown,
+  args: AdminManageAdminNoticesInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminManageAdminNoticesSchema.parse(args);
+
+  if (!validatedData?.adminNotices) return;
+
+  const notices = await Promise.all(
+    validatedData.adminNotices.map(async (notice) => {
+      if (notice.toDelete) {
+        const noticeToDelete = await prisma.adminNotice.findFirst({
+          where: {
+            OR: [
+              { id: notice.id },
+              { business: { id: notice.businessId } },
+              { business: { slug: notice.businessSlug } },
+              { user: { id: notice.userId } },
+              { user: { slug: notice.userSlug } },
+            ],
+          },
+        });
+
+        if (!noticeToDelete) {
+          throw new Error("Notice not found.");
+        }
+
+        // Delete the matched notice
+        return await prisma.adminNotice.delete({
+          where: {
+            id: noticeToDelete.id, // Use the unique `id` from the found notice
+          },
+        });
+      } else {
+        const existingAdminNotice = await prisma.adminNotice.findFirst({
+          where: {
+            OR: [
+              { id: notice.id },
+              { business: { id: notice.businessId } },
+              { business: { slug: notice.businessSlug } },
+              { user: { id: notice.userId } },
+              { user: { slug: notice.userSlug } },
+            ],
+          },
+        });
+
+        if (existingAdminNotice) {
+          return await prisma.adminNotice.update({
+            where: {
+              id: existingAdminNotice.id,
+            },
+            data: {
+              note: notice.note,
+            },
+          });
+        } else {
+          const data: Prisma.AdminNoticeCreateInput = {
+            note: notice.note,
+            type: notice.type || "GLOBAL", // Default to "GLOBAL" if type is not provided
+          };
+
+          if (notice.businessId || notice.businessSlug) {
+            data.business = {
+              connect: notice.businessId
+                ? { id: notice.businessId }
+                : { slug: notice.businessSlug },
+            };
+            data.type = "INDIVIDUAL_BUSINESS"; // Set the type to business specific
+          } else if (notice.userId || notice.userSlug) {
+            data.user = {
+              connect: notice.userId
+                ? { id: notice.userId }
+                : { slug: notice.userSlug },
+            };
+            data.type = "INDIVIDUAL_USER"; // Set the type to user specific
+          }
+
+          return await prisma.adminNotice.create({
+            data,
+          });
+        }
+      }
+    })
+  );
+
+  return notices;
 };
