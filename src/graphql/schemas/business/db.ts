@@ -118,7 +118,7 @@ export const UpdateBusinessDetailsSchema = object({
   longitude: number().optional(),
   additionalContacts: string().array().optional(),
   logo: any().optional(),
-  primaryWebsite: string().url().optional(),
+  primaryWebsite: string().optional(),
 }).optional();
 export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema
@@ -146,7 +146,7 @@ export const ManageBusinessWebsiteSchema = object({
   websites: object({
     websiteId: string().optional(),
     type: string().optional(),
-    url: string().url().optional(),
+    url: string().optional(),
     toDelete: boolean().optional(),
   })
     .array()
