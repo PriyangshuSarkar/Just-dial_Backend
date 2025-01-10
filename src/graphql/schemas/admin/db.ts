@@ -14,6 +14,11 @@ export const AdminLoginSchema = object({
 }).optional();
 export type AdminLoginInput = infer_<typeof AdminLoginSchema>;
 
+export const AdminChangePasswordSchema = object({
+  password: string(),
+}).optional();
+export type AdminChangePasswordInput = infer_<typeof AdminChangePasswordSchema>;
+
 export const AdminSearchAllReviewsSchema = object({
   search: string().toLowerCase().optional(),
   sortBy: enum_(["rating", "createdAt"]).default("createdAt"),
