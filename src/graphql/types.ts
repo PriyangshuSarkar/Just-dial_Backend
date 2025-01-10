@@ -36,6 +36,7 @@ export const typeDefs = gql`
     reviews: [Review]
     feedbacks: [Feedback]
     subscription: UserSubscription
+    adminNotice: AdminNotice
     message: String
     token: String
   }
@@ -116,6 +117,7 @@ export const typeDefs = gql`
     feedbacks: [Feedback]
     businessSupportingDocuments: [BusinessSupportingDocuments]
     businessDetails: BusinessDetails
+    adminNotice: AdminNotice
     price: Float
     message: String
     token: String
@@ -311,6 +313,26 @@ export const typeDefs = gql`
     token: String
   }
 
+  enum AdminNoticeType {
+    GLOBAL
+    ALL_USER
+    INDIVIDUAL_USER
+    ALL_BUSINESS
+    INDIVIDUAL_BUSINESS
+  }
+
+  type AdminNotice {
+    id: ID
+    businessId: ID
+    business: Business
+    userId: ID
+    user: User
+    type: AdminNoticeType
+    note: String
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
+  }
   type Admin {
     id: ID
     name: String

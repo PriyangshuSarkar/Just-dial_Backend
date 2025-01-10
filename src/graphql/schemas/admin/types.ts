@@ -4,7 +4,7 @@ export const typeDefs = gql`
   scalar Upload
   # Enums
   enum AllUsersSortBy {
-    name
+    alphabetical
     createdAt
     updatedAt
   }
@@ -20,27 +20,28 @@ export const typeDefs = gql`
   }
 
   enum AllBusinessesSortBy {
-    name
+    alphabetical
     createdAt
+    updatedAt
     averageRating
     reviewCount
   }
 
-  type AllUserResult {
+  type AllUsersResult {
     users: [User]
     total: Int
     page: Int
     limit: Int
     totalPages: Int
   }
-  type AllBusinessResult {
+  type AllBusinessesResult {
     businesses: [Business]
     total: Int
     page: Int
     limit: Int
     totalPages: Int
   }
-  type AllReviewResult {
+  type AllReviewsResult {
     reviews: [Review]
     total: Int
     page: Int
@@ -48,8 +49,16 @@ export const typeDefs = gql`
     totalPages: Int
   }
 
-  type AllFeedbackResult {
+  type AllFeedbacksResult {
     reviews: [Review]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+
+  type AllAdminNoticesResult {
+    notices: [AdminNotice]
     total: Int
     page: Int
     limit: Int
@@ -75,7 +84,7 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: AllUsersSortBy = createdAt
       sortOrder: SortOrder = desc
-    ): AllUserResult
+    ): AllUsersResult
 
     adminGetUserById(userId: ID, userSlug: ID): User
 
@@ -96,7 +105,7 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: AllBusinessesSortBy = createdAt
       sortOrder: SortOrder = desc
-    ): AllBusinessResult
+    ): AllBusinessesResult
 
     adminGetBusinessById(businessId: ID, businessSlug: ID): Business
 
@@ -106,7 +115,7 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: SortByEnum = createdAt
       sortOrder: OrderEnum = desc
-    ): AllReviewResult
+    ): AllReviewsResult
 
     adminSearchAllFeedbacks(
       search: String
@@ -114,7 +123,7 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: SortByEnum = createdAt
       sortOrder: OrderEnum = desc
-    ): AllFeedbackResult
+    ): AllFeedbacksResult
 
     adminGetAllUserSubscriptions: [UserSubscription]
 
@@ -139,13 +148,24 @@ export const typeDefs = gql`
     adminGetAllPincodes: [Pincode]
 
     adminGetAllTestimonials: [Testimonial]
+
+    adminGetAllAdminNotices(
+      type: AdminNoticeType
+      page: Int = 1
+      limit: Int = 10
+      sortBy: SortByEnum = createdAt
+      sortOrder: OrderEnum = desc
+    ): AllAdminNoticesResult
   }
 
   # Mutation Type Definitions
   type Mutation {
     adminBlockUsers(users: [UsersBlock]): [User]
+
     adminBlockBusinesses(businesses: [BusinessesBlock]): [Business]
+
     adminVerifyBusinesses(businesses: [BusinessesVerify]): [Business]
+
     adminManageUserSubscriptions(
       id: ID
       name: String!
@@ -155,6 +175,7 @@ export const typeDefs = gql`
       features: [String!]!
       toDelete: Boolean
     ): UserSubscription
+
     adminManageBusinessSubscriptions(
       id: ID
       name: String!
@@ -165,16 +186,28 @@ export const typeDefs = gql`
       tierLevel: Int
       toDelete: Boolean
     ): BusinessSubscription
+
     adminManageLanguages(languages: [LanguageInput]): [Language]
+
     adminManageProficiencies(proficiencies: [ProficiencyInput]): [Proficiency]
+
     adminManageCourts(courts: [CourtInput]): [Court]
+
     adminManageCategories(categories: [CategoryInput]): [Category]
+
     adminManageTags(tags: [TagInput]): [Tag]
+
     adminManageCountries(countries: [CountryInput]): [Country]
+
     adminManageStates(states: [StateInput]): [State]
+
     adminManageCities(cities: [CityInput]): [City]
+
     adminManagePincodes(pincodes: [PincodeInput]): [Pincode]
+
     adminManageTestimonials(testimonials: [TestimonialInput]): [Testimonial]
+
+    adminManageAdminNotices(adminNotices: [AdminNoticeInput]): [AdminNotice]
   }
 
   input BusinessesVerify {
@@ -264,6 +297,17 @@ export const typeDefs = gql`
     reviewId: ID
     feedbackId: ID
     order: Int
+    toDelete: Boolean
+  }
+
+  input AdminNoticeInput {
+    id: ID
+    businessId: ID
+    businessSlug: ID
+    userId: ID
+    userSlug: ID
+    type: AdminNoticeType
+    note: String
     toDelete: Boolean
   }
 `;

@@ -63,7 +63,9 @@ export const AdminAllUsersSchema = object({
   createdAtEnd: string().datetime().optional(),
   page: number().int().positive().default(1),
   limit: number().int().positive().default(10),
-  sortBy: enum_(["name", "createdAt", "updatedAt"]).default("createdAt"),
+  sortBy: enum_(["alphabetical", "createdAt", "updatedAt"]).default(
+    "createdAt"
+  ),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
 }).optional();
 export type AdminAllUsersInput = infer_<typeof AdminAllUsersSchema>;
@@ -96,9 +98,13 @@ export const AdminAllBusinessesSchema = object({
   createdAtEnd: string().datetime().optional(),
   page: number().int().positive().default(1),
   limit: number().int().positive().default(10),
-  sortBy: enum_(["name", "createdAt", "averageRating", "reviewCount"]).default(
-    "createdAt"
-  ),
+  sortBy: enum_([
+    "alphabetical",
+    "updatedAt",
+    "createdAt",
+    "averageRating",
+    "reviewCount",
+  ]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
 }).optional();
 export type AdminAllBusinessesInput = infer_<typeof AdminAllBusinessesSchema>;
@@ -308,4 +314,47 @@ export const AdminManageTestimonialsSchema = object({
 }).optional();
 export type AdminManageTestimonialsInput = infer_<
   typeof AdminManageTestimonialsSchema
+>;
+
+export const AdminGetAllAdminNoticesSchema = object({
+  type: enum_([
+    "GLOBAL",
+    "ALL_USER",
+    "ALL_BUSINESS",
+    "INDIVIDUAL_USER",
+    "INDIVIDUAL_BUSINESS",
+  ]).optional(),
+  page: number().int().positive().default(1),
+  limit: number().int().positive().default(10),
+  sortBy: enum_(["alphabetical", "createdAt", "updatedAt"]).default(
+    "createdAt"
+  ),
+  sortOrder: enum_(["asc", "desc"]).default("desc"),
+}).optional();
+export type AdminGetAllAdminNoticesInput = infer_<
+  typeof AdminGetAllAdminNoticesSchema
+>;
+
+export const AdminManageAdminNoticesSchema = object({
+  adminNotices: object({
+    id: string().optional(),
+    businessId: string().optional(),
+    businessSlug: string().optional(),
+    userId: string().optional(),
+    userSlug: string().optional(),
+    type: enum_([
+      "GLOBAL",
+      "ALL_USER",
+      "ALL_BUSINESS",
+      "INDIVIDUAL_USER",
+      "INDIVIDUAL_BUSINESS",
+    ]).optional(),
+    note: string().optional(),
+    toDelete: boolean().optional().default(false),
+  })
+    .array()
+    .optional(),
+}).optional();
+export type AdminManageAdminNoticesInput = infer_<
+  typeof AdminManageAdminNoticesSchema
 >;

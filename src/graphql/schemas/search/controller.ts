@@ -567,6 +567,7 @@ export const allCategories = async () => {
     },
     select: {
       id: true,
+      order: true,
       name: true,
       slug: true,
       description: true,

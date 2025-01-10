@@ -1,6 +1,7 @@
 import {
   adminAllBusinesses,
   adminAllUsers,
+  adminGetAllAdminNotices,
   adminGetAllBusinessSubscriptions,
   adminGetAllCategories,
   adminGetAllCities,
@@ -60,4 +61,6 @@ export const Query = {
   adminGetAllPincodes,
 
   adminGetAllTestimonials,
+
+  adminGetAllAdminNotices,
 };

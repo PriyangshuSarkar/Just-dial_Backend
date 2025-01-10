@@ -290,6 +290,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
           updatedAt: "desc",
         },
       },
+      adminNotice: true,
     },
   });
 

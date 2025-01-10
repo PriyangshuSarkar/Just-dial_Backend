@@ -1,6 +1,7 @@
 import {
   adminBlockBusinesses,
   adminBlockUsers,
+  adminManageAdminNotices,
   adminManageBusinessSubscriptions,
   adminManageCategories,
   adminManageCities,
@@ -46,4 +47,6 @@ export const Mutation = {
   adminManagePincodes,
 
   adminManageTestimonials,
+
+  adminManageAdminNotices,
 };
