@@ -1248,7 +1248,10 @@ export const adminManageCategories = async (
 
       let slug: string | undefined = undefined;
       const initialSlug = category.slug || category.name;
-      if (!existingCategory?.slug && initialSlug) {
+      if (
+        (category.slug && initialSlug) ||
+        (!existingCategory?.slug && initialSlug)
+      ) {
         slug = slugify(initialSlug, {
           lower: true,
           strict: true,
