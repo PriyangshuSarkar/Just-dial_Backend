@@ -947,29 +947,30 @@ export const adminManageLanguages = async (
 
   if (!validatedData?.languages) return;
 
-  const results = await Promise.all(
-    validatedData.languages.map(async (language) => {
-      if (!language.id) {
-        const newLanguage = await prisma.language.create({
-          data: {
-            name: language.name,
-            slug: language.slug,
-          },
-        });
-        return newLanguage;
-      } else {
-        const updatedLanguage = await prisma.language.update({
-          where: { id: language.id },
-          data: {
-            name: language.name,
-            slug: language.slug,
-            deletedAt: language.toDelete ? new Date() : null,
-          },
-        });
-        return updatedLanguage;
-      }
-    })
-  );
+  const results = [];
+  for (const language of validatedData.languages) {
+    let result;
+    if (!language.id) {
+      // Create a new language
+      result = await prisma.language.create({
+        data: {
+          name: language.name,
+          slug: language.slug,
+        },
+      });
+    } else {
+      // Update the existing language
+      result = await prisma.language.update({
+        where: { id: language.id },
+        data: {
+          name: language.name,
+          slug: language.slug,
+          deletedAt: language.toDelete ? new Date() : null,
+        },
+      });
+    }
+    results.push(result);
+  }
 
   return results;
 };
@@ -1016,27 +1017,30 @@ export const adminManageProficiencies = async (
 
   if (!validatedData?.proficiencies) return;
 
-  const results = await Promise.all(
-    validatedData.proficiencies.map(async (proficiency) => {
-      if (!proficiency.id) {
-        return await prisma.proficiency.create({
-          data: {
-            name: proficiency.name,
-            slug: proficiency.slug,
-          },
-        });
-      } else {
-        return await prisma.proficiency.update({
-          where: { id: proficiency.id },
-          data: {
-            name: proficiency.name,
-            slug: proficiency.slug,
-            deletedAt: proficiency.toDelete ? new Date() : null,
-          },
-        });
-      }
-    })
-  );
+  const results = [];
+  for (const proficiency of validatedData.proficiencies) {
+    let result;
+    if (!proficiency.id) {
+      // Create a new proficiency
+      result = await prisma.proficiency.create({
+        data: {
+          name: proficiency.name,
+          slug: proficiency.slug,
+        },
+      });
+    } else {
+      // Update an existing proficiency
+      result = await prisma.proficiency.update({
+        where: { id: proficiency.id },
+        data: {
+          name: proficiency.name,
+          slug: proficiency.slug,
+          deletedAt: proficiency.toDelete ? new Date() : null,
+        },
+      });
+    }
+    results.push(result);
+  }
 
   return results;
 };
@@ -1083,27 +1087,30 @@ export const adminManageCourts = async (
 
   if (!validatedData?.courts) return;
 
-  const results = await Promise.all(
-    validatedData.courts.map(async (court) => {
-      if (!court.id) {
-        return await prisma.court.create({
-          data: {
-            name: court.name,
-            slug: court.slug,
-          },
-        });
-      } else {
-        return await prisma.court.update({
-          where: { id: court.id },
-          data: {
-            name: court.name,
-            slug: court.slug,
-            deletedAt: court.toDelete ? new Date() : null,
-          },
-        });
-      }
-    })
-  );
+  const results = [];
+  for (const court of validatedData.courts) {
+    let result;
+    if (!court.id) {
+      // Create a new court
+      result = await prisma.court.create({
+        data: {
+          name: court.name,
+          slug: court.slug,
+        },
+      });
+    } else {
+      // Update an existing court
+      result = await prisma.court.update({
+        where: { id: court.id },
+        data: {
+          name: court.name,
+          slug: court.slug,
+          deletedAt: court.toDelete ? new Date() : null,
+        },
+      });
+    }
+    results.push(result);
+  }
 
   return results;
 };
@@ -1154,15 +1161,17 @@ export const adminManageCategories = async (
 
   if (!validatedData?.categories) return;
 
-  const processCategory = async (category: any) => {
+  const results = [];
+
+  for (const category of validatedData.categories) {
     let categoryImage: string | undefined = undefined;
 
     if (category.categoryImage) {
       if (category.id) {
-        // Replace existing image if category ID exists
         const existingCategory = await prisma.category.findUnique({
           where: { id: category.id },
         });
+
         if (existingCategory?.categoryImage && category.toDelete) {
           await deleteFromSpaces(existingCategory?.categoryImage);
           categoryImage = undefined;
@@ -1174,26 +1183,30 @@ export const adminManageCategories = async (
           );
         }
       } else {
-        if (category.categoryImage) {
-          // Upload new image if no category ID exists
-          categoryImage = await uploadToSpaces(
-            category.categoryImage,
-            "category_image",
-            null
-          );
-        }
+        categoryImage = await uploadToSpaces(
+          category.categoryImage,
+          "category_image",
+          null
+        );
       }
     }
 
     if (!category.id) {
-      // Update an existing category
-      let slug = undefined;
+      // Creating a new category
+      if (!category.name) {
+        results.push({
+          message: "Category name is required!",
+        });
+        continue;
+      }
+      let slug: string | undefined = undefined;
       const initialSlug = category.slug || category.name;
       if (initialSlug) {
         slug = slugify(initialSlug, {
           lower: true,
           strict: true,
         });
+
         let uniqueSuffixLength = 2;
         let existingSlug = await prisma.category.findFirst({ where: { slug } });
 
@@ -1210,39 +1223,37 @@ export const adminManageCategories = async (
         }
       }
 
-      // Create a new category
-      return {
-        ...prisma.category.create({
-          data: {
-            name: category.name,
-            slug: slug,
-            order: category.order,
-            description: category.description,
-            categoryImage,
-          },
-        }),
+      const newCategory = await prisma.category.create({
+        data: {
+          name: category.name,
+          slug: slug,
+          order: category.order,
+          description: category.description,
+          categoryImage,
+        },
+      });
+      results.push({
+        ...newCategory,
         message: "Category created successfully!",
-      };
+      });
     } else {
       const existingCategory = await prisma.category.findUnique({
-        where: {
-          id: category.id,
-        },
+        where: { id: category.id },
       });
 
       if (!existingCategory) {
-        return {
-          message: "Category not found!",
-        };
+        results.push({ message: "Category not found!" });
+        continue;
       }
 
-      let slug = undefined;
+      let slug: string | undefined = undefined;
       const initialSlug = category.slug || category.name;
       if (!existingCategory?.slug && initialSlug) {
         slug = slugify(initialSlug, {
           lower: true,
           strict: true,
         });
+
         let uniqueSuffixLength = 2;
         let existingSlug = await prisma.category.findFirst({ where: { slug } });
 
@@ -1259,28 +1270,27 @@ export const adminManageCategories = async (
         }
       }
 
-      return {
-        ...prisma.category.update({
-          where: { id: category.id },
-          data: {
-            name: category.name,
-            slug: category.toDelete ? null : slug,
-            order: category.order,
-            description: category.description,
-            categoryImage,
-            deletedAt: category.toDelete ? new Date() : null,
-          },
-        }),
+      const updatedCategory = await prisma.category.update({
+        where: { id: category.id },
+        data: {
+          name: category.name,
+          slug: category.toDelete ? null : slug,
+          order: category.order,
+          description: category.description,
+          categoryImage,
+          deletedAt: category.toDelete ? new Date() : null,
+        },
+      });
+
+      results.push({
+        ...updatedCategory,
         message: category.toDelete
           ? "Category deleted successfully!"
           : "Category updated successfully!",
-      };
+      });
     }
-  };
+  }
 
-  const results = await Promise.all(
-    validatedData.categories.map(processCategory)
-  );
   return results;
 };
 
@@ -1326,24 +1336,37 @@ export const adminManageTags = async (
 
   if (!validatedData?.tags) return;
 
-  const results = await Promise.all(
-    validatedData.tags.map(async (tag) => {
-      if (!tag.id) {
-        return await prisma.tag.create({
-          data: {
-            name: tag.name,
-          },
-        });
-      } else {
-        return await prisma.tag.update({
-          where: { id: tag.id },
-          data: {
-            name: tag.name,
-          },
-        });
+  const results = [];
+
+  for (const tag of validatedData.tags) {
+    if (!tag.id) {
+      // Create a new tag
+      const newTag = await prisma.tag.create({
+        data: {
+          name: tag.name,
+        },
+      });
+      results.push({ ...newTag, message: "Tag created successfully!" });
+    } else {
+      // Update an existing tag
+      const existingTag = await prisma.tag.findUnique({
+        where: { id: tag.id },
+      });
+
+      if (!existingTag) {
+        results.push({ id: tag.id, message: "Tag not found!" });
+        continue;
       }
-    })
-  );
+
+      const updatedTag = await prisma.tag.update({
+        where: { id: tag.id },
+        data: {
+          name: tag.name,
+        },
+      });
+      results.push({ ...updatedTag, message: "Tag updated successfully!" });
+    }
+  }
 
   return results;
 };
@@ -1390,26 +1413,42 @@ export const adminManageCountries = async (
 
   if (!validatedData?.countries) return;
 
-  const results = await Promise.all(
-    validatedData.countries.map(async (country) => {
-      if (!country.id) {
-        return await prisma.country.create({
-          data: {
-            name: country.name,
-            slug: country.slug,
-          },
-        });
-      } else {
-        return await prisma.country.update({
-          where: { id: country.id },
-          data: {
-            name: country.name,
-            slug: country.slug,
-          },
-        });
+  const results = [];
+
+  for (const country of validatedData.countries) {
+    if (!country.id) {
+      // Create a new country
+      const newCountry = await prisma.country.create({
+        data: {
+          name: country.name,
+          slug: country.slug,
+        },
+      });
+      results.push({ ...newCountry, message: "Country created successfully!" });
+    } else {
+      // Update an existing country
+      const existingCountry = await prisma.country.findUnique({
+        where: { id: country.id },
+      });
+
+      if (!existingCountry) {
+        results.push({ id: country.id, message: "Country not found!" });
+        continue;
       }
-    })
-  );
+
+      const updatedCountry = await prisma.country.update({
+        where: { id: country.id },
+        data: {
+          name: country.name,
+          slug: country.slug,
+        },
+      });
+      results.push({
+        ...updatedCountry,
+        message: "Country updated successfully!",
+      });
+    }
+  }
 
   return results;
 };
@@ -1456,28 +1495,41 @@ export const adminManageStates = async (
 
   if (!validatedData?.states) return;
 
-  const results = await Promise.all(
-    validatedData.states.map(async (state) => {
-      if (!state.id) {
-        return await prisma.state.create({
-          data: {
-            countryId: state.countryId,
-            name: state.name,
-            slug: state.slug,
-          },
-        });
-      } else {
-        return await prisma.state.update({
-          where: { id: state.id },
-          data: {
-            countryId: state.countryId,
-            name: state.name,
-            slug: state.slug,
-          },
-        });
+  const results = [];
+
+  for (const state of validatedData.states) {
+    if (!state.id) {
+      // Create a new state
+      const newState = await prisma.state.create({
+        data: {
+          countryId: state.countryId,
+          name: state.name,
+          slug: state.slug,
+        },
+      });
+      results.push({ ...newState, message: "State created successfully!" });
+    } else {
+      // Update an existing state
+      const existingState = await prisma.state.findUnique({
+        where: { id: state.id },
+      });
+
+      if (!existingState) {
+        results.push({ id: state.id, message: "State not found!" });
+        continue;
       }
-    })
-  );
+
+      const updatedState = await prisma.state.update({
+        where: { id: state.id },
+        data: {
+          countryId: state.countryId,
+          name: state.name,
+          slug: state.slug,
+        },
+      });
+      results.push({ ...updatedState, message: "State updated successfully!" });
+    }
+  }
 
   return results;
 };
@@ -1524,28 +1576,41 @@ export const adminManageCities = async (
 
   if (!validatedData?.cities) return;
 
-  const results = await Promise.all(
-    validatedData.cities.map(async (city) => {
-      if (!city.id) {
-        return await prisma.city.create({
-          data: {
-            stateId: city.stateId,
-            name: city.name,
-            slug: city.slug,
-          },
-        });
-      } else {
-        return await prisma.city.update({
-          where: { id: city.id },
-          data: {
-            stateId: city.stateId,
-            name: city.name,
-            slug: city.slug,
-          },
-        });
+  const results = [];
+
+  for (const city of validatedData.cities) {
+    if (!city.id) {
+      // Create a new city
+      const newCity = await prisma.city.create({
+        data: {
+          stateId: city.stateId,
+          name: city.name,
+          slug: city.slug,
+        },
+      });
+      results.push({ ...newCity, message: "City created successfully!" });
+    } else {
+      // Update an existing city
+      const existingCity = await prisma.city.findUnique({
+        where: { id: city.id },
+      });
+
+      if (!existingCity) {
+        results.push({ id: city.id, message: "City not found!" });
+        continue;
       }
-    })
-  );
+
+      const updatedCity = await prisma.city.update({
+        where: { id: city.id },
+        data: {
+          stateId: city.stateId,
+          name: city.name,
+          slug: city.slug,
+        },
+      });
+      results.push({ ...updatedCity, message: "City updated successfully!" });
+    }
+  }
 
   return results;
 };
@@ -1592,28 +1657,44 @@ export const adminManagePincodes = async (
 
   if (!validatedData?.pincodes) return;
 
-  const results = await Promise.all(
-    validatedData.pincodes.map(async (pincode) => {
-      if (!pincode.id) {
-        return await prisma.pincode.create({
-          data: {
-            cityId: pincode.cityId,
-            code: pincode.code,
-            slug: pincode.slug,
-          },
-        });
-      } else {
-        return await prisma.pincode.update({
-          where: { id: pincode.id },
-          data: {
-            cityId: pincode.cityId,
-            code: pincode.code,
-            slug: pincode.slug,
-          },
-        });
+  const results = [];
+
+  for (const pincode of validatedData.pincodes) {
+    if (!pincode.id) {
+      // Create a new pincode
+      const newPincode = await prisma.pincode.create({
+        data: {
+          cityId: pincode.cityId,
+          code: pincode.code,
+          slug: pincode.slug,
+        },
+      });
+      results.push({ ...newPincode, message: "Pincode created successfully!" });
+    } else {
+      // Update an existing pincode
+      const existingPincode = await prisma.pincode.findUnique({
+        where: { id: pincode.id },
+      });
+
+      if (!existingPincode) {
+        results.push({ id: pincode.id, message: "Pincode not found!" });
+        continue;
       }
-    })
-  );
+
+      const updatedPincode = await prisma.pincode.update({
+        where: { id: pincode.id },
+        data: {
+          cityId: pincode.cityId,
+          code: pincode.code,
+          slug: pincode.slug,
+        },
+      });
+      results.push({
+        ...updatedPincode,
+        message: "Pincode updated successfully!",
+      });
+    }
+  }
 
   return results;
 };
@@ -1660,75 +1741,90 @@ export const adminManageTestimonials = async (
 
   if (!validatedData?.testimonials) return;
 
-  const testimonial = await Promise.all(
-    validatedData.testimonials.map(async (testimonial) => {
-      const entityId = testimonial.reviewId || testimonial.feedbackId;
-      const entityType = testimonial.reviewId ? "REVIEW" : "FEEDBACK";
+  const results = [];
 
-      if (
-        testimonial.toDelete &&
-        (testimonial.id || testimonial.reviewId || testimonial.feedbackId)
-      ) {
-        const testimonialToDelete = await prisma.testimonial.findFirst({
-          where: {
-            OR: [
-              { id: testimonial.id },
-              { reviewId: testimonial.reviewId },
-              { feedbackId: testimonial.feedbackId },
-            ],
-          },
-        });
+  for (const testimonial of validatedData.testimonials) {
+    const entityId = testimonial.reviewId || testimonial.feedbackId;
+    const entityType = testimonial.reviewId ? "REVIEW" : "FEEDBACK";
 
-        if (!testimonialToDelete) {
-          throw new Error("Testimonial not found.");
-        }
-
-        // Delete the matched testimonial
-        return await prisma.testimonial.delete({
-          where: {
-            id: testimonialToDelete.id, // Use the unique `id` from the found testimonial
-          },
-        });
-      }
-      if (!testimonial.order) {
-        throw new Error("Testimonial Order is required");
-      }
-
-      let existingReview;
-
-      if (entityType === "REVIEW") {
-        existingReview = await prisma.review.findFirst({
-          where: {
-            id: entityId,
-          },
-        });
-      } else {
-        existingReview = await prisma.feedback.findFirst({
-          where: {
-            id: entityId,
-          },
-        });
-      }
-      return await prisma.testimonial.create({
-        data: {
-          reviewId: testimonial.reviewId,
-          feedbackId: testimonial.feedbackId,
-          order: testimonial.order,
-          type: entityType,
-          rating: existingReview?.rating,
-          comment: existingReview?.comment,
-          businessId: existingReview?.businessId,
-          userId: existingReview?.userId,
-          createdAt: existingReview?.createdAt,
-          updatedAt: existingReview?.updatedAt,
+    // Handle deletion of testimonial
+    if (
+      testimonial.toDelete &&
+      (testimonial.id || testimonial.reviewId || testimonial.feedbackId)
+    ) {
+      const testimonialToDelete = await prisma.testimonial.findFirst({
+        where: {
+          OR: [
+            { id: testimonial.id },
+            { reviewId: testimonial.reviewId },
+            { feedbackId: testimonial.feedbackId },
+          ],
         },
       });
-    })
-  );
 
-  return testimonial;
+      if (!testimonialToDelete) {
+        results.push({ message: "Testimonial not found." });
+        continue;
+      }
+
+      // Delete the testimonial
+      const deletedTestimonial = await prisma.testimonial.delete({
+        where: {
+          id: testimonialToDelete.id,
+        },
+      });
+      results.push({
+        ...deletedTestimonial,
+        message: "Testimonial deleted successfully!",
+      });
+      continue;
+    }
+
+    if (!testimonial.order) {
+      results.push({ message: "Testimonial Order is required" });
+      continue;
+    }
+
+    // Retrieve the associated review or feedback
+    let existingReview;
+    if (entityType === "REVIEW") {
+      existingReview = await prisma.review.findFirst({
+        where: { id: entityId },
+      });
+    } else {
+      existingReview = await prisma.feedback.findFirst({
+        where: { id: entityId },
+      });
+    }
+
+    if (!existingReview) {
+      results.push({ message: "Associated review/feedback not found." });
+      continue;
+    }
+
+    // Create or update the testimonial
+    const createdTestimonial = await prisma.testimonial.create({
+      data: {
+        reviewId: testimonial.reviewId,
+        feedbackId: testimonial.feedbackId,
+        order: testimonial.order,
+        type: entityType,
+        rating: existingReview?.rating,
+        comment: existingReview?.comment,
+        businessId: existingReview?.businessId,
+        userId: existingReview?.userId,
+        createdAt: existingReview?.createdAt,
+        updatedAt: existingReview?.updatedAt,
+      },
+    });
+    results.push({
+      ...createdTestimonial,
+      message: "Testimonial created successfully!",
+    });
+  }
+
+  return results;
 };
-
 export const adminGetAllAdminNotices = async (
   _: unknown,
   args: AdminGetAllAdminNoticesInput,
@@ -1804,82 +1900,95 @@ export const adminManageAdminNotices = async (
 
   if (!validatedData?.adminNotices) return;
 
-  const notices = await Promise.all(
-    validatedData.adminNotices.map(async (notice) => {
-      if (notice.toDelete) {
-        const noticeToDelete = await prisma.adminNotice.findFirst({
-          where: {
-            OR: [
-              { id: notice.id },
-              { business: { id: notice.businessId } },
-              { business: { slug: notice.businessSlug } },
-              { user: { id: notice.userId } },
-              { user: { slug: notice.userSlug } },
-            ],
+  const results = [];
+
+  for (const notice of validatedData.adminNotices) {
+    if (notice.toDelete) {
+      // Handle deletion of notice
+      const noticeToDelete = await prisma.adminNotice.findFirst({
+        where: {
+          OR: [
+            { id: notice.id },
+            { business: { id: notice.businessId } },
+            { business: { slug: notice.businessSlug } },
+            { user: { id: notice.userId } },
+            { user: { slug: notice.userSlug } },
+          ],
+        },
+      });
+
+      if (!noticeToDelete) {
+        results.push({ message: "Notice not found for deletion" });
+        continue;
+      }
+
+      // Delete the matched notice
+      const deletedNotice = await prisma.adminNotice.delete({
+        where: { id: noticeToDelete.id },
+      });
+      results.push({
+        ...deletedNotice,
+        message: "Notice deleted successfully",
+      });
+    } else {
+      // Handle update or creation of a notice
+      const existingAdminNotice = await prisma.adminNotice.findFirst({
+        where: {
+          OR: [
+            { id: notice.id },
+            { business: { id: notice.businessId } },
+            { business: { slug: notice.businessSlug } },
+            { user: { id: notice.userId } },
+            { user: { slug: notice.userSlug } },
+          ],
+        },
+      });
+
+      if (existingAdminNotice) {
+        // Update the existing notice
+        const updatedNotice = await prisma.adminNotice.update({
+          where: { id: existingAdminNotice.id },
+          data: {
+            note: notice.note,
           },
         });
-
-        if (!noticeToDelete) {
-          throw new Error("Notice not found.");
-        }
-
-        // Delete the matched notice
-        return await prisma.adminNotice.delete({
-          where: {
-            id: noticeToDelete.id, // Use the unique `id` from the found notice
-          },
+        results.push({
+          ...updatedNotice,
+          message: "Notice updated successfully",
         });
       } else {
-        const existingAdminNotice = await prisma.adminNotice.findFirst({
-          where: {
-            OR: [
-              { id: notice.id },
-              { business: { id: notice.businessId } },
-              { business: { slug: notice.businessSlug } },
-              { user: { id: notice.userId } },
-              { user: { slug: notice.userSlug } },
-            ],
-          },
-        });
+        // Create a new notice
+        const data: Prisma.AdminNoticeCreateInput = {
+          note: notice.note,
+          type: notice.type || "GLOBAL", // Default to "GLOBAL" if type is not provided
+        };
 
-        if (existingAdminNotice) {
-          return await prisma.adminNotice.update({
-            where: {
-              id: existingAdminNotice.id,
-            },
-            data: {
-              note: notice.note,
-            },
-          });
-        } else {
-          const data: Prisma.AdminNoticeCreateInput = {
-            note: notice.note,
-            type: notice.type || "GLOBAL", // Default to "GLOBAL" if type is not provided
+        if (notice.businessId || notice.businessSlug) {
+          data.business = {
+            connect: notice.businessId
+              ? { id: notice.businessId }
+              : { slug: notice.businessSlug },
           };
-
-          if (notice.businessId || notice.businessSlug) {
-            data.business = {
-              connect: notice.businessId
-                ? { id: notice.businessId }
-                : { slug: notice.businessSlug },
-            };
-            data.type = "INDIVIDUAL_BUSINESS"; // Set the type to business specific
-          } else if (notice.userId || notice.userSlug) {
-            data.user = {
-              connect: notice.userId
-                ? { id: notice.userId }
-                : { slug: notice.userSlug },
-            };
-            data.type = "INDIVIDUAL_USER"; // Set the type to user specific
-          }
-
-          return await prisma.adminNotice.create({
-            data,
-          });
+          data.type = "INDIVIDUAL_BUSINESS"; // Set the type to business-specific
+        } else if (notice.userId || notice.userSlug) {
+          data.user = {
+            connect: notice.userId
+              ? { id: notice.userId }
+              : { slug: notice.userSlug },
+          };
+          data.type = "INDIVIDUAL_USER"; // Set the type to user-specific
         }
-      }
-    })
-  );
 
-  return notices;
+        const createdNotice = await prisma.adminNotice.create({
+          data,
+        });
+        results.push({
+          ...createdNotice,
+          message: "Notice created successfully",
+        });
+      }
+    }
+  }
+
+  return results;
 };
