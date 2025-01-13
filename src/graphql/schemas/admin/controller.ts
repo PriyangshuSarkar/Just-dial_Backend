@@ -195,6 +195,10 @@ export const adminAllUsers = async (
     };
   }
 
+  if (validatedData.sortBy === "alphabetical") {
+    validatedData.sortBy = "name" as "alphabetical" | "createdAt" | "updatedAt";
+  }
+
   // Execute query
   const [users, total] = await Promise.all([
     prisma.user.findMany({
@@ -352,6 +356,10 @@ export const adminAllBusinesses = async (
         lte: new Date(validatedData.createdAtEnd),
       }),
     };
+  }
+
+  if (validatedData.sortBy === "alphabetical") {
+    validatedData.sortBy = "name" as "alphabetical" | "createdAt" | "updatedAt";
   }
 
   // Execute query
@@ -1848,6 +1856,10 @@ export const adminGetAllAdminNotices = async (
   const validatedData = AdminGetAllAdminNoticesSchema.parse(args);
 
   if (!validatedData) return;
+
+  if (validatedData.sortBy === "alphabetical") {
+    validatedData.sortBy = "name" as "alphabetical" | "createdAt" | "updatedAt";
+  }
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
