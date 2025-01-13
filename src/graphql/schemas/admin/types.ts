@@ -77,6 +77,7 @@ export const typeDefs = gql`
       phone: String
       subscriptionId: ID
       hasSubscription: Boolean
+      isVerified: Boolean
       createdAtStart: String
       createdAtEnd: String
       page: Int = 1
