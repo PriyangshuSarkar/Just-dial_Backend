@@ -232,8 +232,8 @@ const buildBusinessDetailsSelect = (location: LocationPriorityInput) => ({
   id: true,
   experience: true,
   teamSize: true,
-  description: true,
   logo: true,
+  description: true,
   addresses: {
     where: {
       ...ACTIVE_RECORD,
