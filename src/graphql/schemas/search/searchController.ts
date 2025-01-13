@@ -250,6 +250,17 @@ const buildBusinessDetailsSelect = (location: LocationPriorityInput) => ({
       order: true,
     },
   },
+  categories: {
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      categoryImage: true,
+    },
+  },
   // Add other business detail selects...
   // (keeping the rest of your existing select structure)
 });
