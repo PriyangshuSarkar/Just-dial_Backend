@@ -694,6 +694,10 @@ export const userLogin = async (_: unknown, args: UserLoginInput) => {
     throw new Error("User not found!");
   }
 
+  if (user.isBlocked) {
+    throw new Error("User is blocked!");
+  }
+
   if (!user.salt || !user.password) {
     throw new Error("User signed in using other Authentication Methods!");
   }
