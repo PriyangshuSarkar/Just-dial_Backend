@@ -1,9 +1,9 @@
 const otpApiKey = process.env.OTPLESS_API_KEY!;
 const otpApiSecret = process.env.OTPLESS_SECRET!;
 
-export const sendOtpEmail = async (
+export const sendOtpPhone = async (
   userName: string | null,
-  email: string
+  phone: string
 ): Promise<{ requestId: string }> => {
   const options = {
     method: "POST",
@@ -13,10 +13,10 @@ export const sendOtpEmail = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      email,
+      phoneNumber: phone,
       expiry: 30, // OTP expiry time in minutes
       otpLength: 4, // Length of the OTP
-      channels: ["EMAIL"],
+      channels: ["WHATSAPP", "SMS"], // Send via WhatsApp and SMS
       metadata: {
         userName,
       },

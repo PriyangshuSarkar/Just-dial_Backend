@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { verifyToken } from "../utils/token";
-import { googleOAuth } from "../utils/googleOAuth";
+import { googleOAuth } from "../utils/OAuth";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
