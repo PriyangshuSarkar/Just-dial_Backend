@@ -8,6 +8,8 @@ export const typeDefs = gql`
     userMe: User
     userLogin(email: String, phone: String, password: String!): User
     getUserAdminNotices: [AdminNotice]
+    userGoogleOAuth(redirectURI: String!): UserGoogleOAuthResponse
+    userGoogleOAuthVerify(code: String!): User
   }
 
   input UserAddressInput {
@@ -20,8 +22,12 @@ export const typeDefs = gql`
     toDelete: Boolean
   }
 
+  type UserGoogleOAuthResponse {
+    requestId: String
+    link: String
+  }
+
   type Mutation {
-    userGoogleOAuth(googleOAuthToken: String!): User
     userSignup(
       name: String!
       email: String
@@ -30,13 +36,19 @@ export const typeDefs = gql`
     ): UserContact
     resendUserOtp(email: String, phone: String): UserContact
     addUserContact(email: String, phone: String): UserContact
-    verifyUserContact(email: String, phone: String, otp: String!): UserContact
+    verifyUserContact(
+      email: String
+      phone: String
+      requestId: String!
+      otp: String!
+    ): UserContact
     forgetUserPassword(email: String, phone: String): UserContact
     changeUserPassword(
       email: String
       phone: String
       password: String!
       otp: String!
+      requestId: String!
     ): User
     updateUserDetails(
       name: String

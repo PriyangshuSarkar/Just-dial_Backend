@@ -1,9 +1,18 @@
+import { infer as infer_, object, string } from "zod";
+
 const otpApiKey = process.env.OTPLESS_API_KEY!;
 const otpApiSecret = process.env.OTPLESS_SECRET!;
+const otpLength = process.env.OTP_LENGTH || 6;
+
+export const SendOtpEmailResponseSchema = object({
+  requestId: string(),
+});
+export type SendOtpEmailResponse = infer_<typeof SendOtpEmailResponseSchema>;
 
 export const sendOtpEmail = async (
   userName: string | null,
-  email: string
+  email: string,
+  expiry: number
 ): Promise<{ requestId: string }> => {
   const options = {
     method: "POST",
@@ -14,8 +23,8 @@ export const sendOtpEmail = async (
     },
     body: JSON.stringify({
       email,
-      expiry: 30, // OTP expiry time in minutes
-      otpLength: 4, // Length of the OTP
+      expiry, // OTP expiry time in minutes
+      otpLength, // Length of the OTP
       channels: ["EMAIL"],
       metadata: {
         userName,
@@ -30,9 +39,8 @@ export const sendOtpEmail = async (
     );
     if (response.ok) {
       const data = await response.json();
-      const requestId: string = data.requestId; // Ensuring requestId is a string
-      console.log("OTP request initiated successfully:", requestId);
-      return { requestId };
+      console.log("OTP request initiated successfully:", data);
+      return data;
     } else {
       const errorData = await response.json();
       console.error("Error initiating OTP request:", errorData);

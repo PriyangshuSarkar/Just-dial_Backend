@@ -1,5 +1,17 @@
 import { object, string, infer as infer_, any, boolean } from "zod";
 
+export const UserGoogleOAuthSchema = object({
+  redirectURI: string(),
+});
+export type UserGoogleOAuthInput = infer_<typeof UserGoogleOAuthSchema>;
+
+export const UserGoogleOAuthVerifySchema = object({
+  code: string(),
+});
+export type UserGoogleOAuthVerifyInput = infer_<
+  typeof UserGoogleOAuthVerifySchema
+>;
+
 export const UserSignupSchema = object({
   name: string().min(2).max(50),
   email: string().email().optional(),
@@ -38,6 +50,7 @@ export type AddUserContactInput = infer_<typeof AddUserContactSchema>;
 export const VerifyUserContactSchema = object({
   email: string().email().optional(),
   phone: string().optional(),
+  requestId: string(),
   otp: string(),
 })
   .refine((data) => (data.email ? !data.phone : !!data.phone), {
@@ -75,6 +88,7 @@ export const ChangeUserPasswordSchema = object({
   phone: string().optional(),
   password: string(),
   otp: string(),
+  requestId: string(),
 })
   .refine((data) => (data.email ? !data.phone : !!data.phone), {
     message: "Only one of email or phone should be provided.",

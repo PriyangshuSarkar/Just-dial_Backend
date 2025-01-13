@@ -11,6 +11,10 @@ import {
   ResendUserOtpSchema,
   UpdateUserDetailsInput,
   UpdateUserDetailsSchema,
+  UserGoogleOAuthInput,
+  UserGoogleOAuthSchema,
+  UserGoogleOAuthVerifyInput,
+  UserGoogleOAuthVerifySchema,
   UserLoginInput,
   UserLoginSchema,
   UserSignupInput,
@@ -24,16 +28,17 @@ import {
 } from "./db";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
-// import { sendOtpEmail } from "../../../utils/emailService";
 import { generateToken } from "../../../utils/token";
 import slugify from "slugify";
-// import { sendOtpPhone } from "../../../utils/smsService";
-import { createOtpData } from "../../../utils/generateOtp";
 import { ContactType, Prisma } from "@prisma/client";
 import { uploadToSpaces } from "../../../utils/bucket";
-// import { chownSync } from "fs";
-// import { razorpay } from "../../../utils/razorpay";
-// import crypto from "crypto";
+import { sendOtpEmail } from "../../../utils/emailService";
+import { sendOtpPhone } from "../../../utils/phoneService";
+import { verifyOtp } from "../../../utils/verifyOtp";
+import { initiateOAuth } from "../../../utils/oAuth";
+import { verifyCode } from "../../../utils/oAuthVerify";
+
+const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
 
 const MAX_CONTACTS_PER_TYPE = parseInt(
   process.env.MAX_CONTACTS_PER_TYPE || "1",
@@ -87,7 +92,7 @@ const checkVerificationAttempts = async (
       value: contactValue,
       type,
       updatedAt: { gte: last24Hours },
-      otp: { not: null },
+      // otp: { not: null },
     },
   });
 
@@ -115,71 +120,80 @@ const cleanupUnverifiedContacts = async (
 
 export const userGoogleOAuth = async (
   _: unknown,
-  args: unknown,
-  context: any
+  args: UserGoogleOAuthInput
 ) => {
-  if (!context) {
-    throw new Error("GoogleOAuth payload missing!");
-  }
+  const validatedData = UserGoogleOAuthSchema.parse(args);
 
-  const payload = context;
+  if (!validatedData) return;
 
-  const email = payload.email;
-  const name = payload.name;
+  const response = await initiateOAuth(validatedData.redirectURI);
 
-  if (!email) {
-    throw new Error("Email is required");
-  }
-
-  let user: any = await prisma.user.findFirst({
-    where: { contacts: { some: { value: email, isVerified: true } } },
-    include: { contacts: true },
-  });
-
-  let slug = slugify(name!, { lower: true, strict: true });
-  let uniqueSuffixLength = 2;
-  let existingSlug = await prisma.user.findFirst({ where: { slug } });
-
-  while (existingSlug) {
-    const uniqueSuffix = Math.random()
-      .toString(16)
-      .slice(2, 2 + uniqueSuffixLength);
-    slug = `${slugify(name!, {
-      lower: true,
-      strict: true,
-    })}-${uniqueSuffix}`;
-    existingSlug = await prisma.user.findFirst({ where: { slug } });
-    uniqueSuffixLength += 1;
-  }
-
-  if (!user) {
-    const newUser = await prisma.user.create({
-      data: {
-        name: name!,
-        slug,
-        contacts: {
-          create: {
-            type: "EMAIL",
-            value: email,
-            isPrimary: true,
-            isVerified: true,
-            verifiedAt: new Date(),
-          },
-        },
-      },
-    });
-    user = newUser;
-  }
-
-  const token = generateToken(user.id, "USER");
-
-  return {
-    ...user,
-    token,
-    message: "Google OAuth successful",
-  };
+  return response;
 };
 
+export const userGoogleOAuthVerify = async (
+  _: unknown,
+  args: UserGoogleOAuthVerifyInput
+) => {
+  const validatedData = UserGoogleOAuthVerifySchema.parse(args);
+
+  if (!validatedData) return;
+
+  const response = await verifyCode(validatedData.code);
+
+  const requestId = response.requestId;
+
+  const message = response.message;
+
+  const userDetails = response.userDetails;
+
+  const user = await prisma.user.findFirst({
+    where: {
+      contacts: {
+        some: {
+          value: userDetails.identities[0].identityValue,
+          isVerified: true,
+          deletedAt: null,
+        },
+      },
+    },
+  });
+
+  if (user) {
+    if (user.isBlocked) {
+      throw new Error("User is blocked");
+    }
+    return {
+      token: generateToken(user.id, "USER"),
+      ...user,
+      requestId,
+      message,
+    };
+  }
+
+  const newUser = await prisma.user.create({
+    data: {
+      name: userDetails.name || "Please add name",
+      contacts: {
+        create: {
+          value: userDetails.identities[0].identityValue,
+          type: userDetails.identities[0].identityType as ContactType,
+          isVerified: true,
+        },
+      },
+    },
+    include: {
+      contacts: true,
+    },
+  });
+
+  return {
+    token: generateToken(newUser.id, "USER"),
+    ...newUser,
+    requestId,
+    message,
+  };
+};
 export const userSignup = async (_: unknown, args: UserSignupInput) => {
   const validatedData = UserSignupSchema.parse(args);
 
@@ -219,8 +233,8 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
     }
 
     // Generate OTPs
-    const emailOtpData = validatedData.email ? createOtpData() : null;
-    const phoneOtpData = validatedData.phone ? createOtpData() : null;
+    // const emailOtpData = validatedData.email ? createOtpData() : null;
+    // const phoneOtpData = validatedData.phone ? createOtpData() : null;
 
     // Create user
     const { salt, hash } = hashPassword(validatedData.password);
@@ -249,6 +263,8 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
       },
     });
 
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
     // Create contacts
     if (validatedData.email) {
       await tx.userContact.create({
@@ -259,7 +275,8 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
           type: "EMAIL",
           value: validatedData.email,
           isPrimary: true,
-          ...emailOtpData,
+          // ...emailOtpData,
+          otpExpiresAt,
         },
       });
     }
@@ -271,23 +288,35 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
           type: "PHONE",
           value: validatedData.phone,
           isPrimary: !validatedData.email,
-          ...phoneOtpData,
+          // ...phoneOtpData,
+          otpExpiresAt,
         },
       });
     }
 
+    let requestId: string | undefined;
     // Send verification codes
-    // try {
-    //   if (validatedData.email && emailOtpData) {
-    //     await sendOtpEmail(user.name, validatedData.email, emailOtpData.otp);
-    //   }
-    //   if (validatedData.phone && phoneOtpData) {
-    //     await sendOtpPhone(user.name, validatedData.phone, phoneOtpData.otp);
-    //   }
-    // } catch (error) {
-    //   // Log error but don't fail the transaction
-    //   console.error("Error sending OTP:", error);
-    // }
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          user.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+      if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          user.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
 
     return {
       value: [validatedData.email, validatedData.phone]
@@ -300,6 +329,7 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
           ? "email"
           : "phone"
       }.`,
+      requestId,
     };
   });
 };
@@ -342,31 +372,47 @@ export const resendUserOtp = async (_: unknown, args: ResendUserOtpInput) => {
       );
     }
 
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
     // Create new OTP data
-    const otpData = createOtpData();
+    // const otpData = createOtpData();
 
     // Update the OTP and expiration time in the database
-    await tx.userContact.update({
+    const updatedContact = await tx.userContact.update({
       where: {
         value,
         type,
       },
       data: {
-        otp: otpData?.otp,
-        otpExpiresAt: otpData?.otpExpiresAt, // Set expiry 1 minute from now
+        // otp: otpData?.otp,
+        otpExpiresAt, // Set expiry 1 minute from now
+      },
+      include: {
+        user: true,
       },
     });
 
-    // Optionally, send the OTP via email or phone
-    // try {
-    //   if (validatedData.email && otpData) {
-    //     await sendOtpEmail(null, validatedData.email, otpData.otp);
-    //   } else if (validatedData.phone && otpData) {
-    //     await sendOtpPhone(null, validatedData.phone, otpData.otp);
-    //   }
-    // } catch (error) {
-    //   console.error("Error sending OTP:", error);
-    // }
+    let requestId: string | undefined;
+
+    // send the OTP via email or phone
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          updatedContact.user.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      } else if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          updatedContact.user.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
 
     return {
       message: `Verification code sent to your ${
@@ -376,6 +422,7 @@ export const resendUserOtp = async (_: unknown, args: ResendUserOtpInput) => {
           ? "email"
           : "phone"
       }.`,
+      requestId,
     };
   });
 
@@ -449,44 +496,49 @@ export const addUserContact = async (
     await checkVerificationAttempts(tx, value!, type);
 
     // Create new contact
-    const otpData = createOtpData();
-    const newContact = await tx.userContact.create({
+    // const otpData = createOtpData();
+
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await tx.userContact.create({
       data: {
         user: {
           connect: { id: context.owner.userId },
         },
         type,
         value: value!,
-        ...otpData,
-      },
-      include: {
-        user: true,
+        otpExpiresAt,
       },
     });
 
-    console.log(!newContact);
-
     // Send OTP
-    // try {
-    //   if (type === "EMAIL") {
-    //     await sendOtpEmail(newContact.user.name, value!, otpData.otp);
-    //   } else {
-    //     await sendOtpPhone(newContact.user.name, value!, otpData.otp);
-    //   }
-    // } catch (error) {
-    //   console.error("Error sending OTP:", error);
-    //   // Delete the contact if OTP sending fails
-    //   await tx.userContact.delete({
-    //     where: { id: newContact.id },
-    //   });
-    //   throw new Error(
-    //     `Failed to send verification code to ${type.toLowerCase()}`
-    //   );
-    // }
+    let requestId: string | undefined;
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          user.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+      if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          user.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
 
     return {
       value,
       message: `Verification code sent to your ${type.toLowerCase()}`,
+      requestId,
     };
   });
 };
@@ -500,38 +552,47 @@ export const verifyUserContact = async (
   if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
+    // Verify contact
+    const { requestId, isOTPVerified, message } = await verifyOtp(
+      validatedData.requestId,
+      validatedData.otp
+    );
+
+    if (!isOTPVerified) {
+      throw new Error(message);
+    }
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";
 
-    const contact = await tx.userContact.findFirst({
-      where: {
-        value,
-        type,
-        deletedAt: null,
-      },
-    });
+    // const contact = await tx.userContact.findFirst({
+    //   where: {
+    //     value,
+    //     type,
+    //     deletedAt: null,
+    //   },
+    // });
 
-    if (!contact) {
-      throw new Error("Contact not found");
-    }
+    // if (!contact) {
+    //   throw new Error("Contact not found");
+    // }
 
-    if (!contact.otp || !contact.otpExpiresAt) {
-      throw new Error("No verification code found. Please request a new one.");
-    }
+    // if (!contact.otp || !contact.otpExpiresAt) {
+    //   throw new Error("No verification code found. Please request a new one.");
+    // }
 
-    if (contact.otpExpiresAt < new Date()) {
-      throw new Error(
-        "Verification code has expired. Please request a new one."
-      );
-    }
+    // if (contact.otpExpiresAt < new Date()) {
+    //   throw new Error(
+    //     "Verification code has expired. Please request a new one."
+    //   );
+    // }
 
-    if (contact.otp !== validatedData.otp) {
-      throw new Error("Invalid verification code");
-    }
+    // if (contact.otp !== validatedData.otp) {
+    //   throw new Error("Invalid verification code");
+    // }
 
     // Verify the contact
     const verifiedContact = await tx.userContact.update({
-      where: { id: contact.id, value },
+      where: { value, type, deletedAt: null },
       data: {
         isVerified: true,
         verifiedAt: new Date(),
@@ -556,13 +617,14 @@ export const verifyUserContact = async (
     });
 
     // Ensure there's a primary contact
-    await ensurePrimaryContact(tx, contact.userId);
+    await ensurePrimaryContact(tx, verifiedContact.userId);
     const token = generateToken(verifiedContact.userId, "USER");
 
     return {
       ...verifiedContact,
       token,
       message: `${type === "EMAIL" ? "Email" : "Phone"} verified successfully!`,
+      requestId,
     };
   });
 };
@@ -750,8 +812,10 @@ export const forgetUserPassword = async (
     // Check verification attempts
     await checkVerificationAttempts(tx, value!, type);
 
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
     // Create new contact
-    const otpData = createOtpData();
+    // const otpData = createOtpData();
     const updatedContact = await tx.userContact.update({
       where: {
         userId: existingContact.userId,
@@ -759,36 +823,41 @@ export const forgetUserPassword = async (
         value: value!,
       },
       data: {
-        ...otpData,
+        otpExpiresAt,
       },
       include: {
         user: true,
       },
     });
 
-    console.log(!updatedContact);
-
-    // Send OTP
-    // try {
-    //   if (type === "EMAIL") {
-    //     await sendOtpEmail(newContact.user.name, value!, otpData.otp);
-    //   } else {
-    //     await sendOtpPhone(newContact.user.name, value!, otpData.otp);
-    //   }
-    // } catch (error) {
-    //   console.error("Error sending OTP:", error);
-    //   // Delete the contact if OTP sending fails
-    //   await tx.userContact.delete({
-    //     where: { id: newContact.id },
-    //   });
-    //   throw new Error(
-    //     `Failed to send verification code to ${type.toLowerCase()}`
-    //   );
-    // }
+    let requestId: string | undefined;
+    // Send verification codes
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          updatedContact.user.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+      if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          updatedContact.user.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
 
     return {
       value: value,
       message: `Verification code sent to your ${type.toLowerCase()}`,
+      requestId,
     };
   });
 };
@@ -802,6 +871,14 @@ export const changeUserPassword = async (
   if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
+    const { requestId, isOTPVerified, message } = await verifyOtp(
+      validatedData.requestId,
+      validatedData.otp
+    );
+
+    if (!isOTPVerified) {
+      throw new Error(message);
+    }
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";
 
@@ -822,23 +899,23 @@ export const changeUserPassword = async (
       );
     }
 
-    if (!existingContact) {
-      throw new Error("Contact not found");
-    }
+    // if (!existingContact) {
+    //   throw new Error("Contact not found");
+    // }
 
-    if (!existingContact.otp || !existingContact.otpExpiresAt) {
-      throw new Error("No verification code found. Please request a new one.");
-    }
+    // if (!existingContact.otp || !existingContact.otpExpiresAt) {
+    //   throw new Error("No verification code found. Please request a new one.");
+    // }
 
-    if (existingContact.otpExpiresAt < new Date()) {
-      throw new Error(
-        "Verification code has expired. Please request a new one."
-      );
-    }
+    // if (existingContact.otpExpiresAt < new Date()) {
+    //   throw new Error(
+    //     "Verification code has expired. Please request a new one."
+    //   );
+    // }
 
-    if (existingContact.otp !== validatedData.otp) {
-      throw new Error("Invalid verification code");
-    }
+    // if (existingContact.otp !== validatedData.otp) {
+    //   throw new Error("Invalid verification code");
+    // }
 
     const { salt, hash } = hashPassword(validatedData.password);
 
@@ -867,6 +944,7 @@ export const changeUserPassword = async (
     return {
       ...updatedPassword,
       massage: "Password updated successfully.",
+      requestId,
     };
   });
 };

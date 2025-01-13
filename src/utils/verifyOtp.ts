@@ -1,10 +1,18 @@
+import { boolean, infer as infer_, object, string } from "zod";
+
 const otpApiKey = process.env.OTPLESS_API_KEY!;
 const otpApiSecret = process.env.OTPLESS_SECRET!;
 
+export const VerifyOtpResponseSchema = object({
+  requestId: string(),
+  isOTPVerified: boolean(),
+  message: string(),
+});
+export type VerifyOtpResponse = infer_<typeof VerifyOtpResponseSchema>;
 export const verifyOtp = async (
   requestId: string,
   otp: string
-): Promise<{ requestId: string; isOTPVerified: boolean; message: string }> => {
+): Promise<VerifyOtpResponse> => {
   const options = {
     method: "POST",
     headers: {
@@ -25,11 +33,8 @@ export const verifyOtp = async (
     );
     if (response.ok) {
       const data = await response.json();
-      const requestId: string = data?.requestId; // Ensure requestId is a string
-      const isOTPVerified: boolean = data?.isVerified; // Default to false if undefined
-      const message: string = data?.message; // Default message if missing
       console.log("OTP verified successfully:", data);
-      return { requestId, isOTPVerified, message };
+      return data;
     } else {
       const errorData = await response.json();
       const errorMessage = errorData?.message || "Unknown error occurred";

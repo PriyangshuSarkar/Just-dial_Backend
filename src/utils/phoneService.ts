@@ -1,10 +1,19 @@
+import { infer as infer_, object, string } from "zod";
+
 const otpApiKey = process.env.OTPLESS_API_KEY!;
 const otpApiSecret = process.env.OTPLESS_SECRET!;
+const otpLength = process.env.OTP_LENGTH || 6;
+
+export const SendOtpPhoneResponseSchema = object({
+  requestId: string(),
+});
+export type SendOtpPhoneResponse = infer_<typeof SendOtpPhoneResponseSchema>;
 
 export const sendOtpPhone = async (
   userName: string | null,
-  phone: string
-): Promise<{ requestId: string }> => {
+  phone: string,
+  expiry: number
+): Promise<SendOtpPhoneResponse> => {
   const options = {
     method: "POST",
     headers: {
@@ -14,8 +23,8 @@ export const sendOtpPhone = async (
     },
     body: JSON.stringify({
       phoneNumber: phone,
-      expiry: 30, // OTP expiry time in minutes
-      otpLength: 4, // Length of the OTP
+      expiry, // OTP expiry time in minutes
+      otpLength, // Length of the OTP
       channels: ["WHATSAPP", "SMS"], // Send via WhatsApp and SMS
       metadata: {
         userName,
@@ -30,9 +39,8 @@ export const sendOtpPhone = async (
     );
     if (response.ok) {
       const data = await response.json();
-      const requestId: string = data.requestId; // Ensuring requestId is a string
-      console.log("OTP request initiated successfully:", requestId);
-      return { requestId };
+      console.log("OTP request initiated successfully:", data);
+      return data;
     } else {
       const errorData = await response.json();
       console.error("Error initiating OTP request:", errorData);
