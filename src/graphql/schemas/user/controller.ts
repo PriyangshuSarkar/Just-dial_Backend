@@ -645,9 +645,11 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
         where: {
           deletedAt: null,
         },
-        orderBy: {
-          createdAt: "asc",
-        },
+        orderBy: [
+          { isVerified: "desc" },
+          { isPrimary: "desc" },
+          { createdAt: "desc" },
+        ],
       },
       addresses: {
         where: {
