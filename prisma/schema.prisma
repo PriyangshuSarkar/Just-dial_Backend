@@ -72,7 +72,7 @@ model UserContact {
   deletedAt    DateTime?
   user         User        @relation(fields: [userId], references: [id])
 
-  @@unique([userId, type, isPrimary])
+  // @@unique([userId, type, isPrimary])
   @@index([type])
   @@index([value])
   @@index([userId, isVerified])
@@ -169,7 +169,7 @@ model BusinessPrimaryContact {
   deletedAt    DateTime?
   business     Business    @relation(fields: [businessId], references: [id])
 
-  @@unique([businessId, type, isPrimary])
+  // @@unique([businessId, type, isPrimary])
   @@index([type])
   @@index([value])
   @@index([businessId, isVerified])
