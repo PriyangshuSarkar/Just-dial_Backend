@@ -351,6 +351,33 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
 
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
+    let requestId: string | undefined;
+    let reachedIdEmail: string | undefined;
+    let reachedIdPhone: string | undefined;
+
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          business.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+        reachedIdEmail = response.requestId;
+      } else if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          business.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+        reachedIdPhone = response.requestId;
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
+
     // Create contacts
     if (validatedData.email) {
       await tx.businessPrimaryContact.create({
@@ -361,8 +388,8 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
           type: "EMAIL",
           value: validatedData.email,
           isPrimary: true,
-          // ...emailOtpData,
-          otpExpiresAt,
+          otp: reachedIdEmail,
+          otpExpiresAt: reachedIdEmail ? otpExpiresAt : null,
         },
       });
     }
@@ -374,46 +401,16 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
           type: "PHONE",
           value: validatedData.phone,
           isPrimary: !validatedData.email,
-          // ...phoneOtpData,
-          otpExpiresAt,
+          otp: reachedIdPhone,
+          otpExpiresAt: reachedIdPhone ? otpExpiresAt : null,
         },
       });
     }
 
-    let requestId: string | undefined;
-
-    try {
-      if (validatedData.email && otpExpiresAt) {
-        const response = await sendOtpEmail(
-          business.name,
-          validatedData.email,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-      }
-      if (validatedData.phone && otpExpiresAt) {
-        const response = await sendOtpPhone(
-          business.name,
-          validatedData.phone,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-      }
-    } catch (error) {
-      // Log error but don't fail the transaction
-      console.error("Error sending OTP:", error);
-    }
-
     return {
-      value: [validatedData.email, validatedData.phone]
-        .filter(Boolean)
-        .join(" and "),
-      message: `Verification code sent to your ${
-        validatedData.email && validatedData.phone
-          ? "email and phone"
-          : validatedData.email
-          ? "email"
-          : "phone"
+      value: validatedData.email || validatedData.phone,
+      message: `Verification code sent to ${
+        validatedData.email || validatedData.phone
       }.`,
       requestId,
     };
@@ -440,8 +437,12 @@ export const resendBusinessOtp = async (
     // Retrieve the business's current OTP details
     const contact = await tx.businessPrimaryContact.findUnique({
       where: { value },
-      select: { otpExpiresAt: true },
+      select: { otpExpiresAt: true, business: { select: { name: true } } },
     });
+
+    if (!contact) {
+      throw new Error("User not found");
+    }
 
     // Use the checkVerificationAttempts function to check the attempts
     await checkVerificationAttempts(tx, value, type);
@@ -465,35 +466,20 @@ export const resendBusinessOtp = async (
     // Create new OTP data
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    // Update the OTP and expiration time in the database
-    const updatedContact = await tx.businessPrimaryContact.update({
-      where: {
-        value,
-        type,
-      },
-      data: {
-        // otp: otpData?.otp,
-        otpExpiresAt, // Set expiry 1 minute from now
-      },
-      include: {
-        business: true,
-      },
-    });
-
     let requestId: string | undefined;
 
     // send the OTP via email or phone
     try {
       if (validatedData.email && otpExpiresAt) {
         const response = await sendOtpEmail(
-          updatedContact.business.name,
+          contact.business.name,
           validatedData.email,
           OTP_EXPIRY_MINUTES
         );
         requestId = response.requestId;
       } else if (validatedData.phone && otpExpiresAt) {
         const response = await sendOtpPhone(
-          updatedContact.business.name,
+          contact.business.name,
           validatedData.phone,
           OTP_EXPIRY_MINUTES
         );
@@ -502,13 +488,22 @@ export const resendBusinessOtp = async (
     } catch (error) {
       console.error("Error sending OTP:", error);
     }
+
+    // Update the OTP and expiration time in the database
+    await tx.businessPrimaryContact.update({
+      where: {
+        value,
+        type,
+      },
+      data: {
+        otp: requestId,
+        otpExpiresAt, // Set expiry 1 minute from now
+      },
+    });
+
     return {
-      message: `Verification code sent to your ${
-        validatedData.email && validatedData.phone
-          ? "email and phone"
-          : validatedData.email
-          ? "email"
-          : "phone"
+      message: `Verification code sent to ${
+        validatedData.email || validatedData.phone
       }.`,
       requestId,
     };
@@ -576,7 +571,7 @@ export const verifyBusinessPrimaryContact = async (
 
     // Verify the contact
     const verifiedContact = await tx.businessPrimaryContact.update({
-      where: { id: contact.id, value },
+      where: { value, deletedAt: null, otp: requestId },
       data: {
         isVerified: true,
         verifiedAt: new Date(),
@@ -703,7 +698,7 @@ export const verifyBusinessPrimaryContact = async (
     return {
       ...verifiedContact,
       token,
-      message: `${type === "EMAIL" ? "Email" : "Phone"} verified successfully!`,
+      message: `${value} verified successfully!`,
       requestId,
     };
   });
@@ -934,17 +929,6 @@ export const addBusinessPrimaryContact = async (
     // Create new contact
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    await tx.businessPrimaryContact.create({
-      data: {
-        business: {
-          connect: { id: context.owner.businessId },
-        },
-        type,
-        value: value!,
-        otpExpiresAt,
-      },
-    });
-
     // Send OTP
     let requestId: string | undefined;
     try {
@@ -969,9 +953,21 @@ export const addBusinessPrimaryContact = async (
       console.error("Error sending OTP:", error);
     }
 
+    await tx.businessPrimaryContact.create({
+      data: {
+        business: {
+          connect: { id: context.owner.businessId },
+        },
+        type,
+        value: value!,
+        otp: requestId,
+        otpExpiresAt,
+      },
+    });
+
     return {
       value,
-      message: `Verification code sent to your ${type.toLowerCase()}`,
+      message: `Verification code sent to ${value}`,
       requestId,
     };
   });
@@ -995,6 +991,9 @@ export const forgetBusinessPassword = async (
         isVerified: true,
         deletedAt: null,
       },
+      include: {
+        business: true,
+      },
     });
 
     if (!existingContact) {
@@ -1010,27 +1009,13 @@ export const forgetBusinessPassword = async (
     // Create new contact
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    const updatedContact = await tx.businessPrimaryContact.update({
-      where: {
-        businessId: existingContact.businessId,
-        type,
-        value: value!,
-      },
-      data: {
-        otpExpiresAt,
-      },
-      include: {
-        business: true,
-      },
-    });
-
     let requestId: string | undefined;
 
     // Send verification codes
     try {
       if (validatedData.email && otpExpiresAt) {
         const response = await sendOtpEmail(
-          updatedContact.business.name,
+          existingContact.business.name,
           validatedData.email,
           OTP_EXPIRY_MINUTES
         );
@@ -1038,7 +1023,7 @@ export const forgetBusinessPassword = async (
       }
       if (validatedData.phone && otpExpiresAt) {
         const response = await sendOtpPhone(
-          updatedContact.business.name,
+          existingContact.business.name,
           validatedData.phone,
           OTP_EXPIRY_MINUTES
         );
@@ -1049,9 +1034,21 @@ export const forgetBusinessPassword = async (
       console.error("Error sending OTP:", error);
     }
 
+    await tx.businessPrimaryContact.update({
+      where: {
+        businessId: existingContact.businessId,
+        type,
+        value: value!,
+      },
+      data: {
+        otp: requestId,
+        otpExpiresAt,
+      },
+    });
+
     return {
       value: value,
-      message: `Verification code sent to your ${type.toLowerCase()}`,
+      message: `Verification code sent to your ${value}`,
       requestId,
     };
   });
@@ -1084,6 +1081,7 @@ export const changeBusinessPassword = async (
         type,
         isVerified: true,
         deletedAt: null,
+        otp: requestId,
       },
     });
 
