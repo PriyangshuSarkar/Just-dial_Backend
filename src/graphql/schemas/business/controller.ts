@@ -913,6 +913,7 @@ export const addBusinessPrimaryContact = async (
       where: {
         businessId: context.owner.businessId,
         type,
+        isVerified: true,
         deletedAt: null,
       },
     });

@@ -475,6 +475,7 @@ export const addUserContact = async (
       where: {
         userId: context.owner.userId,
         type,
+        isVerified: true,
         deletedAt: null,
       },
     });
