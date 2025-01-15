@@ -322,9 +322,8 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
 
     return {
       value: validatedData.email || validatedData.phone,
-      message: `Verification code sent to your ${
-        (validatedData.email || validatedData.phone,
-        validatedData.email ? "email" : "phone")
+      message: `Verification code sent to ${
+        validatedData.email || validatedData.phone
       }.`,
       requestId,
     };
@@ -410,16 +409,11 @@ export const resendUserOtp = async (_: unknown, args: ResendUserOtpInput) => {
         otp: requestId,
         otpExpiresAt, // Set expiry 1 minute from now
       },
-      select: null,
     });
 
     return {
-      message: `Verification code sent to your ${
-        validatedData.email && validatedData.phone
-          ? "email and phone"
-          : validatedData.email
-          ? "email"
-          : "phone"
+      message: `Verification code sent to ${
+        validatedData.email || validatedData.phone
       }.`,
       requestId,
     };
@@ -537,7 +531,7 @@ export const addUserContact = async (
 
     return {
       value,
-      message: `Verification code sent to your ${type.toLowerCase()}`,
+      message: `Verification code sent to ${value}`,
       requestId,
     };
   });
@@ -564,17 +558,17 @@ export const verifyUserContact = async (
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";
 
-    // const contact = await tx.userContact.findFirst({
-    //   where: {
-    //     value,
-    //     type,
-    //     deletedAt: null,
-    //   },
-    // });
+    const contact = await tx.userContact.findFirst({
+      where: {
+        value,
+        type,
+        deletedAt: null,
+      },
+    });
 
-    // if (!contact) {
-    //   throw new Error("Contact not found");
-    // }
+    if (!contact) {
+      throw new Error("Contact not found");
+    }
 
     // if (!contact.otp || !contact.otpExpiresAt) {
     //   throw new Error("No verification code found. Please request a new one.");
@@ -592,7 +586,7 @@ export const verifyUserContact = async (
 
     // Verify the contact
     const verifiedContact = await tx.userContact.update({
-      where: { value, type, deletedAt: null, otp: requestId },
+      where: { value, deletedAt: null, otp: requestId },
       data: {
         isVerified: true,
         verifiedAt: new Date(),
@@ -623,7 +617,7 @@ export const verifyUserContact = async (
     return {
       ...verifiedContact,
       token,
-      message: `${type === "EMAIL" ? "Email" : "Phone"} verified successfully!`,
+      message: `${value} verified successfully!`,
       requestId,
     };
   });
@@ -857,7 +851,7 @@ export const forgetUserPassword = async (
 
     return {
       value: value,
-      message: `Verification code sent to your ${type.toLowerCase()}`,
+      message: `Verification code sent to ${value}`,
       requestId,
     };
   });
