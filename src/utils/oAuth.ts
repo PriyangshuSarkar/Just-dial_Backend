@@ -16,6 +16,7 @@ export const initiateOAuth = async (
     requestId: "test",
     link: `${redirectURI}?code=1234abcd`,
   };
+
   const options = {
     method: "POST",
     headers: {
