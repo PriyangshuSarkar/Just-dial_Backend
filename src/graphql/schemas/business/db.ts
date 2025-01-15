@@ -34,6 +34,7 @@ export const VerifyBusinessPrimaryContactSchema = object({
   email: string().optional(),
   phone: string().optional(),
   otp: string(),
+  requestId: string(),
   password: string().optional(),
 })
   .refine((data) => (data.email ? !data.phone : !!data.phone), {
@@ -88,6 +89,7 @@ export const ChangeBusinessPasswordSchema = object({
   phone: string().optional(),
   password: string(),
   otp: string(),
+  requestId: string(),
 })
   .refine((data) => (data.email ? !data.phone : !!data.phone), {
     message: "Only one of email or phone should be provided.",

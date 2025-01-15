@@ -434,10 +434,6 @@ export const addUserContact = async (
   args: AddUserContactInput,
   context: any
 ) => {
-  const validatedData = AddUserContactSchema.parse(args);
-
-  if (!validatedData) return;
-
   // const owner: any = verifyToken(validatedData.token);
   if (!context.owner?.userId || typeof context.owner.userId !== "string") {
     throw new Error("Invalid or missing token");
@@ -455,6 +451,10 @@ export const addUserContact = async (
     if (!user) {
       throw new Error("User not found");
     }
+
+    const validatedData = AddUserContactSchema.parse(args);
+
+    if (!validatedData) return;
 
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";

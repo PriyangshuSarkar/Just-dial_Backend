@@ -89,6 +89,7 @@ export const typeDefs = gql`
     verifyBusinessPrimaryContact(
       email: String
       phone: String
+      requestId: String!
       otp: String!
       password: String
     ): BusinessPrimaryContact
@@ -102,6 +103,7 @@ export const typeDefs = gql`
       phone: String
       password: String!
       otp: String!
+      requestId: String!
     ): Business
     updateBusinessDetails(
       name: String

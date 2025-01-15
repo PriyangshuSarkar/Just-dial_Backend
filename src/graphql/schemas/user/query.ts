@@ -1,7 +1,6 @@
 import {
   getUserAdminNotices,
   userGoogleOAuth,
-  userGoogleOAuthVerify,
   userLogin,
   userMe,
 } from "./controller";
@@ -16,6 +15,4 @@ export const Query = {
   getUserAdminNotices,
 
   userGoogleOAuth,
-
-  userGoogleOAuthVerify,
 };

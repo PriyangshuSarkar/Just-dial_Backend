@@ -14,6 +14,9 @@ export const sendOtpEmail = async (
   email: string,
   expiry: number
 ): Promise<{ requestId: string }> => {
+  return {
+    requestId: "test",
+  };
   const options = {
     method: "POST",
     headers: {

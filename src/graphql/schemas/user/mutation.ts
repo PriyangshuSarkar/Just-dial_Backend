@@ -6,6 +6,7 @@ import {
   manageUserAddress,
   resendUserOtp,
   updateUserDetails,
+  userGoogleOAuthVerify,
   userSignup,
   userSubscription,
   userVerifyPayment,
@@ -34,4 +35,6 @@ export const Mutation = {
   userSubscription,
 
   userVerifyPayment,
+
+  userGoogleOAuthVerify,
 };

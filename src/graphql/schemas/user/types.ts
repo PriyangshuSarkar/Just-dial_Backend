@@ -9,7 +9,6 @@ export const typeDefs = gql`
     userLogin(email: String, phone: String, password: String!): User
     getUserAdminNotices: [AdminNotice]
     userGoogleOAuth(redirectURI: String!): UserGoogleOAuthResponse
-    userGoogleOAuthVerify(code: String!): User
   }
 
   input UserAddressInput {
@@ -64,5 +63,6 @@ export const typeDefs = gql`
       razorpay_payment_id: String!
       razorpay_signature: String!
     ): User
+    userGoogleOAuthVerify(code: String!): User
   }
 `;

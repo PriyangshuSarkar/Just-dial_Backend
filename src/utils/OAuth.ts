@@ -12,6 +12,10 @@ export type OAuthResponse = infer_<typeof OAuthResponseSchema>;
 export const initiateOAuth = async (
   redirectURI: string
 ): Promise<OAuthResponse> => {
+  return {
+    requestId: "test",
+    link: `${redirectURI}?code=1234abcd`,
+  };
   const options = {
     method: "POST",
     headers: {

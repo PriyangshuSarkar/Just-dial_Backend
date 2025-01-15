@@ -14,6 +14,9 @@ export const sendOtpPhone = async (
   phone: string,
   expiry: number
 ): Promise<SendOtpPhoneResponse> => {
+  return {
+    requestId: "test",
+  };
   const options = {
     method: "POST",
     headers: {
