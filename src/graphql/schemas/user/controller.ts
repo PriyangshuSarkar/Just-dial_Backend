@@ -35,8 +35,8 @@ import { uploadToSpaces } from "../../../utils/bucket";
 import { sendOtpEmail } from "../../../utils/emailService";
 import { sendOtpPhone } from "../../../utils/phoneService";
 import { verifyOtp } from "../../../utils/verifyOtp";
-import { initiateOAuth } from "../../../utils/oAuth";
 import { verifyCode } from "../../../utils/oAuthVerify";
+import { initiateOAuth } from "../../../utils/oAuth";
 
 const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
 
@@ -265,6 +265,33 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
 
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
+    let requestId: string | undefined;
+    let reachedIdEmail: string | undefined;
+    let reachedIdPhone: string | undefined;
+    // Send verification codes
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          user.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+        reachedIdEmail = response.requestId;
+      } else if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          user.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+        reachedIdPhone = response.requestId;
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
+
     // Create contacts
     if (validatedData.email) {
       await tx.userContact.create({
@@ -275,12 +302,11 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
           type: "EMAIL",
           value: validatedData.email,
           isPrimary: true,
-          // ...emailOtpData,
-          otpExpiresAt,
+          otp: reachedIdEmail,
+          otpExpiresAt: reachedIdEmail ? otpExpiresAt : null,
         },
       });
     }
-
     if (validatedData.phone) {
       await tx.userContact.create({
         data: {
@@ -288,46 +314,17 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
           type: "PHONE",
           value: validatedData.phone,
           isPrimary: !validatedData.email,
-          // ...phoneOtpData,
-          otpExpiresAt,
+          otp: reachedIdPhone,
+          otpExpiresAt: reachedIdPhone ? otpExpiresAt : null,
         },
       });
     }
 
-    let requestId: string | undefined;
-    // Send verification codes
-    try {
-      if (validatedData.email && otpExpiresAt) {
-        const response = await sendOtpEmail(
-          user.name,
-          validatedData.email,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-      }
-      if (validatedData.phone && otpExpiresAt) {
-        const response = await sendOtpPhone(
-          user.name,
-          validatedData.phone,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-      }
-    } catch (error) {
-      // Log error but don't fail the transaction
-      console.error("Error sending OTP:", error);
-    }
-
     return {
-      value: [validatedData.email, validatedData.phone]
-        .filter(Boolean)
-        .join(" and "),
+      value: validatedData.email || validatedData.phone,
       message: `Verification code sent to your ${
-        validatedData.email && validatedData.phone
-          ? "email and phone"
-          : validatedData.email
-          ? "email"
-          : "phone"
+        (validatedData.email || validatedData.phone,
+        validatedData.email ? "email" : "phone")
       }.`,
       requestId,
     };
@@ -351,8 +348,12 @@ export const resendUserOtp = async (_: unknown, args: ResendUserOtpInput) => {
     // Retrieve the user's current OTP details
     const contact = await tx.userContact.findUnique({
       where: { value },
-      select: { otpExpiresAt: true },
+      select: { otpExpiresAt: true, user: { select: { name: true } } },
     });
+
+    if (!contact) {
+      throw new Error("User not found");
+    }
 
     // Use the checkVerificationAttempts function to check the attempts
     await checkVerificationAttempts(tx, value, type);
@@ -376,35 +377,20 @@ export const resendUserOtp = async (_: unknown, args: ResendUserOtpInput) => {
     // Create new OTP data
     // const otpData = createOtpData();
 
-    // Update the OTP and expiration time in the database
-    const updatedContact = await tx.userContact.update({
-      where: {
-        value,
-        type,
-      },
-      data: {
-        // otp: otpData?.otp,
-        otpExpiresAt, // Set expiry 1 minute from now
-      },
-      include: {
-        user: true,
-      },
-    });
-
     let requestId: string | undefined;
 
     // send the OTP via email or phone
     try {
       if (validatedData.email && otpExpiresAt) {
         const response = await sendOtpEmail(
-          updatedContact.user.name,
+          contact.user.name,
           validatedData.email,
           OTP_EXPIRY_MINUTES
         );
         requestId = response.requestId;
       } else if (validatedData.phone && otpExpiresAt) {
         const response = await sendOtpPhone(
-          updatedContact.user.name,
+          contact.user.name,
           validatedData.phone,
           OTP_EXPIRY_MINUTES
         );
@@ -413,6 +399,19 @@ export const resendUserOtp = async (_: unknown, args: ResendUserOtpInput) => {
     } catch (error) {
       console.error("Error sending OTP:", error);
     }
+
+    // Update the OTP and expiration time in the database
+    await tx.userContact.update({
+      where: {
+        value,
+        type,
+      },
+      data: {
+        otp: requestId,
+        otpExpiresAt, // Set expiry 1 minute from now
+      },
+      select: null,
+    });
 
     return {
       message: `Verification code sent to your ${
@@ -500,17 +499,6 @@ export const addUserContact = async (
 
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    await tx.userContact.create({
-      data: {
-        user: {
-          connect: { id: context.owner.userId },
-        },
-        type,
-        value: value!,
-        otpExpiresAt,
-      },
-    });
-
     // Send OTP
     let requestId: string | undefined;
     try {
@@ -534,6 +522,18 @@ export const addUserContact = async (
       // Log error but don't fail the transaction
       console.error("Error sending OTP:", error);
     }
+
+    await tx.userContact.create({
+      data: {
+        user: {
+          connect: { id: context.owner.userId },
+        },
+        type,
+        value: value!,
+        otp: requestId,
+        otpExpiresAt,
+      },
+    });
 
     return {
       value,
@@ -592,7 +592,7 @@ export const verifyUserContact = async (
 
     // Verify the contact
     const verifiedContact = await tx.userContact.update({
-      where: { value, type, deletedAt: null },
+      where: { value, type, deletedAt: null, otp: requestId },
       data: {
         isVerified: true,
         verifiedAt: new Date(),
@@ -800,6 +800,9 @@ export const forgetUserPassword = async (
         isVerified: true,
         deletedAt: null,
       },
+      include: {
+        user: true,
+      },
     });
 
     if (!existingContact) {
@@ -814,28 +817,12 @@ export const forgetUserPassword = async (
 
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    // Create new contact
-    // const otpData = createOtpData();
-    const updatedContact = await tx.userContact.update({
-      where: {
-        userId: existingContact.userId,
-        type,
-        value: value!,
-      },
-      data: {
-        otpExpiresAt,
-      },
-      include: {
-        user: true,
-      },
-    });
-
     let requestId: string | undefined;
     // Send verification codes
     try {
       if (validatedData.email && otpExpiresAt) {
         const response = await sendOtpEmail(
-          updatedContact.user.name,
+          existingContact.user.name,
           validatedData.email,
           OTP_EXPIRY_MINUTES
         );
@@ -843,7 +830,7 @@ export const forgetUserPassword = async (
       }
       if (validatedData.phone && otpExpiresAt) {
         const response = await sendOtpPhone(
-          updatedContact.user.name,
+          existingContact.user.name,
           validatedData.phone,
           OTP_EXPIRY_MINUTES
         );
@@ -853,6 +840,20 @@ export const forgetUserPassword = async (
       // Log error but don't fail the transaction
       console.error("Error sending OTP:", error);
     }
+
+    // Create new contact
+    // const otpData = createOtpData();
+    await tx.userContact.update({
+      where: {
+        userId: existingContact.userId,
+        type,
+        value: value!,
+      },
+      data: {
+        otp: requestId,
+        otpExpiresAt,
+      },
+    });
 
     return {
       value: value,
@@ -888,6 +889,7 @@ export const changeUserPassword = async (
         type,
         isVerified: true,
         deletedAt: null,
+        otp: requestId,
       },
     });
 
@@ -895,7 +897,7 @@ export const changeUserPassword = async (
       throw new Error(
         `${
           validatedData.email ? validatedData.email : validatedData.phone
-        } doesn't exit!`
+        } doesn't exit! OR ${requestId} is invalid`
       );
     }
 
