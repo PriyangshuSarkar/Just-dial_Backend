@@ -145,7 +145,16 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
       },
     },
     include: {
-      primaryContacts: true,
+      primaryContacts: {
+        where: {
+          deletedAt: null,
+        },
+        orderBy: [
+          { isVerified: "desc" },
+          { isPrimary: "desc" },
+          { createdAt: "desc" },
+        ],
+      },
       businessDetails: {
         include: {
           categories: {
