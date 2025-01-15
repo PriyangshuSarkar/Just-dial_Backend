@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { verifyToken } from "../utils/token";
-import { googleOAuth } from "../utils/googleOAuth";
+// import { googleOAuth } from "../utils/OAuth";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -17,10 +17,12 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     if (authHeader.startsWith("Bearer ")) {
       token = authHeader.slice(7); // Remove "Bearer " prefix
       authType = "jwt";
-    } else if (authHeader.startsWith("Google ")) {
-      token = authHeader.slice(7); // Remove "Google " prefix
-      authType = "google";
-    } else {
+    }
+    // else if (authHeader.startsWith("Google ")) {
+    //   token = authHeader.slice(7); // Remove "Google " prefix
+    //   authType = "google";
+    // }
+    else {
       return next(); // Unsupported authentication method, skip
     }
 
@@ -33,16 +35,17 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     if (authType === "jwt") {
       // Verify JWT token
       ownerData = await verifyToken(token); // This should return decoded JWT payload
-    } else if (authType === "google") {
-      // Verify Google OAuth token
-      const ticket = await googleOAuth.verifyIdToken({
-        idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID, // Match your Google client ID
-      });
-      const payload = ticket.getPayload();
-
-      ownerData = payload; // This contains Google user info
     }
+    // else if (authType === "google") {
+    //   // Verify Google OAuth token
+    //   const ticket = await googleOAuth.verifyIdToken({
+    //     idToken: token,
+    //     audience: process.env.GOOGLE_CLIENT_ID, // Match your Google client ID
+    //   });
+    //   const payload = ticket.getPayload();
+
+    //   ownerData = payload; // This contains Google user info
+    // }
 
     req.owner = ownerData;
     return next();

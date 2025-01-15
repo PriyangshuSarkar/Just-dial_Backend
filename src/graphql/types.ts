@@ -39,6 +39,7 @@ export const typeDefs = gql`
     adminNotice: AdminNotice
     message: String
     token: String
+    requestId: String
   }
 
   type UserContact {
@@ -56,6 +57,7 @@ export const typeDefs = gql`
     user: User
     message: String
     token: String
+    requestId: String
   }
 
   type UserAddress {
@@ -72,7 +74,6 @@ export const typeDefs = gql`
     pincode: String
     state: String
     message: String
-    token: String
   }
 
   type BusinessSubscription {
@@ -89,7 +90,6 @@ export const typeDefs = gql`
     deletedAt: Date
     businesses: [Business]
     message: String
-    token: String
   }
 
   type Business {
@@ -121,6 +121,7 @@ export const typeDefs = gql`
     price: Float
     message: String
     token: String
+    requestId: String
   }
 
   type BusinessPrimaryContact {
@@ -138,6 +139,7 @@ export const typeDefs = gql`
     business: Business
     message: String
     token: String
+    requestId: String
   }
 
   type BusinessAddress {
@@ -154,7 +156,6 @@ export const typeDefs = gql`
     pincode: String
     state: String
     message: String
-    token: String
   }
 
   type BusinessDetails {
@@ -187,6 +188,7 @@ export const typeDefs = gql`
     deletedAt: Date
     message: String
     token: String
+    requestId: String
   }
 
   type BusinessSupportingDocuments {
@@ -199,7 +201,6 @@ export const typeDefs = gql`
     deletedAt: Date
     business: Business
     message: String
-    token: String
   }
 
   type BusinessCoverImage {
@@ -212,7 +213,6 @@ export const typeDefs = gql`
     businessDetailsId: ID
     businessDetails: BusinessDetails
     message: String
-    token: String
   }
 
   type BusinessAdBannerImage {
@@ -225,7 +225,6 @@ export const typeDefs = gql`
     businessDetailsId: ID
     businessDetails: BusinessDetails
     message: String
-    token: String
   }
   type BusinessMobileAdBannerImage {
     id: ID
@@ -237,7 +236,6 @@ export const typeDefs = gql`
     businessDetailsId: ID
     businessDetails: BusinessDetails
     message: String
-    token: String
   }
 
   type BusinessWebsite {
@@ -250,7 +248,6 @@ export const typeDefs = gql`
     businessDetailsId: ID
     businessDetails: BusinessDetails
     message: String
-    token: String
   }
 
   enum DayOfWeek {
@@ -274,7 +271,6 @@ export const typeDefs = gql`
     businessDetailsId: ID
     businessDetails: BusinessDetails
     message: String
-    token: String
   }
 
   type Language {
@@ -286,7 +282,6 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetails: [BusinessDetails]
     message: String
-    token: String
   }
 
   type Proficiency {
@@ -298,7 +293,6 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetails: [BusinessDetails]
     message: String
-    token: String
   }
 
   type Court {
@@ -310,7 +304,6 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetails: [BusinessDetails]
     message: String
-    token: String
   }
 
   enum AdminNoticeType {
@@ -332,6 +325,7 @@ export const typeDefs = gql`
     createdAt: Date
     updatedAt: Date
     deletedAt: Date
+    message: String
   }
   type Admin {
     id: ID
@@ -342,6 +336,7 @@ export const typeDefs = gql`
     deletedAt: Date
     message: String
     token: String
+    requestId: String
   }
 
   type Category {
@@ -356,7 +351,6 @@ export const typeDefs = gql`
     updatedAt: Date
     businessesDetails: [BusinessDetails]
     message: String
-    token: String
   }
 
   type Tag {
@@ -367,7 +361,6 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetails: [BusinessDetails]
     message: String
-    token: String
   }
 
   type Review {
@@ -382,7 +375,6 @@ export const typeDefs = gql`
     deletedAt: Date
     updatedAt: Date
     message: String
-    token: String
   }
 
   type Feedback {
@@ -397,7 +389,6 @@ export const typeDefs = gql`
     deletedAt: Date
     updatedAt: Date
     message: String
-    token: String
   }
 
   enum TestimonialType {
@@ -419,7 +410,6 @@ export const typeDefs = gql`
     deletedAt: Date
     updatedAt: Date
     message: String
-    token: String
   }
 
   type Booking {
@@ -433,7 +423,6 @@ export const typeDefs = gql`
     deletedAt: Date
     updatedAt: Date
     message: String
-    token: String
   }
 
   type Pincode {
@@ -446,7 +435,6 @@ export const typeDefs = gql`
     deletedAt: Date
     updatedAt: Date
     message: String
-    token: String
   }
 
   type City {
@@ -460,7 +448,6 @@ export const typeDefs = gql`
     updatedAt: Date
     pincodes: [Pincode]
     message: String
-    token: String
   }
 
   type State {
@@ -474,7 +461,6 @@ export const typeDefs = gql`
     updatedAt: Date
     cities: [City]
     message: String
-    token: String
   }
 
   type Country {
@@ -486,7 +472,6 @@ export const typeDefs = gql`
     updatedAt: Date
     states: [State]
     message: String
-    token: String
   }
 
   type Razorpay {
@@ -496,5 +481,6 @@ export const typeDefs = gql`
     status: String!
     receipt: String!
     created_at: Date!
+    message: String
   }
 `;

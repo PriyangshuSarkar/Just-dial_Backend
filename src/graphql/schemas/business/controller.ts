@@ -36,16 +36,15 @@ import {
 } from "./db";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
-// import { sendOtpEmail } from "../../../utils/emailService";
 import { generateToken } from "../../../utils/token";
 import slugify from "slugify";
-// import { sendOtpPhone } from "../../../utils/smsService";
-import { createOtpData } from "../../../utils/generateOtp";
-// import crypto from "crypto";
 import { ContactType, Prisma } from "@prisma/client";
 import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
+import { sendOtpEmail } from "../../../utils/emailService";
+import { sendOtpPhone } from "../../../utils/phoneService";
+import { verifyOtp } from "../../../utils/verifyOtp";
 
-// import { razorpay } from "../../../utils/razorpay";
+const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
 
 const MAX_CONTACTS_PER_TYPE = parseInt(
   process.env.MAX_CONTACTS_PER_TYPE || "1",
@@ -115,7 +114,7 @@ const checkVerificationAttempts = async (
       value: contactValue,
       type,
       updatedAt: { gte: last24Hours },
-      otp: { not: null },
+      // otp: { not: null },
     },
   });
 
@@ -343,12 +342,14 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
     }
 
     // Generate OTPs
-    const emailOtpData = validatedData.email ? createOtpData() : null;
-    const phoneOtpData = validatedData.phone ? createOtpData() : null;
+    // const emailOtpData = validatedData.email ? createOtpData() : null;
+    // const phoneOtpData = validatedData.phone ? createOtpData() : null;
 
     const business = await tx.business.create({
       data: {},
     });
+
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
     // Create contacts
     if (validatedData.email) {
@@ -360,8 +361,8 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
           type: "EMAIL",
           value: validatedData.email,
           isPrimary: true,
-          otp: emailOtpData?.otp,
-          otpExpiresAt: emailOtpData?.otpExpiresAt,
+          // ...emailOtpData,
+          otpExpiresAt,
         },
       });
     }
@@ -373,24 +374,35 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
           type: "PHONE",
           value: validatedData.phone,
           isPrimary: !validatedData.email,
-          otp: phoneOtpData?.otp,
-          otpExpiresAt: phoneOtpData?.otpExpiresAt,
+          // ...phoneOtpData,
+          otpExpiresAt,
         },
       });
     }
 
-    // // Send verification codes
-    // try {
-    //   if (validatedData.email && emailOtpData) {
-    //     await sendOtpEmail(null, validatedData.email, emailOtpData.otp);
-    //   }
-    //   if (validatedData.phone && phoneOtpData) {
-    //     await sendOtpPhone(null, validatedData.phone, phoneOtpData.otp);
-    //   }
-    // } catch (error) {
-    //   // Log error but don't fail the transaction
-    //   console.error("Error sending OTP:", error);
-    // }
+    let requestId: string | undefined;
+
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          business.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+      if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          business.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
 
     return {
       value: [validatedData.email, validatedData.phone]
@@ -403,6 +415,7 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
           ? "email"
           : "phone"
       }.`,
+      requestId,
     };
   });
 };
@@ -450,31 +463,45 @@ export const resendBusinessOtp = async (
     }
 
     // Create new OTP data
-    const otpData = createOtpData();
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
     // Update the OTP and expiration time in the database
-    await tx.businessPrimaryContact.update({
+    const updatedContact = await tx.businessPrimaryContact.update({
       where: {
         value,
         type,
       },
       data: {
-        otp: otpData?.otp,
-        otpExpiresAt: otpData?.otpExpiresAt, // Set expiry 1 minute from now
+        // otp: otpData?.otp,
+        otpExpiresAt, // Set expiry 1 minute from now
+      },
+      include: {
+        business: true,
       },
     });
 
-    // Optionally, send the OTP via email or phone
-    // try {
-    //   if (validatedData.email && otpData) {
-    //     await sendOtpEmail(null, validatedData.email, otpData.otp);
-    //   } else if (validatedData.phone && otpData) {
-    //     await sendOtpPhone(null, validatedData.phone, otpData.otp);
-    //   }
-    // } catch (error) {
-    //   console.error("Error sending OTP:", error);
-    // }
+    let requestId: string | undefined;
 
+    // send the OTP via email or phone
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          updatedContact.business.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      } else if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          updatedContact.business.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
     return {
       message: `Verification code sent to your ${
         validatedData.email && validatedData.phone
@@ -483,6 +510,7 @@ export const resendBusinessOtp = async (
           ? "email"
           : "phone"
       }.`,
+      requestId,
     };
   });
 
@@ -498,6 +526,15 @@ export const verifyBusinessPrimaryContact = async (
   if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
+    // Verify contact
+    const { requestId, isOTPVerified, message } = await verifyOtp(
+      validatedData.requestId,
+      validatedData.otp
+    );
+
+    if (!isOTPVerified) {
+      throw new Error(message);
+    }
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";
 
@@ -513,19 +550,19 @@ export const verifyBusinessPrimaryContact = async (
       throw new Error("Contact not found");
     }
 
-    if (!contact.otp || !contact.otpExpiresAt) {
-      throw new Error("No verification code found. Please request a new one.");
-    }
+    // if (!contact.otp || !contact.otpExpiresAt) {
+    //   throw new Error("No verification code found. Please request a new one.");
+    // }
 
-    if (contact.otpExpiresAt < new Date()) {
-      throw new Error(
-        "Verification code has expired. Please request a new one."
-      );
-    }
+    // if (contact.otpExpiresAt < new Date()) {
+    //   throw new Error(
+    //     "Verification code has expired. Please request a new one."
+    //   );
+    // }
 
-    if (contact.otp !== validatedData.otp) {
-      throw new Error("Invalid verification code");
-    }
+    // if (contact.otp !== validatedData.otp) {
+    //   throw new Error("Invalid verification code");
+    // }
 
     const business = await tx.business.findUnique({
       where: { id: contact.businessId },
@@ -667,6 +704,7 @@ export const verifyBusinessPrimaryContact = async (
       ...verifiedContact,
       token,
       message: `${type === "EMAIL" ? "Email" : "Phone"} verified successfully!`,
+      requestId,
     };
   });
 };
@@ -894,44 +932,47 @@ export const addBusinessPrimaryContact = async (
     await checkVerificationAttempts(tx, value!, type);
 
     // Create new contact
-    const otpData = createOtpData();
-    const newContact = await tx.businessPrimaryContact.create({
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await tx.businessPrimaryContact.create({
       data: {
         business: {
           connect: { id: context.owner.businessId },
         },
         type,
         value: value!,
-        ...otpData,
-      },
-      include: {
-        business: true,
+        otpExpiresAt,
       },
     });
 
-    console.log(!newContact);
-
     // Send OTP
-    // try {
-    //   if (type === "EMAIL") {
-    //     await sendOtpEmail(newContact.business.name, value!, otpData.otp);
-    //   } else {
-    //     await sendOtpPhone(newContact.business.name, value!, otpData.otp);
-    //   }
-    // } catch (error) {
-    //   console.error("Error sending OTP:", error);
-    //   // Delete the contact if OTP sending fails
-    //   await tx.businessPrimaryContact.delete({
-    //     where: { id: newContact.id },
-    //   });
-    //   throw new Error(
-    //     `Failed to send verification code to ${type.toLowerCase()}`
-    //   );
-    // }
+    let requestId: string | undefined;
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          business.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+      if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          business.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
 
     return {
       value,
       message: `Verification code sent to your ${type.toLowerCase()}`,
+      requestId,
     };
   });
 };
@@ -967,7 +1008,8 @@ export const forgetBusinessPassword = async (
     await checkVerificationAttempts(tx, value!, type);
 
     // Create new contact
-    const otpData = createOtpData();
+    const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
     const updatedContact = await tx.businessPrimaryContact.update({
       where: {
         businessId: existingContact.businessId,
@@ -975,34 +1017,42 @@ export const forgetBusinessPassword = async (
         value: value!,
       },
       data: {
-        ...otpData,
+        otpExpiresAt,
       },
       include: {
         business: true,
       },
     });
 
-    console.log(!updatedContact);
-    // Send OTP
-    // try {
-    //   if (type === "EMAIL") {
-    //     await sendOtpEmail(newContact.business.name, value!, otpData.otp);
-    //   } else {
-    //     await sendOtpPhone(newContact.business.name, value!, otpData.otp);
-    //   }
-    // } catch (error) {
-    //   console.error("Error sending OTP:", error);
-    //   // Delete the contact if OTP sending fails
-    //   await tx.businessPrimaryContact.delete({
-    //     where: { id: newContact.id },
-    //   });
-    //   throw new Error(
-    //     `Failed to send verification code to ${type.toLowerCase()}`
-    //   );
-    // }
+    let requestId: string | undefined;
+
+    // Send verification codes
+    try {
+      if (validatedData.email && otpExpiresAt) {
+        const response = await sendOtpEmail(
+          updatedContact.business.name,
+          validatedData.email,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+      if (validatedData.phone && otpExpiresAt) {
+        const response = await sendOtpPhone(
+          updatedContact.business.name,
+          validatedData.phone,
+          OTP_EXPIRY_MINUTES
+        );
+        requestId = response.requestId;
+      }
+    } catch (error) {
+      // Log error but don't fail the transaction
+      console.error("Error sending OTP:", error);
+    }
+
     return {
       value: value,
       message: `Verification code sent to your ${type.toLowerCase()}`,
+      requestId,
     };
   });
 };
@@ -1016,6 +1066,15 @@ export const changeBusinessPassword = async (
   if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
+    const { requestId, isOTPVerified, message } = await verifyOtp(
+      validatedData.requestId,
+      validatedData.otp
+    );
+
+    if (!isOTPVerified) {
+      throw new Error(message);
+    }
+
     const value = validatedData.email || validatedData.phone;
     const type = validatedData.email ? "EMAIL" : "PHONE";
 
@@ -1036,23 +1095,23 @@ export const changeBusinessPassword = async (
       );
     }
 
-    if (!existingContact) {
-      throw new Error("Contact not found");
-    }
+    // if (!existingContact) {
+    //   throw new Error("Contact not found");
+    // }
 
-    if (!existingContact.otp || !existingContact.otpExpiresAt) {
-      throw new Error("No verification code found. Please request a new one.");
-    }
+    // if (!existingContact.otp || !existingContact.otpExpiresAt) {
+    //   throw new Error("No verification code found. Please request a new one.");
+    // }
 
-    if (existingContact.otpExpiresAt < new Date()) {
-      throw new Error(
-        "Verification code has expired. Please request a new one."
-      );
-    }
+    // if (existingContact.otpExpiresAt < new Date()) {
+    //   throw new Error(
+    //     "Verification code has expired. Please request a new one."
+    //   );
+    // }
 
-    if (existingContact.otp !== validatedData.otp) {
-      throw new Error("Invalid verification code");
-    }
+    // if (existingContact.otp !== validatedData.otp) {
+    //   throw new Error("Invalid verification code");
+    // }
 
     const { salt, hash } = hashPassword(validatedData.password);
 
@@ -1181,6 +1240,7 @@ export const changeBusinessPassword = async (
     return {
       ...updatedPassword,
       massage: "Password updated successfully.",
+      requestId,
     };
   });
 };

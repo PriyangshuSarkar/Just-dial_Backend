@@ -6,7 +6,7 @@ import {
   manageUserAddress,
   resendUserOtp,
   updateUserDetails,
-  userGoogleOAuth,
+  userGoogleOAuthVerify,
   userSignup,
   userSubscription,
   userVerifyPayment,
@@ -14,8 +14,6 @@ import {
 } from "./controller";
 
 export const Mutation = {
-  userGoogleOAuth,
-
   userSignup,
 
   resendUserOtp,
@@ -37,4 +35,6 @@ export const Mutation = {
   userSubscription,
 
   userVerifyPayment,
+
+  userGoogleOAuthVerify,
 };

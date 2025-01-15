@@ -232,6 +232,7 @@ const buildBusinessDetailsSelect = (location: LocationPriorityInput) => ({
   id: true,
   experience: true,
   teamSize: true,
+  logo: true,
   description: true,
   addresses: {
     where: {
@@ -247,6 +248,17 @@ const buildBusinessDetailsSelect = (location: LocationPriorityInput) => ({
       id: true,
       url: true,
       order: true,
+    },
+  },
+  categories: {
+    where: {
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      categoryImage: true,
     },
   },
   // Add other business detail selects...
