@@ -5,6 +5,14 @@ export const typeDefs = gql`
 
   type Query {
     status: String!
+
+    getReviewWithId(
+      id: ID
+      userId: ID
+      userSlug: ID
+      businessId: ID
+      businessSlug: ID
+    ): Review
   }
 
   type Mutation {

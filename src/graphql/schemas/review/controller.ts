@@ -2,6 +2,8 @@ import { prisma } from "../../../utils/dbConnect";
 import {
   FeedbackInput,
   FeedbackSchema,
+  GetReviewWithIdInput,
+  GetReviewWithIdSchema,
   ReviewBusinessInput,
   ReviewBusinessSchema,
 } from "./db";
@@ -37,29 +39,68 @@ export const reviewBusiness = async (
   if (!validatedData) return;
 
   if (validatedData.id) {
-    // const review = await prisma.review.update({
-    //   where: {
-    //     id: validatedData.id,
-    //     deletedAt: null,
-    //     userId: user.id,
-    //   },
-    //   data: {
-    //     rating: validatedData.rating,
-    //     comment: validatedData.comment,
-    //     businessId: validatedData.businessId,
-    //     deletedAt: validatedData.toDelete ? new Date() : null,
-    //   },
-    // });
+    const review = await prisma.review.findFirst({
+      where: {
+        id: validatedData.id,
+        deletedAt: null,
+        userId: user.id,
+      },
+    });
 
-    // return review;
+    if (!review) {
+      throw new Error(
+        "Review not found or you are not authorized to update this review."
+      );
+    }
+
+    const business = await prisma.business.findFirst({
+      where: {
+        id: review.businessId,
+      },
+      select: { averageRating: true, reviewCount: true },
+    });
+
+    if (!business) {
+      throw new Error("Business associated with this review not found.");
+    }
+
+    // Recalculate the average rating before updating
+    const adjustedAverageRating =
+      (business.averageRating! * business.reviewCount -
+        review.rating +
+        validatedData.rating!) /
+      business.reviewCount;
+
+    await prisma.business.update({
+      where: {
+        id: review.businessId,
+      },
+      data: {
+        averageRating: adjustedAverageRating,
+      },
+    });
+
+    const updatedReview = await prisma.review.update({
+      where: {
+        id: validatedData.id,
+      },
+      data: {
+        rating: validatedData.rating,
+        comment: validatedData.comment,
+        deletedAt: validatedData.toDelete ? new Date() : null,
+      },
+    });
 
     return {
-      message: "Updating Review is not allowed at this moment.",
+      ...updatedReview,
+      message: validatedData.toDelete
+        ? "Review deleted successfully."
+        : "Review updated successfully.",
     };
   }
 
   if (!validatedData.businessId && !validatedData.businessSlug) {
-    throw new Error("Business Id is required");
+    throw new Error("Business Id or slug is required");
   }
   if (!validatedData.rating) {
     throw new Error("Rating is required");
@@ -210,4 +251,38 @@ export const feedback = async (
   });
 
   return { ...feedback, message: "Feedback created successfully" };
+};
+
+export const getReviewWithId = async (
+  _: unknown,
+  args: GetReviewWithIdInput
+) => {
+  const validatedData = GetReviewWithIdSchema.parse(args);
+  if (!validatedData) return;
+
+  const review = await prisma.review.findFirst({
+    where: {
+      OR: [
+        { id: validatedData.id },
+        {
+          AND: [
+            {
+              OR: [
+                { userId: validatedData.userId },
+                { user: { slug: validatedData.userSlug } },
+              ],
+            },
+            {
+              OR: [
+                { businessId: validatedData.businessId },
+                { business: { slug: validatedData.businessSlug } },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  return review;
 };
