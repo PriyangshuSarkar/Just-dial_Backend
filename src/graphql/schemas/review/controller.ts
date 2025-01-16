@@ -255,10 +255,85 @@ export const feedback = async (
 
 export const getReviewWithId = async (
   _: unknown,
-  args: GetReviewWithIdInput
+  args: GetReviewWithIdInput,
+  context: any
 ) => {
   const validatedData = GetReviewWithIdSchema.parse(args);
   if (!validatedData) return;
+
+  const { userId, businessId } = context.owner || {};
+
+  const isUserContext = typeof userId === "string";
+  const isBusinessContext = typeof businessId === "string";
+
+  const validateDataForContext = () => {
+    if (
+      isUserContext &&
+      !validatedData.id &&
+      !validatedData.businessId &&
+      !validatedData.businessSlug
+    ) {
+      throw new Error("Review id or business slug/ID is required with token");
+    }
+    if (
+      isBusinessContext &&
+      !validatedData.id &&
+      !validatedData.userId &&
+      !validatedData.userSlug
+    ) {
+      throw new Error("Review id or user slug/ID is required with token");
+    }
+    if (
+      !isUserContext &&
+      !isBusinessContext &&
+      !validatedData.id &&
+      !validatedData.userId &&
+      !validatedData.userSlug &&
+      !validatedData.businessId &&
+      !validatedData.businessSlug
+    ) {
+      throw new Error(
+        "Review id or user slug/ID and business slug/ID is required"
+      );
+    }
+  };
+
+  validateDataForContext();
+
+  let user = undefined;
+  let business = undefined;
+
+  if (isUserContext) {
+    user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        contacts: {
+          some: {
+            isVerified: true,
+            deletedAt: null,
+          },
+        },
+      },
+    });
+    if (!user) {
+      throw new Error("Invalid Token! OR User not found");
+    }
+  } else if (isBusinessContext) {
+    business = await prisma.business.findFirst({
+      where: {
+        id: businessId,
+        primaryContacts: {
+          some: {
+            isVerified: true,
+            deletedAt: null,
+          },
+        },
+      },
+    });
+    if (!business) {
+      throw new Error("Invalid Token! OR Business not found");
+    }
+  }
 
   const review = await prisma.review.findFirst({
     where: {
@@ -268,13 +343,13 @@ export const getReviewWithId = async (
           AND: [
             {
               OR: [
-                { userId: validatedData.userId },
+                { userId: user?.id || validatedData.userId },
                 { user: { slug: validatedData.userSlug } },
               ],
             },
             {
               OR: [
-                { businessId: validatedData.businessId },
+                { businessId: business?.id || validatedData.businessId },
                 { business: { slug: validatedData.businessSlug } },
               ],
             },

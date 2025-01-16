@@ -28,13 +28,16 @@ export const GetReviewWithIdSchema = object({
   .refine(
     (data) =>
       data.id ||
-      ((data.userSlug || data.userId) &&
-        (data.businessId || data.businessSlug)),
+      data.userSlug ||
+      data.userId ||
+      data.businessId ||
+      data.businessSlug,
     {
       message:
-        "Either userSlug or userId must be provided and either businessSlug or businessId must be provided OR ID",
+        "Either userSlug or userId must be provided or either businessSlug or businessId must be provided or ID",
       path: ["id", "userSlug", "userId", "businessSlug", "businessId"], // Pointing to both fields for clarity
     }
   )
   .optional();
+
 export type GetReviewWithIdInput = infer_<typeof GetReviewWithIdSchema>;
