@@ -219,9 +219,7 @@ export const getAllBusinesses = async () => {
         where: {
           deletedAt: null,
         },
-        orderBy: {
-          updatedAt: "desc",
-        },
+        orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
         select: {
           id: true,
           rating: true,
@@ -459,9 +457,7 @@ export const getBusinessById = async (
         where: {
           deletedAt: null,
         },
-        orderBy: {
-          updatedAt: "desc",
-        },
+        orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
         select: {
           id: true,
           rating: true,
@@ -776,6 +772,7 @@ export const allTestimonials = async (
         },
       },
     },
+    orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
     skip: (page - 1) * limit,
     take: limit,
   });

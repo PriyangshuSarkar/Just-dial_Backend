@@ -217,7 +217,7 @@ const buildSelectObject = (
   },
   reviews: {
     where: ACTIVE_RECORD,
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
     select: {
       id: true,
       rating: true,
