@@ -357,6 +357,36 @@ export const getReviewWithId = async (
         },
       ],
     },
+    select: {
+      id: true,
+      comment: true,
+      rating: true,
+      userId: true,
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true,
+      businessId: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          avatar: true,
+        },
+      },
+      business: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          businessDetails: {
+            select: {
+              logo: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   return review;
