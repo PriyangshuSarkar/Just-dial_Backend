@@ -473,6 +473,7 @@ export const getBusinessById = async (
             },
           },
         },
+        take: 10,
       },
       price: true,
     },

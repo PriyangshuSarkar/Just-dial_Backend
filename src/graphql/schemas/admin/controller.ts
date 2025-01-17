@@ -261,6 +261,7 @@ export const adminGetUserById = async (
         include: {
           business: true,
         },
+        take: 5,
       },
       feedbacks: true,
       testimonials: true,
@@ -456,11 +457,29 @@ export const adminGetBusinessById = async (
       },
       reviews: {
         include: {
-          user: true,
+          user: {
+            include: {
+              contacts: true,
+            },
+          },
         },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
       },
-      feedbacks: true,
-      testimonials: true,
+      feedbacks: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
+      },
+      testimonials: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
+      },
       businessSupportingDocuments: true,
       adminNotice: true,
     },
