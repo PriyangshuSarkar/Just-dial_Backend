@@ -64,11 +64,13 @@ export const reviewBusiness = async (
       throw new Error("Business associated with this review not found.");
     }
 
+    const newRating = validatedData.toDelete ? 0 : validatedData.rating || 0;
+
     // Recalculate the average rating before updating
     const adjustedAverageRating =
       (business.averageRating! * business.reviewCount -
         review.rating +
-        validatedData.rating!) /
+        newRating) /
       business.reviewCount;
 
     await prisma.business.update({
@@ -77,12 +79,16 @@ export const reviewBusiness = async (
       },
       data: {
         averageRating: adjustedAverageRating,
+        reviewCount: validatedData.toDelete
+          ? business.reviewCount - 1
+          : undefined,
       },
     });
 
     const updatedReview = await prisma.review.update({
       where: {
         id: validatedData.id,
+        userId: user.id,
       },
       data: {
         rating: validatedData.rating,
@@ -136,10 +142,15 @@ export const reviewBusiness = async (
       averageRating: newAverageRating,
       reviewCount: reviewCount + 1,
       reviews: {
-        create: {
-          userId: context.owner.userId,
-          rating: validatedData.rating,
-          comment: validatedData.comment,
+        update: {
+          where: {
+            id: validatedData.id,
+          },
+          data: {
+            userId: context.owner.userId,
+            rating: validatedData.rating,
+            comment: validatedData.comment,
+          },
         },
       },
     },
