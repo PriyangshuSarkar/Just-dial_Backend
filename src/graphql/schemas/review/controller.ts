@@ -54,9 +54,7 @@ export const reviewBusiness = async (
     }
 
     const business = await prisma.business.findFirst({
-      where: {
-        id: review.businessId,
-      },
+      where: { id: review.businessId },
       select: { averageRating: true, reviewCount: true },
     });
 
@@ -67,38 +65,39 @@ export const reviewBusiness = async (
     const newRating = validatedData.toDelete ? 0 : validatedData.rating || 0;
 
     // Recalculate the average rating before updating
+
     const adjustedAverageRating =
-      (business.averageRating! * business.reviewCount -
-        review.rating +
-        newRating) /
-      business.reviewCount;
+      business.reviewCount > 1
+        ? ((business.averageRating || 0) * business.reviewCount -
+            review.rating +
+            newRating) /
+          (validatedData.toDelete
+            ? business.reviewCount - 1
+            : business.reviewCount)
+        : newRating;
 
-    await prisma.business.update({
-      where: {
-        id: review.businessId,
-      },
-      data: {
-        averageRating: adjustedAverageRating,
-        reviewCount: validatedData.toDelete
-          ? business.reviewCount - 1
-          : undefined,
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      await tx.business.update({
+        where: { id: review.businessId },
+        data: {
+          averageRating: adjustedAverageRating,
+          reviewCount: validatedData.toDelete
+            ? business.reviewCount - 1
+            : business.reviewCount,
+        },
+      });
 
-    const updatedReview = await prisma.review.update({
-      where: {
-        id: validatedData.id,
-        userId: user.id,
-      },
-      data: {
-        rating: validatedData.rating,
-        comment: validatedData.comment,
-        deletedAt: validatedData.toDelete ? new Date() : null,
-      },
+      await tx.review.update({
+        where: { id: validatedData.id },
+        data: {
+          rating: validatedData.rating,
+          comment: validatedData.comment,
+          deletedAt: validatedData.toDelete ? new Date() : null,
+        },
+      });
     });
 
     return {
-      ...updatedReview,
       message: validatedData.toDelete
         ? "Review deleted successfully."
         : "Review updated successfully.",
@@ -126,47 +125,37 @@ export const reviewBusiness = async (
     throw new Error("Business not found");
   }
 
-  let { averageRating, reviewCount } = business;
-
-  averageRating = averageRating || 0;
-  reviewCount = reviewCount || 0;
+  const { averageRating = 0, reviewCount = 0 } = business;
 
   const newAverageRating =
-    (averageRating * reviewCount + validatedData.rating) / (reviewCount + 1);
+    (averageRating! * reviewCount + validatedData.rating) / (reviewCount + 1);
 
-  const updatedBusiness = await prisma.business.update({
-    where: {
-      id: business.id,
-    },
-    data: {
-      averageRating: newAverageRating,
-      reviewCount: reviewCount + 1,
-      reviews: {
-        create: {
-          userId: context.owner.userId,
-          rating: validatedData.rating,
-          comment: validatedData.comment,
-        },
+  const updatedBusiness = await prisma.$transaction(async (tx) => {
+    const createdReview = await tx.review.create({
+      data: {
+        businessId: business.id,
+        userId: user.id,
+        rating: validatedData.rating as number,
+        comment: validatedData.comment,
       },
-    },
-    select: {
-      averageRating: true,
-      reviewCount: true,
-      reviews: {
-        where: {
-          deletedAt: null,
-        },
-        select: {
-          rating: true,
-          comment: true,
-          businessId: true,
-          userId: true,
-        },
+    });
+
+    const updatedBusiness = await tx.business.update({
+      where: { id: business.id },
+      data: {
+        averageRating: newAverageRating,
+        reviewCount: reviewCount + 1,
       },
-    },
+      select: { id: true, averageRating: true, reviewCount: true },
+    });
+
+    return { ...updatedBusiness, createdReview };
   });
 
-  return { ...updatedBusiness, message: "Review created successfully" };
+  return {
+    message: "Review created successfully.",
+    data: updatedBusiness,
+  };
 };
 
 export const feedback = async (
