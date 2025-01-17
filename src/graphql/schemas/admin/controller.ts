@@ -457,7 +457,11 @@ export const adminGetBusinessById = async (
       },
       reviews: {
         include: {
-          user: true,
+          user: {
+            include: {
+              contacts: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
