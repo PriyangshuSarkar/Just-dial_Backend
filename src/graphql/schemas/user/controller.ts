@@ -669,6 +669,12 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
           createdAt: "desc",
         },
         select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          deletedAt: true,
+          updatedAt: true,
           business: {
             select: {
               id: true,
