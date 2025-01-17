@@ -257,6 +257,13 @@ export const adminGetUserById = async (
       contacts: true,
       subscription: true,
       addresses: true,
+      reviews: {
+        include: {
+          business: true,
+        },
+      },
+      feedbacks: true,
+      testimonials: true,
     },
   });
 
@@ -441,8 +448,21 @@ export const adminGetBusinessById = async (
           adBannerImages: true,
           mobileAdBannerImages: true,
           websites: true,
+          operatingHours: true,
+          languages: true,
+          proficiencies: true,
+          courts: true,
         },
       },
+      reviews: {
+        include: {
+          user: true,
+        },
+      },
+      feedbacks: true,
+      testimonials: true,
+      businessSupportingDocuments: true,
+      adminNotice: true,
     },
   });
 
