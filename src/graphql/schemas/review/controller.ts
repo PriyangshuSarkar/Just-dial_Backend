@@ -142,15 +142,10 @@ export const reviewBusiness = async (
       averageRating: newAverageRating,
       reviewCount: reviewCount + 1,
       reviews: {
-        update: {
-          where: {
-            id: validatedData.id,
-          },
-          data: {
-            userId: context.owner.userId,
-            rating: validatedData.rating,
-            comment: validatedData.comment,
-          },
+        create: {
+          userId: context.owner.userId,
+          rating: validatedData.rating,
+          comment: validatedData.comment,
         },
       },
     },
