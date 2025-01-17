@@ -367,6 +367,7 @@ export const getReviewWithId = async (
           ],
         },
       ],
+      deletedAt: null,
     },
     select: {
       id: true,
