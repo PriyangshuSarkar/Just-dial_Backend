@@ -30,6 +30,16 @@ export type AdminSearchAllReviewsInput = infer_<
   typeof AdminSearchAllReviewsSchema
 >;
 
+export const AdminDeleteReviewsSchema = object({
+  reviews: object({
+    reviewId: string().optional(),
+    toDelete: boolean().optional().default(false),
+  })
+    .array()
+    .optional(),
+}).optional();
+export type AdminDeleteReviewsInput = infer_<typeof AdminDeleteReviewsSchema>;
+
 export const AdminSearchAllFeedbacksSchema = object({
   search: string().toLowerCase().optional(),
   sortBy: enum_(["rating", "createdAt"]).default("createdAt"),

@@ -1,6 +1,7 @@
 import {
   adminBlockBusinesses,
   adminBlockUsers,
+  adminDeleteReviews,
   adminManageAdminNotices,
   adminManageBusinessSubscriptions,
   adminManageCategories,
@@ -23,6 +24,8 @@ export const Mutation = {
   adminBlockBusinesses,
 
   adminVerifyBusinesses,
+
+  adminDeleteReviews,
 
   adminManageUserSubscriptions,
 

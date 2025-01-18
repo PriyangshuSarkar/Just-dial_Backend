@@ -666,7 +666,7 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
           deletedAt: null,
         },
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
         },
         select: {
           id: true,
@@ -688,17 +688,19 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
             },
           },
         },
+        take: 20,
       },
       feedbacks: {
         where: {
           deletedAt: null,
         },
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
         },
         include: {
           user: true,
         },
+        take: 20,
       },
       bookings: {
         where: {
@@ -1063,8 +1065,9 @@ export const updateUserDetails = async (
           deletedAt: null,
         },
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
         },
+        take: 20,
       },
       bookings: {
         where: {

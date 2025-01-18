@@ -14,6 +14,8 @@ import {
   AdminBlockUsersSchema,
   AdminChangePasswordInput,
   AdminChangePasswordSchema,
+  AdminDeleteReviewsInput,
+  AdminDeleteReviewsSchema,
   AdminGetAllAdminNoticesInput,
   AdminGetAllAdminNoticesSchema,
   AdminGetBusinessByIdInput,
@@ -258,13 +260,32 @@ export const adminGetUserById = async (
       subscription: true,
       addresses: true,
       reviews: {
+        where: {
+          deletedAt: null,
+        },
         include: {
           business: true,
         },
-        take: 5,
+        take: 20,
       },
-      feedbacks: true,
-      testimonials: true,
+      feedbacks: {
+        where: {
+          deletedAt: null,
+        },
+        include: {
+          business: true,
+        },
+        take: 20,
+      },
+      testimonials: {
+        where: {
+          deletedAt: null,
+        },
+        include: {
+          business: true,
+        },
+        take: 20,
+      },
     },
   });
 
@@ -377,9 +398,33 @@ export const adminAllBusinesses = async (
       include: {
         primaryContacts: true,
         subscription: true,
-        reviews: true,
-        feedbacks: true,
-        testimonials: true,
+        reviews: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            business: true,
+          },
+          take: 20,
+        },
+        feedbacks: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            business: true,
+          },
+          take: 20,
+        },
+        testimonials: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            business: true,
+          },
+          take: 20,
+        },
         adminNotice: true,
         businessDetails: {
           include: {
@@ -460,6 +505,9 @@ export const adminGetBusinessById = async (
         },
       },
       reviews: {
+        where: {
+          deletedAt: null,
+        },
         include: {
           user: {
             include: {
@@ -470,15 +518,21 @@ export const adminGetBusinessById = async (
         orderBy: {
           createdAt: "desc",
         },
-        take: 10,
+        take: 20,
       },
       feedbacks: {
+        where: {
+          deletedAt: null,
+        },
         orderBy: {
           createdAt: "desc",
         },
-        take: 10,
+        take: 20,
       },
       testimonials: {
+        where: {
+          deletedAt: null,
+        },
         orderBy: {
           createdAt: "desc",
         },
@@ -526,6 +580,7 @@ export const adminSearchAllReviews = async (
   const [reviews, total] = await Promise.all([
     prisma.review.findMany({
       where: {
+        deletedAt: null,
         comment: search
           ? {
               contains: search,
@@ -541,6 +596,7 @@ export const adminSearchAllReviews = async (
     }),
     prisma.review.count({
       where: {
+        deletedAt: null,
         comment: search
           ? {
               contains: search,
@@ -565,6 +621,46 @@ export const adminSearchAllReviews = async (
     limit,
     totalPages,
   };
+};
+
+export const adminDeleteReviews = async (
+  _: unknown,
+  args: AdminDeleteReviewsInput,
+  context: any
+) => {
+  // Validate the adminId in the context
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  // Validate and parse the input data
+  const validatedData = AdminDeleteReviewsSchema.parse(args);
+  if (!validatedData?.reviews) return;
+
+  // Delete the reviews
+
+  const result = [];
+
+  for (const review of validatedData.reviews) {
+    const updatedReview = await prisma.review.update({
+      where: { id: review.reviewId },
+      data: {
+        deletedAt: review.toDelete ? new Date() : null,
+      },
+    });
+    if (updatedReview.deletedAt) {
+      result.push({ message: "Review deleted successfully" });
+    }
+  }
+  return result;
 };
 
 export const adminSearchAllFeedbacks = async (
@@ -598,6 +694,7 @@ export const adminSearchAllFeedbacks = async (
     prisma.feedback.findMany({
       where: {
         comment: search ? { contains: search, mode: "insensitive" } : undefined,
+        deletedAt: null,
       },
       orderBy: {
         [sortBy]: sortOrder, // Dynamic sorting

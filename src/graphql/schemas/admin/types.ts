@@ -166,6 +166,8 @@ export const typeDefs = gql`
 
     adminVerifyBusinesses(businesses: [BusinessesVerify]): [Business]
 
+    adminDeleteReviews(reviews: [ReviewDelete]): [Review]
+
     adminManageUserSubscriptions(
       id: ID
       name: String!
@@ -226,6 +228,11 @@ export const typeDefs = gql`
     userSlug: ID
     userId: ID
     block: Boolean
+  }
+
+  input ReviewDelete {
+    reviewId: ID
+    toDelete: Boolean
   }
 
   input LanguageInput {
