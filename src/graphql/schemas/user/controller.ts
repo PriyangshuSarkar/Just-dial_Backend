@@ -710,7 +710,14 @@ export const userMe = async (_: unknown, args: unknown, context: any) => {
           createdAt: "desc",
         },
       },
-      adminNotice: true,
+      adminNotice: {
+        where: {
+          deletedAt: null,
+          expiresAt: {
+            gt: new Date(), // Filters for notices that have not expired
+          },
+        },
+      },
     },
   });
 

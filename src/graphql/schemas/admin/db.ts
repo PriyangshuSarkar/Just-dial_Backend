@@ -6,6 +6,7 @@ import {
   number,
   boolean,
   any,
+  date,
 } from "zod";
 
 export const AdminLoginSchema = object({
@@ -77,6 +78,7 @@ export const AdminAllUsersSchema = object({
     "createdAt"
   ),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
+  hasAdminNotice: boolean().optional(),
 }).optional();
 export type AdminAllUsersInput = infer_<typeof AdminAllUsersSchema>;
 
@@ -116,6 +118,7 @@ export const AdminAllBusinessesSchema = object({
     "reviewCount",
   ]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
+  hasAdminNotice: boolean().optional(),
 }).optional();
 export type AdminAllBusinessesInput = infer_<typeof AdminAllBusinessesSchema>;
 
@@ -375,6 +378,7 @@ export const AdminManageAdminNoticesSchema = object({
     ]).optional(),
     note: string().optional(),
     toDelete: boolean().optional().default(false),
+    expiresAt: date().optional(),
   })
     .array()
     .optional(),

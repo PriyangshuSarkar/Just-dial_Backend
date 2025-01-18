@@ -860,6 +860,9 @@ export const getAllGlobalAdminNotice = async () => {
     where: {
       deletedAt: null,
       type: "GLOBAL",
+      expiresAt: {
+        gt: new Date(), // Filters for notices that have not expired
+      },
     },
     orderBy: {
       createdAt: "desc",
