@@ -257,6 +257,7 @@ export const typeDefs = gql`
     description: String
     categoryImage: Upload
     toDelete: Boolean
+    groupName: String
   }
 
   input TagInput {

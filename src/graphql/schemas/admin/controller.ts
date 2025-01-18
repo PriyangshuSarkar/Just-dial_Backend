@@ -377,6 +377,10 @@ export const adminAllBusinesses = async (
       include: {
         primaryContacts: true,
         subscription: true,
+        reviews: true,
+        feedbacks: true,
+        testimonials: true,
+        adminNotice: true,
         businessDetails: {
           include: {
             addresses: true,
@@ -1182,6 +1186,9 @@ export const adminGetAllCategories = async (
     where: {
       deletedAt: null,
     },
+    include: {
+      groupName: true,
+    },
   });
 
   return categories;
@@ -1277,6 +1284,21 @@ export const adminManageCategories = async (
           order: category.order,
           description: category.description,
           categoryImage,
+          groupName: category.groupName
+            ? {
+                connectOrCreate: {
+                  where: {
+                    name: category.groupName,
+                  },
+                  create: {
+                    name: category.groupName,
+                  },
+                },
+              }
+            : undefined,
+        },
+        include: {
+          groupName: true,
         },
       });
       results.push({
@@ -1329,6 +1351,21 @@ export const adminManageCategories = async (
           description: category.description,
           categoryImage,
           deletedAt: category.toDelete ? new Date() : null,
+          groupName: category.groupName
+            ? {
+                connectOrCreate: {
+                  where: {
+                    name: category.groupName,
+                  },
+                  create: {
+                    name: category.groupName,
+                  },
+                },
+              }
+            : undefined,
+        },
+        include: {
+          groupName: true,
         },
       });
 

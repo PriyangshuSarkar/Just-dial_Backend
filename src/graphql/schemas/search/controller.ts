@@ -569,6 +569,13 @@ export const allCategories = async () => {
       slug: true,
       description: true,
       categoryImage: true,
+      groupName: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+        },
+      },
     },
     orderBy: {
       order: "asc",
@@ -773,7 +780,7 @@ export const allTestimonials = async (
         },
       },
     },
-    orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ order: "asc" }, { rating: "desc" }, { createdAt: "desc" }],
     skip: (page - 1) * limit,
     take: limit,
   });
