@@ -276,7 +276,6 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
         },
         take: 20,
       },
-
       feedbacks: {
         where: {
           deletedAt: null,
@@ -302,7 +301,14 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
           updatedAt: "desc",
         },
       },
-      adminNotice: true,
+      adminNotice: {
+        where: {
+          deletedAt: null,
+          expiresAt: {
+            gt: new Date(), // Filters for notices that have not expired
+          },
+        },
+      },
     },
   });
 

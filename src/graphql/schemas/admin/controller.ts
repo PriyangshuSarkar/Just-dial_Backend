@@ -203,6 +203,15 @@ export const adminAllUsers = async (
     validatedData.sortBy = "name" as "alphabetical" | "createdAt" | "updatedAt";
   }
 
+  if (validatedData.hasAdminNotice === true) {
+    where.adminNotice = {
+      deletedAt: null,
+      expiresAt: {
+        gt: new Date(), // Filters for notices that have not expired
+      },
+    };
+  }
+
   // Execute query
   const [users, total] = await Promise.all([
     prisma.user.findMany({
@@ -391,6 +400,15 @@ export const adminAllBusinesses = async (
 
   if (validatedData.sortBy === "alphabetical") {
     validatedData.sortBy = "name" as "alphabetical" | "createdAt" | "updatedAt";
+  }
+
+  if (validatedData.hasAdminNotice === true) {
+    where.adminNotice = {
+      deletedAt: null,
+      expiresAt: {
+        gt: new Date(), // Filters for notices that have not expired
+      },
+    };
   }
 
   // Execute query
@@ -2045,6 +2063,7 @@ export const adminManageTestimonials = async (
 
   return results;
 };
+
 export const adminGetAllAdminNotices = async (
   _: unknown,
   args: AdminGetAllAdminNoticesInput,
@@ -2077,6 +2096,9 @@ export const adminGetAllAdminNotices = async (
       where: {
         deletedAt: null,
         type: validatedData.type,
+        expiresAt: {
+          gt: new Date(), // Filters for notices that have not expired
+        },
       },
       skip,
       take: validatedData.limit,
@@ -2088,6 +2110,9 @@ export const adminGetAllAdminNotices = async (
       where: {
         deletedAt: null,
         type: validatedData.type,
+        expiresAt: {
+          gt: new Date(), // Filters for notices that have not expired
+        },
       },
     }),
   ]);
@@ -2181,8 +2206,17 @@ export const adminManageAdminNotices = async (
           message: "Notice updated successfully",
         });
       } else {
+        const ADMIN_NOTICE_EXPIRY_DAYS = parseInt(
+          process.env.ADMIN_NOTICE_EXPIRY_DAYS || "7",
+          7
+        );
         // Create a new notice
         const data: Prisma.AdminNoticeCreateInput = {
+          expiresAt:
+            notice.expiresAt ||
+            new Date(
+              Date.now() + ADMIN_NOTICE_EXPIRY_DAYS! * 24 * 60 * 60 * 1000
+            ),
           note: notice.note,
           type: notice.type || "GLOBAL", // Default to "GLOBAL" if type is not provided
         };

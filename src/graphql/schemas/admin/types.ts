@@ -92,6 +92,7 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: AllUsersSortBy = createdAt
       sortOrder: SortOrder = desc
+      hasAdminNotice: Boolean = false
     ): AllUsersResult
 
     adminGetUserById(userId: ID, userSlug: ID): User
@@ -113,6 +114,7 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: AllBusinessesSortBy = createdAt
       sortOrder: SortOrder = desc
+      hasAdminNotice: Boolean = false
     ): AllBusinessesResult
 
     adminGetBusinessById(businessId: ID, businessSlug: ID): Business
@@ -331,5 +333,6 @@ export const typeDefs = gql`
     type: AdminNoticeType
     note: String
     toDelete: Boolean
+    expiresAt: Date
   }
 `;
