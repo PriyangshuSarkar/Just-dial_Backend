@@ -350,6 +350,16 @@ export const typeDefs = gql`
     categoryImage: String
     updatedAt: Date
     businessesDetails: [BusinessDetails]
+    groupName: CategoryGroupName
+    message: String
+  }
+
+  type CategoryGroupName {
+    id: ID
+    slug: ID
+    name: String
+
+    Category: [Category]
     message: String
   }
 

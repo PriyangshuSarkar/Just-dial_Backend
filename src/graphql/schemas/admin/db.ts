@@ -233,6 +233,7 @@ export const AdminManageCategoriesSchema = object({
     description: string().optional(),
     slug: string().optional(),
     categoryImage: any().optional(),
+    groupName: string().optional(),
     toDelete: boolean().optional().default(false),
   })
     .array()

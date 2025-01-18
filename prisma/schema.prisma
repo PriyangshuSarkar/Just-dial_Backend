@@ -382,18 +382,29 @@ model AdminNotice {
 }
 
 model Category {
-  id                String            @id @default(uuid())
-  name              String
-  slug              String?           @unique
-  order             Int?
-  description       String?
-  createdAt         DateTime          @default(now())
-  deletedAt         DateTime?
-  categoryImage     String?
-  updatedAt         DateTime          @updatedAt
-  businessesDetails BusinessDetails[] @relation()
+  id                  String             @id @default(uuid())
+  name                String
+  slug                String?            @unique
+  order               Int?
+  description         String?
+  createdAt           DateTime           @default(now())
+  deletedAt           DateTime?
+  categoryImage       String?
+  updatedAt           DateTime           @updatedAt
+  groupName           CategoryGroupName? @relation(fields: [categoryGroupNameId], references: [id])
+  businessesDetails   BusinessDetails[]  @relation()
+  categoryGroupNameId String?
 
   @@index([id, name, slug])
+}
+
+model CategoryGroupName {
+  id    String  @id @default(uuid())
+  slug  String? @unique
+  order Int?
+  name  String  @unique
+
+  Category Category[]
 }
 
 model Tag {
