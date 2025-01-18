@@ -18,6 +18,8 @@ import {
   AdminDeleteReviewsSchema,
   AdminGetAllAdminNoticesInput,
   AdminGetAllAdminNoticesSchema,
+  AdminGetAllTestimonialsInput,
+  AdminGetAllTestimonialsSchema,
   AdminGetBusinessByIdInput,
   AdminGetBusinessByIdSchema,
   AdminGetUserByIdInput,
@@ -1885,7 +1887,7 @@ export const adminManagePincodes = async (
 
 export const adminGetAllTestimonials = async (
   _: unknown,
-  args: unknown,
+  args: AdminGetAllTestimonialsInput,
   context: any
 ) => {
   if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
@@ -1899,9 +1901,43 @@ export const adminGetAllTestimonials = async (
   if (!admin) {
     throw new Error("Unauthorized access");
   }
-  const testimonials = await prisma.testimonial.findMany({});
 
-  return testimonials;
+  const validatedData = AdminGetAllTestimonialsSchema.parse(args);
+  if (!validatedData) return;
+
+  let sort = validatedData.sortBy;
+  sort = (sort === "alphabetical" ? "name" : sort) as
+    | "alphabetical"
+    | "createdAt"
+    | "updatedAt";
+
+  const skip = (validatedData?.page - 1) * validatedData?.limit;
+
+  const [testimonials, total] = await Promise.all([
+    await prisma.testimonial.findMany({
+      where: {
+        type: validatedData.type,
+      },
+      skip,
+      take: validatedData.limit,
+      orderBy: { [sort]: validatedData.sortOrder },
+    }),
+    await prisma.testimonial.count({
+      where: {
+        type: validatedData.type || undefined,
+      },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / validatedData.limit);
+
+  return {
+    testimonials,
+    total,
+    page: validatedData.page,
+    limit: validatedData.limit,
+    totalPages,
+  };
 };
 
 export const adminManageTestimonials = async (

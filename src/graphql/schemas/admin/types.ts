@@ -57,6 +57,14 @@ export const typeDefs = gql`
     totalPages: Int
   }
 
+  type AllTestimonialsResult {
+    Testimonials: [Testimonial]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+
   type AllAdminNoticesResult {
     notices: [AdminNotice]
     total: Int
@@ -147,7 +155,13 @@ export const typeDefs = gql`
 
     adminGetAllPincodes: [Pincode]
 
-    adminGetAllTestimonials: [Testimonial]
+    adminGetAllTestimonials(
+      type: AllTestimonialType
+      page: Int = 1
+      limit: Int = 10
+      sortBy: SortByEnum = createdAt
+      sortOrder: OrderEnum = desc
+    ): AllTestimonialsResult
 
     adminGetAllAdminNotices(
       type: AdminNoticeType
