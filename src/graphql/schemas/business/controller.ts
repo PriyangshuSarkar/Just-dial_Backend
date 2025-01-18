@@ -274,6 +274,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
             },
           },
         },
+        take: 20,
       },
 
       feedbacks: {
@@ -286,6 +287,7 @@ export const businessMe = async (_: unknown, args: unknown, context: any) => {
         include: {
           business: true,
         },
+        take: 20,
       },
       subscription: {
         where: {
@@ -683,6 +685,7 @@ export const verifyBusinessPrimaryContact = async (
               orderBy: {
                 createdAt: "desc",
               },
+              take: 20,
             },
             subscription: {
               where: {
@@ -827,8 +830,9 @@ export const businessLogin = async (_: unknown, args: BusinessLoginInput) => {
           deletedAt: null,
         },
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
         },
+        take: 20,
       },
       subscription: {
         where: {
@@ -1228,8 +1232,9 @@ export const changeBusinessPassword = async (
             deletedAt: null,
           },
           orderBy: {
-            createdAt: "desc",
+            updatedAt: "desc",
           },
+          take: 20,
         },
         subscription: {
           where: {
@@ -1564,8 +1569,9 @@ export const updateBusinessDetails = async (
           deletedAt: null,
         },
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
         },
+        take: 20,
       },
       subscription: {
         where: {
@@ -1724,8 +1730,9 @@ export const deleteBusinessAccount = async (
             deletedAt: null,
           },
           orderBy: {
-            createdAt: "desc",
+            updatedAt: "desc",
           },
+          take: 20,
         },
         subscription: {
           where: {

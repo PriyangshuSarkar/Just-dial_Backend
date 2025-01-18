@@ -30,6 +30,16 @@ export type AdminSearchAllReviewsInput = infer_<
   typeof AdminSearchAllReviewsSchema
 >;
 
+export const AdminDeleteReviewsSchema = object({
+  reviews: object({
+    reviewId: string().optional(),
+    toDelete: boolean().optional().default(false),
+  })
+    .array()
+    .optional(),
+}).optional();
+export type AdminDeleteReviewsInput = infer_<typeof AdminDeleteReviewsSchema>;
+
 export const AdminSearchAllFeedbacksSchema = object({
   search: string().toLowerCase().optional(),
   sortBy: enum_(["rating", "createdAt"]).default("createdAt"),
@@ -301,6 +311,19 @@ export const AdminManagePincodesSchema = object({
     .optional(),
 }).optional();
 export type AdminManagePincodesInput = infer_<typeof AdminManagePincodesSchema>;
+
+export const AdminGetAllTestimonialsSchema = object({
+  page: number().int().positive().default(1),
+  limit: number().int().positive().default(10),
+  type: enum_(["REVIEW", "FEEDBACK"]).optional(),
+  sortBy: enum_(["alphabetical", "createdAt", "updatedAt"]).default(
+    "createdAt"
+  ),
+  sortOrder: enum_(["asc", "desc"]).default("desc"),
+}).optional();
+export type AdminGetAllTestimonialsInput = infer_<
+  typeof AdminGetAllTestimonialsSchema
+>;
 
 export const AdminManageTestimonialsSchema = object({
   testimonials: object({

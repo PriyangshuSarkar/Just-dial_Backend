@@ -225,6 +225,7 @@ const buildSelectObject = (
       businessId: true,
       userId: true,
     },
+    take: 20,
   },
 });
 

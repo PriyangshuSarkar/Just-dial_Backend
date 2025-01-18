@@ -57,6 +57,14 @@ export const typeDefs = gql`
     totalPages: Int
   }
 
+  type AllTestimonialsResult {
+    Testimonials: [Testimonial]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+
   type AllAdminNoticesResult {
     notices: [AdminNotice]
     total: Int
@@ -147,7 +155,13 @@ export const typeDefs = gql`
 
     adminGetAllPincodes: [Pincode]
 
-    adminGetAllTestimonials: [Testimonial]
+    adminGetAllTestimonials(
+      type: AllTestimonialType
+      page: Int = 1
+      limit: Int = 10
+      sortBy: SortByEnum = createdAt
+      sortOrder: OrderEnum = desc
+    ): AllTestimonialsResult
 
     adminGetAllAdminNotices(
       type: AdminNoticeType
@@ -165,6 +179,8 @@ export const typeDefs = gql`
     adminBlockBusinesses(businesses: [BusinessesBlock]): [Business]
 
     adminVerifyBusinesses(businesses: [BusinessesVerify]): [Business]
+
+    adminDeleteReviews(reviews: [ReviewDelete]): [Review]
 
     adminManageUserSubscriptions(
       id: ID
@@ -226,6 +242,11 @@ export const typeDefs = gql`
     userSlug: ID
     userId: ID
     block: Boolean
+  }
+
+  input ReviewDelete {
+    reviewId: ID
+    toDelete: Boolean
   }
 
   input LanguageInput {

@@ -235,6 +235,7 @@ export const getAllBusinesses = async () => {
             },
           },
         },
+        take: 20,
       },
     },
   });
@@ -473,7 +474,7 @@ export const getBusinessById = async (
             },
           },
         },
-        take: 10,
+        take: 20,
       },
       price: true,
     },
