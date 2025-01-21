@@ -11,6 +11,8 @@ import {
   getAllMobileAddBanners,
   getAllBusinesses,
   getAllGlobalAdminNotice,
+  getAllUserSubscriptions,
+  getAllBusinessSubscriptions,
 } from "./controller";
 import { search } from "./searchController";
 
@@ -42,4 +44,8 @@ export const Query = {
   getAllMobileAddBanners,
 
   getAllGlobalAdminNotice,
+
+  getAllUserSubscriptions,
+
+  getAllBusinessSubscriptions,
 };
