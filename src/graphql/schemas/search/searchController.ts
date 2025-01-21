@@ -260,6 +260,14 @@ const buildBusinessDetailsSelect = (location: LocationPriorityInput) => ({
       name: true,
       slug: true,
       categoryImage: true,
+      categoryGroupNameId: true,
+      groupName: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+        },
+      },
     },
   },
   // Add other business detail selects...
@@ -407,6 +415,22 @@ const getCategoriesForSearch = async (filters: FilterInput) => {
             { slug: filters.categorySlug, ...ACTIVE_RECORD },
           ],
         },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          order: true,
+          description: true,
+          categoryImage: true,
+          categoryGroupNameId: true,
+          groupName: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+            },
+          },
+        },
       })
       .then((category) => (category ? [category] : null));
   } else {
@@ -422,6 +446,22 @@ const getCategoriesForSearch = async (filters: FilterInput) => {
             ...ACTIVE_RECORD,
           },
         ],
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        order: true,
+        description: true,
+        categoryImage: true,
+        categoryGroupNameId: true,
+        groupName: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+          },
+        },
       },
     });
   }

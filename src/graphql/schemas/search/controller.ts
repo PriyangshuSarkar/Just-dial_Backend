@@ -198,6 +198,14 @@ export const getAllBusinesses = async () => {
               slug: true,
               description: true,
               categoryImage: true,
+              categoryGroupNameId: true,
+              groupName: {
+                select: {
+                  id: true,
+                  slug: true,
+                  name: true,
+                },
+              },
             },
           },
           tags: {
@@ -437,6 +445,14 @@ export const getBusinessById = async (
               slug: true,
               description: true,
               categoryImage: true,
+              categoryGroupNameId: true,
+              groupName: {
+                select: {
+                  id: true,
+                  slug: true,
+                  name: true,
+                },
+              },
             },
           },
           tags: {
@@ -570,6 +586,7 @@ export const allCategories = async () => {
       slug: true,
       description: true,
       categoryImage: true,
+      categoryGroupNameId: true,
       groupName: {
         select: {
           id: true,
