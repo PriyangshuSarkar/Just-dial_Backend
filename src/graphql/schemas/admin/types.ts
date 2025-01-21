@@ -235,7 +235,7 @@ export const typeDefs = gql`
     adminManageAdminNotices(adminNotices: [AdminNoticeInput]): [AdminNotice]
 
     adminManageBusinessAdBannerImage(
-      businessMobileAdBannerImages: [AdminBusinessAdBannerImageInput]
+      businessAdBannerImages: [AdminBusinessAdBannerImageInput]
     ): [AdminBusinessAdBannerImage]
 
     adminManageBusinessMobileAdBannerImage(
