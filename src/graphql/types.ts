@@ -370,8 +370,9 @@ export const typeDefs = gql`
     deletedAt: Date
     categoryImage: String
     updatedAt: Date
-    businessesDetails: [BusinessDetails]
     groupName: CategoryGroupName
+    businessesDetails: [BusinessDetails]
+    categoryGroupNameId: ID
     message: String
   }
 

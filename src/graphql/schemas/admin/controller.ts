@@ -233,6 +233,33 @@ export const adminAllUsers = async (
         contacts: true,
         subscription: true,
         addresses: true,
+        reviews: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            business: true,
+          },
+          take: 20,
+        },
+        feedbacks: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            business: true,
+          },
+          take: 20,
+        },
+        testimonials: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            business: true,
+          },
+          take: 20,
+        },
       },
       skip,
       take: validatedData.limit,
@@ -600,9 +627,21 @@ export const adminAllBusinesses = async (
             categories: true,
             tags: true,
             coverImages: true,
-            adBannerImages: true,
-            mobileAdBannerImages: true,
+            adBannerImages: {
+              include: {
+                adminBusinessAdBannerImage: true,
+              },
+            },
+            mobileAdBannerImages: {
+              include: {
+                adminBusinessMobileAdBannerImage: true,
+              },
+            },
             websites: true,
+            operatingHours: true,
+            languages: true,
+            proficiencies: true,
+            courts: true,
           },
         },
       },
@@ -657,34 +696,12 @@ export const adminGetBusinessById = async (
     include: {
       primaryContacts: true,
       subscription: true,
-      businessDetails: {
-        include: {
-          addresses: true,
-          categories: true,
-          tags: true,
-          coverImages: true,
-          adBannerImages: true,
-          mobileAdBannerImages: true,
-          websites: true,
-          operatingHours: true,
-          languages: true,
-          proficiencies: true,
-          courts: true,
-        },
-      },
       reviews: {
         where: {
           deletedAt: null,
         },
         include: {
-          user: {
-            include: {
-              contacts: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
+          business: true,
         },
         take: 20,
       },
@@ -692,8 +709,8 @@ export const adminGetBusinessById = async (
         where: {
           deletedAt: null,
         },
-        orderBy: {
-          createdAt: "desc",
+        include: {
+          business: true,
         },
         take: 20,
       },
@@ -701,13 +718,35 @@ export const adminGetBusinessById = async (
         where: {
           deletedAt: null,
         },
-        orderBy: {
-          createdAt: "desc",
+        include: {
+          business: true,
         },
-        take: 10,
+        take: 20,
       },
-      businessSupportingDocuments: true,
       adminNotice: true,
+      businessDetails: {
+        include: {
+          addresses: true,
+          categories: true,
+          tags: true,
+          coverImages: true,
+          adBannerImages: {
+            include: {
+              adminBusinessAdBannerImage: true,
+            },
+          },
+          mobileAdBannerImages: {
+            include: {
+              adminBusinessMobileAdBannerImage: true,
+            },
+          },
+          websites: true,
+          operatingHours: true,
+          languages: true,
+          proficiencies: true,
+          courts: true,
+        },
+      },
     },
   });
 
