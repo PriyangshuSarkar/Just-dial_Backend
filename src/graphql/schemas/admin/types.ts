@@ -114,7 +114,14 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: AllBusinessesSortBy = createdAt
       sortOrder: SortOrder = desc
-      hasAdminNotice: Boolean = false
+      hasReviews: Boolean
+      hasFeedbacks: Boolean
+      hasBusinessAdBanners: Boolean
+      hasBusinessMobileAdBanners: Boolean
+      hasAdminNotice: Boolean
+      hasAdminBusinessAdBanners: Boolean
+      hasAdminBusinessMobileAdBanners: Boolean
+      hasTestimonials: Boolean
     ): AllBusinessesResult
 
     adminGetBusinessById(businessId: ID, businessSlug: ID): Business

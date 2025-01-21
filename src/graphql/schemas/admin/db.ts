@@ -118,7 +118,14 @@ export const AdminAllBusinessesSchema = object({
     "reviewCount",
   ]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
+  hasReviews: boolean().optional(),
+  hasFeedbacks: boolean().optional(),
+  hasBusinessAdBanners: boolean().optional(),
+  hasBusinessMobileAdBanners: boolean().optional(),
   hasAdminNotice: boolean().optional(),
+  hasAdminBusinessAdBanners: boolean().optional(),
+  hasAdminBusinessMobileAdBanners: boolean().optional(),
+  hasTestimonials: boolean().optional(),
 }).optional();
 export type AdminAllBusinessesInput = infer_<typeof AdminAllBusinessesSchema>;
 

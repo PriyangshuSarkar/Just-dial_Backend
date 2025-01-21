@@ -162,7 +162,7 @@ export const adminAllUsers = async (
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
-  const where: any = {};
+  const where: Prisma.UserWhereInput = {};
 
   if (validatedData.name) {
     where.name = { contains: validatedData.name, mode: "insensitive" };
@@ -172,15 +172,24 @@ export const adminAllUsers = async (
     where.contacts = {
       some: {
         OR: [
-          validatedData.email && {
-            type: "EMAIL",
-            value: { contains: validatedData.email, mode: "insensitive" },
-          },
-          validatedData.phone && {
-            type: "PHONE",
-            value: { contains: validatedData.phone },
-          },
-        ].filter(Boolean),
+          validatedData.email
+            ? {
+                type: "EMAIL",
+                value: { contains: validatedData.email, mode: "insensitive" },
+                deleteAt: null,
+              }
+            : null,
+          validatedData.phone
+            ? {
+                type: "PHONE",
+                value: { contains: validatedData.phone },
+                deleteAt: null,
+              }
+            : null,
+        ].filter(
+          (condition): condition is Exclude<typeof condition, null> =>
+            condition !== null
+        ) as Prisma.UserContactWhereInput[],
       },
     };
   }
@@ -333,7 +342,7 @@ export const adminAllBusinesses = async (
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
-  const where: any = {};
+  const where: Prisma.BusinessWhereInput = {};
 
   if (validatedData.name) {
     where.name = { contains: validatedData.name, mode: "insensitive" };
@@ -343,17 +352,24 @@ export const adminAllBusinesses = async (
     where.primaryContacts = {
       some: {
         OR: [
-          validatedData.email && {
-            type: "EMAIL",
-            value: { contains: validatedData.email, mode: "insensitive" },
-            deletedAt: null,
-          },
-          validatedData.phone && {
-            type: "PHONE",
-            value: { contains: validatedData.phone },
-            deletedAt: null,
-          },
-        ].filter(Boolean),
+          validatedData.email
+            ? {
+                type: "EMAIL",
+                value: { contains: validatedData.email, mode: "insensitive" },
+                deletedAt: null,
+              }
+            : null,
+          validatedData.phone
+            ? {
+                type: "PHONE",
+                value: { contains: validatedData.phone },
+                deletedAt: null,
+              }
+            : null,
+        ].filter(
+          (condition): condition is Exclude<typeof condition, null> =>
+            condition !== null
+        ) as Prisma.BusinessPrimaryContactWhereInput[],
       },
     };
   }
@@ -376,7 +392,12 @@ export const adminAllBusinesses = async (
 
   if (validatedData.categoryId) {
     where.businessDetails = {
-      categoryId: validatedData.categoryId,
+      categories: {
+        some: {
+          id: validatedData.categoryId,
+          deletedAt: null,
+        },
+      },
     };
   }
 
@@ -406,13 +427,136 @@ export const adminAllBusinesses = async (
     validatedData.sortBy = "name" as "alphabetical" | "createdAt" | "updatedAt";
   }
 
-  if (validatedData.hasAdminNotice === true) {
-    where.adminNotice = {
-      deletedAt: null,
-      expiresAt: {
-        gt: new Date(), // Filters for notices that have not expired
-      },
+  if (validatedData.hasAdminNotice !== undefined) {
+    where.adminNotice = validatedData.hasAdminNotice
+      ? {
+          deletedAt: null,
+          expiresAt: {
+            gt: new Date(), // Filters for notices that have not expired
+          },
+        }
+      : {
+          NOT: {
+            deletedAt: null,
+            expiresAt: {
+              gt: new Date(), // Ensures no valid notices exist
+            },
+          },
+        };
+  }
+
+  if (validatedData.hasReviews !== undefined) {
+    where.reviews = validatedData.hasReviews
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
+  }
+
+  if (validatedData.hasFeedbacks !== undefined) {
+    where.feedbacks = validatedData.hasFeedbacks
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
+  }
+
+  if (validatedData.hasBusinessAdBanners !== undefined) {
+    where.businessDetails = {
+      adBannerImages: validatedData.hasBusinessAdBanners
+        ? {
+            some: {
+              deletedAt: null,
+            },
+          }
+        : {
+            none: {
+              deletedAt: null,
+            },
+          },
     };
+  }
+
+  if (validatedData.hasBusinessMobileAdBanners !== undefined) {
+    where.businessDetails = {
+      mobileAdBannerImages: validatedData.hasBusinessMobileAdBanners
+        ? {
+            some: {
+              deletedAt: null,
+            },
+          }
+        : {
+            none: {
+              deletedAt: null,
+            },
+          },
+    };
+  }
+
+  if (validatedData.hasAdminBusinessAdBanners !== undefined) {
+    where.businessDetails = {
+      adBannerImages: validatedData.hasAdminBusinessAdBanners
+        ? {
+            some: {
+              adminBusinessAdBannerImage: {
+                isNot: null, // Check if a related AdminBusinessAdBannerImage exists
+              },
+            },
+          }
+        : {
+            none: {
+              adminBusinessAdBannerImage: {
+                isNot: null, // Ensure no related AdminBusinessAdBannerImage exists
+              },
+            },
+          },
+    };
+  }
+
+  if (validatedData.hasAdminBusinessMobileAdBanners !== undefined) {
+    where.businessDetails = {
+      mobileAdBannerImages: validatedData.hasAdminBusinessMobileAdBanners
+        ? {
+            some: {
+              adminBusinessMobileAdBannerImage: {
+                isNot: null, // Check if a related AdminBusinessMobileAdBannerImage exists
+              },
+            },
+          }
+        : {
+            none: {
+              adminBusinessMobileAdBannerImage: {
+                isNot: null, // Ensure no related AdminBusinessMobileAdBannerImage exists
+              },
+            },
+          },
+    };
+  }
+
+  if (validatedData.hasTestimonials !== undefined) {
+    where.testimonials = validatedData.hasTestimonials
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
   }
 
   // Execute query
