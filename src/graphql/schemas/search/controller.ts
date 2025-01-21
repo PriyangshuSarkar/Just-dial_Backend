@@ -821,7 +821,22 @@ export const getAllAddBanners = async () => {
       id: true,
       order: true,
       businessAdBannerImage: {
-        select: { id: true, url: true, order: true },
+        select: {
+          id: true,
+          url: true,
+          order: true,
+          businessDetails: {
+            select: {
+              business: {
+                select: {
+                  id: true,
+                  slug: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       },
     },
     orderBy: {
@@ -847,7 +862,22 @@ export const getAllMobileAddBanners = async () => {
       id: true,
       order: true,
       businessMobileAdBannerImage: {
-        select: { id: true, url: true, order: true },
+        select: {
+          id: true,
+          url: true,
+          order: true,
+          businessDetails: {
+            select: {
+              business: {
+                select: {
+                  id: true,
+                  slug: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       },
     },
     orderBy: {
