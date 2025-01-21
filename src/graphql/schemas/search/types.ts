@@ -86,5 +86,9 @@ export const typeDefs = gql`
     getAllMobileAddBanners: [AdminBusinessMobileAdBannerImage]
 
     getAllGlobalAdminNotice: [AdminNotice]
+
+    getAllUserSubscriptions: [UserSubscription]
+
+    getAllBusinessSubscriptions: [BusinessSubscription]
   }
 `;
