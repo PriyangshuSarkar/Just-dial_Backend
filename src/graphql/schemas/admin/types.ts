@@ -235,11 +235,11 @@ export const typeDefs = gql`
     adminManageAdminNotices(adminNotices: [AdminNoticeInput]): [AdminNotice]
 
     adminManageBusinessAdBannerImage(
-      businessMobileAdBannerImages: [BusinessAdBannerImageInput]
+      businessMobileAdBannerImages: [AdminBusinessAdBannerImageInput]
     ): [AdminBusinessAdBannerImage]
 
     adminManageBusinessMobileAdBannerImage(
-      businessMobileAdBannerImages: [businessMobileAdBannerImageInput]
+      businessMobileAdBannerImages: [AdminBusinessMobileAdBannerImageInput]
     ): [AdminBusinessMobileAdBannerImage]
   }
 
@@ -351,13 +351,13 @@ export const typeDefs = gql`
     expiresAt: Date
   }
 
-  input BusinessAdBannerImageInput {
+  input AdminBusinessAdBannerImageInput {
     id: ID
     order: Int
     toDelete: Boolean
   }
 
-  input businessMobileAdBannerImageInput {
+  input AdminBusinessMobileAdBannerImageInput {
     id: ID
     order: Int
     toDelete: Boolean
