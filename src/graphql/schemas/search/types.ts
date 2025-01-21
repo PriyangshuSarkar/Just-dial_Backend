@@ -81,9 +81,9 @@ export const typeDefs = gql`
 
     location(search: String): LocationResult
 
-    getAllAddBanners: [BusinessAdBannerImage]
+    getAllAddBanners: [AdminBusinessAdBannerImage]
 
-    getAllMobileAddBanners: [BusinessMobileAdBannerImage]
+    getAllMobileAddBanners: [AdminBusinessMobileAdBannerImage]
 
     getAllGlobalAdminNotice: [AdminNotice]
   }

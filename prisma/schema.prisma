@@ -250,29 +250,49 @@ model BusinessCoverImage {
 }
 
 model BusinessAdBannerImage {
-  id                String           @id @default(uuid())
-  url               String
-  order             Int?
-  createdAt         DateTime         @default(now())
-  deletedAt         DateTime?
-  updatedAt         DateTime         @updatedAt
-  businessDetailsId String?
-  businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+  id                         String                      @id @default(uuid())
+  url                        String
+  order                      Int?
+  createdAt                  DateTime                    @default(now())
+  deletedAt                  DateTime?
+  updatedAt                  DateTime                    @updatedAt
+  businessDetailsId          String?
+  businessDetails            BusinessDetails?            @relation(fields: [businessDetailsId], references: [id])
+  adminBusinessAdBannerImage AdminBusinessAdBannerImage?
 
   @@index([businessDetailsId, url])
 }
 
+model AdminBusinessAdBannerImage {
+  id                    String                @id @default(uuid())
+  order                 Int?
+  businessAdBannerImage BusinessAdBannerImage @relation(fields: [id], references: [id])
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  deletedAt             DateTime?
+}
+
 model BusinessMobileAdBannerImage {
-  id                String           @id @default(uuid())
-  url               String
-  order             Int?
-  createdAt         DateTime         @default(now())
-  deletedAt         DateTime?
-  updatedAt         DateTime         @updatedAt
-  businessDetailsId String?
-  businessDetails   BusinessDetails? @relation(fields: [businessDetailsId], references: [id])
+  id                               String                            @id @default(uuid())
+  url                              String
+  order                            Int?
+  createdAt                        DateTime                          @default(now())
+  deletedAt                        DateTime?
+  updatedAt                        DateTime                          @updatedAt
+  businessDetailsId                String?
+  businessDetails                  BusinessDetails?                  @relation(fields: [businessDetailsId], references: [id])
+  adminBusinessMobileAdBannerImage AdminBusinessMobileAdBannerImage?
 
   @@index([businessDetailsId, url])
+}
+
+model AdminBusinessMobileAdBannerImage {
+  id                          String                      @id @default(uuid())
+  order                       Int?
+  businessMobileAdBannerImage BusinessMobileAdBannerImage @relation(fields: [id], references: [id])
+  createdAt                   DateTime                    @default(now())
+  updatedAt                   DateTime                    @updatedAt
+  deletedAt                   DateTime?
 }
 
 model BusinessWebsite {

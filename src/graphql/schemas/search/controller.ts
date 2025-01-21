@@ -796,25 +796,19 @@ export const getAllAddBanners = async () => {
 
   if (cachedResult) return cachedResult;
 
-  const allAdBanners = prisma.businessAdBannerImage.findMany({
+  const allAdBanners = prisma.adminBusinessAdBannerImage.findMany({
     where: {
       deletedAt: null,
     },
     select: {
       id: true,
-      url: true,
       order: true,
-      businessDetails: {
-        select: {
-          business: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-        },
+      businessAdBannerImage: {
+        select: { id: true, url: true, order: true },
       },
+    },
+    orderBy: {
+      order: "asc",
     },
   });
 
@@ -828,25 +822,19 @@ export const getAllMobileAddBanners = async () => {
 
   if (cachedResult) return cachedResult;
 
-  const allMobileAdBanners = prisma.businessMobileAdBannerImage.findMany({
+  const allMobileAdBanners = prisma.adminBusinessMobileAdBannerImage.findMany({
     where: {
       deletedAt: null,
     },
     select: {
       id: true,
-      url: true,
       order: true,
-      businessDetails: {
-        select: {
-          business: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-        },
+      businessMobileAdBannerImage: {
+        select: { id: true, url: true, order: true },
       },
+    },
+    orderBy: {
+      order: "asc",
     },
   });
 

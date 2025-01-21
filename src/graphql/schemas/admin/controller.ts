@@ -28,6 +28,10 @@ import {
   AdminLoginSchema,
   AdminManageAdminNoticesInput,
   AdminManageAdminNoticesSchema,
+  AdminManageBusinessAdBannerImageInput,
+  AdminManageBusinessAdBannerImageSchema,
+  AdminManageBusinessMobileAdBannerImageInput,
+  AdminManageBusinessMobileAdBannerImageSchema,
   AdminManageBusinessSubscriptionsInput,
   AdminManageBusinessSubscriptionsSchema,
   AdminManageCategoriesInput,
@@ -158,7 +162,7 @@ export const adminAllUsers = async (
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
-  const where: any = {};
+  const where: Prisma.UserWhereInput = {};
 
   if (validatedData.name) {
     where.name = { contains: validatedData.name, mode: "insensitive" };
@@ -168,15 +172,24 @@ export const adminAllUsers = async (
     where.contacts = {
       some: {
         OR: [
-          validatedData.email && {
-            type: "EMAIL",
-            value: { contains: validatedData.email, mode: "insensitive" },
-          },
-          validatedData.phone && {
-            type: "PHONE",
-            value: { contains: validatedData.phone },
-          },
-        ].filter(Boolean),
+          validatedData.email
+            ? {
+                type: "EMAIL",
+                value: { contains: validatedData.email, mode: "insensitive" },
+                deleteAt: null,
+              }
+            : null,
+          validatedData.phone
+            ? {
+                type: "PHONE",
+                value: { contains: validatedData.phone },
+                deleteAt: null,
+              }
+            : null,
+        ].filter(
+          (condition): condition is Exclude<typeof condition, null> =>
+            condition !== null
+        ) as Prisma.UserContactWhereInput[],
       },
     };
   }
@@ -329,7 +342,7 @@ export const adminAllBusinesses = async (
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
-  const where: any = {};
+  const where: Prisma.BusinessWhereInput = {};
 
   if (validatedData.name) {
     where.name = { contains: validatedData.name, mode: "insensitive" };
@@ -339,17 +352,24 @@ export const adminAllBusinesses = async (
     where.primaryContacts = {
       some: {
         OR: [
-          validatedData.email && {
-            type: "EMAIL",
-            value: { contains: validatedData.email, mode: "insensitive" },
-            deletedAt: null,
-          },
-          validatedData.phone && {
-            type: "PHONE",
-            value: { contains: validatedData.phone },
-            deletedAt: null,
-          },
-        ].filter(Boolean),
+          validatedData.email
+            ? {
+                type: "EMAIL",
+                value: { contains: validatedData.email, mode: "insensitive" },
+                deletedAt: null,
+              }
+            : null,
+          validatedData.phone
+            ? {
+                type: "PHONE",
+                value: { contains: validatedData.phone },
+                deletedAt: null,
+              }
+            : null,
+        ].filter(
+          (condition): condition is Exclude<typeof condition, null> =>
+            condition !== null
+        ) as Prisma.BusinessPrimaryContactWhereInput[],
       },
     };
   }
@@ -372,7 +392,12 @@ export const adminAllBusinesses = async (
 
   if (validatedData.categoryId) {
     where.businessDetails = {
-      categoryId: validatedData.categoryId,
+      categories: {
+        some: {
+          id: validatedData.categoryId,
+          deletedAt: null,
+        },
+      },
     };
   }
 
@@ -402,13 +427,136 @@ export const adminAllBusinesses = async (
     validatedData.sortBy = "name" as "alphabetical" | "createdAt" | "updatedAt";
   }
 
-  if (validatedData.hasAdminNotice === true) {
-    where.adminNotice = {
-      deletedAt: null,
-      expiresAt: {
-        gt: new Date(), // Filters for notices that have not expired
-      },
+  if (validatedData.hasAdminNotice !== undefined) {
+    where.adminNotice = validatedData.hasAdminNotice
+      ? {
+          deletedAt: null,
+          expiresAt: {
+            gt: new Date(), // Filters for notices that have not expired
+          },
+        }
+      : {
+          NOT: {
+            deletedAt: null,
+            expiresAt: {
+              gt: new Date(), // Ensures no valid notices exist
+            },
+          },
+        };
+  }
+
+  if (validatedData.hasReviews !== undefined) {
+    where.reviews = validatedData.hasReviews
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
+  }
+
+  if (validatedData.hasFeedbacks !== undefined) {
+    where.feedbacks = validatedData.hasFeedbacks
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
+  }
+
+  if (validatedData.hasBusinessAdBanners !== undefined) {
+    where.businessDetails = {
+      adBannerImages: validatedData.hasBusinessAdBanners
+        ? {
+            some: {
+              deletedAt: null,
+            },
+          }
+        : {
+            none: {
+              deletedAt: null,
+            },
+          },
     };
+  }
+
+  if (validatedData.hasBusinessMobileAdBanners !== undefined) {
+    where.businessDetails = {
+      mobileAdBannerImages: validatedData.hasBusinessMobileAdBanners
+        ? {
+            some: {
+              deletedAt: null,
+            },
+          }
+        : {
+            none: {
+              deletedAt: null,
+            },
+          },
+    };
+  }
+
+  if (validatedData.hasAdminBusinessAdBanners !== undefined) {
+    where.businessDetails = {
+      adBannerImages: validatedData.hasAdminBusinessAdBanners
+        ? {
+            some: {
+              adminBusinessAdBannerImage: {
+                isNot: null, // Check if a related AdminBusinessAdBannerImage exists
+              },
+            },
+          }
+        : {
+            none: {
+              adminBusinessAdBannerImage: {
+                isNot: null, // Ensure no related AdminBusinessAdBannerImage exists
+              },
+            },
+          },
+    };
+  }
+
+  if (validatedData.hasAdminBusinessMobileAdBanners !== undefined) {
+    where.businessDetails = {
+      mobileAdBannerImages: validatedData.hasAdminBusinessMobileAdBanners
+        ? {
+            some: {
+              adminBusinessMobileAdBannerImage: {
+                isNot: null, // Check if a related AdminBusinessMobileAdBannerImage exists
+              },
+            },
+          }
+        : {
+            none: {
+              adminBusinessMobileAdBannerImage: {
+                isNot: null, // Ensure no related AdminBusinessMobileAdBannerImage exists
+              },
+            },
+          },
+    };
+  }
+
+  if (validatedData.hasTestimonials !== undefined) {
+    where.testimonials = validatedData.hasTestimonials
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
   }
 
   // Execute query
@@ -1409,6 +1557,10 @@ export const adminManageCategories = async (
                   },
                   create: {
                     name: category.groupName,
+                    slug: slugify(category.groupName, {
+                      lower: true,
+                      strict: true,
+                    }),
                   },
                 },
               }
@@ -2245,6 +2397,137 @@ export const adminManageAdminNotices = async (
           message: "Notice created successfully",
         });
       }
+    }
+  }
+
+  return results;
+};
+
+export const adminManageBusinessAdBannerImage = async (
+  _: unknown,
+  args: AdminManageBusinessAdBannerImageInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminManageBusinessAdBannerImageSchema.parse(args);
+
+  if (!validatedData?.businessAdBannerImages) return;
+
+  const results = [];
+
+  for (const businessAdBannerImage of validatedData.businessAdBannerImages) {
+    if (businessAdBannerImage.toDelete) {
+      const existingBusinessAdBannerImage =
+        await prisma.adminBusinessAdBannerImage.findFirst({
+          where: {
+            id: businessAdBannerImage.id,
+          },
+        });
+
+      if (!existingBusinessAdBannerImage) {
+        results.push({ message: "Image not found for deletion" });
+      } else {
+        const createdAdminBusinessAdBannerImage =
+          await prisma.adminBusinessAdBannerImage.delete({
+            where: {
+              id: existingBusinessAdBannerImage.id,
+            },
+          });
+
+        if (createdAdminBusinessAdBannerImage) {
+          results.push({ message: "Image deleted successfully" });
+        }
+      }
+    } else {
+      const createdAdminBusinessAdBannerImage =
+        await prisma.adminBusinessAdBannerImage.create({
+          data: {
+            businessAdBannerImage: {
+              connect: {
+                id: businessAdBannerImage.id,
+              },
+            },
+            order: businessAdBannerImage.order,
+          },
+        });
+      results.push(createdAdminBusinessAdBannerImage);
+    }
+  }
+
+  return results;
+};
+
+export const adminManageBusinessMobileAdBannerImage = async (
+  _: unknown,
+  args: AdminManageBusinessMobileAdBannerImageInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData =
+    AdminManageBusinessMobileAdBannerImageSchema.parse(args);
+
+  if (!validatedData?.businessMobileAdBannerImages) return;
+
+  const results = [];
+
+  for (const businessMobileAdBannerImage of validatedData.businessMobileAdBannerImages) {
+    if (businessMobileAdBannerImage.toDelete) {
+      const existingBusinessMobileAdBannerImage =
+        await prisma.adminBusinessMobileAdBannerImage.findFirst({
+          where: {
+            id: businessMobileAdBannerImage.id,
+          },
+        });
+
+      if (!existingBusinessMobileAdBannerImage) {
+        results.push({ message: "Image not found for deletion" });
+      } else {
+        const createdAdminBusinessMobileAdBannerImage =
+          await prisma.adminBusinessMobileAdBannerImage.delete({
+            where: {
+              id: existingBusinessMobileAdBannerImage.id,
+            },
+          });
+
+        if (createdAdminBusinessMobileAdBannerImage) {
+          results.push({ message: "Image deleted successfully" });
+        }
+      }
+    } else {
+      const createdAdminBusinessMobileAdBannerImage =
+        await prisma.adminBusinessMobileAdBannerImage.create({
+          data: {
+            businessMobileAdBannerImage: {
+              connect: {
+                id: businessMobileAdBannerImage.id,
+              },
+            },
+            order: businessMobileAdBannerImage.order,
+          },
+        });
+      results.push(createdAdminBusinessMobileAdBannerImage);
     }
   }
 

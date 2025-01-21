@@ -118,7 +118,14 @@ export const AdminAllBusinessesSchema = object({
     "reviewCount",
   ]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
+  hasReviews: boolean().optional(),
+  hasFeedbacks: boolean().optional(),
+  hasBusinessAdBanners: boolean().optional(),
+  hasBusinessMobileAdBanners: boolean().optional(),
   hasAdminNotice: boolean().optional(),
+  hasAdminBusinessAdBanners: boolean().optional(),
+  hasAdminBusinessMobileAdBanners: boolean().optional(),
+  hasTestimonials: boolean().optional(),
 }).optional();
 export type AdminAllBusinessesInput = infer_<typeof AdminAllBusinessesSchema>;
 
@@ -385,4 +392,30 @@ export const AdminManageAdminNoticesSchema = object({
 }).optional();
 export type AdminManageAdminNoticesInput = infer_<
   typeof AdminManageAdminNoticesSchema
+>;
+
+export const AdminManageBusinessAdBannerImageSchema = object({
+  businessAdBannerImages: object({
+    id: string().optional(),
+    order: number().optional(),
+    toDelete: boolean().optional().default(false),
+  })
+    .array()
+    .optional(),
+}).optional();
+export type AdminManageBusinessAdBannerImageInput = infer_<
+  typeof AdminManageBusinessAdBannerImageSchema
+>;
+
+export const AdminManageBusinessMobileAdBannerImageSchema = object({
+  businessMobileAdBannerImages: object({
+    id: string().optional(),
+    order: number().optional(),
+    toDelete: boolean().optional().default(false),
+  })
+    .array()
+    .optional(),
+}).optional();
+export type AdminManageBusinessMobileAdBannerImageInput = infer_<
+  typeof AdminManageBusinessMobileAdBannerImageSchema
 >;

@@ -114,7 +114,14 @@ export const typeDefs = gql`
       limit: Int = 10
       sortBy: AllBusinessesSortBy = createdAt
       sortOrder: SortOrder = desc
-      hasAdminNotice: Boolean = false
+      hasReviews: Boolean
+      hasFeedbacks: Boolean
+      hasBusinessAdBanners: Boolean
+      hasBusinessMobileAdBanners: Boolean
+      hasAdminNotice: Boolean
+      hasAdminBusinessAdBanners: Boolean
+      hasAdminBusinessMobileAdBanners: Boolean
+      hasTestimonials: Boolean
     ): AllBusinessesResult
 
     adminGetBusinessById(businessId: ID, businessSlug: ID): Business
@@ -226,6 +233,14 @@ export const typeDefs = gql`
     adminManageTestimonials(testimonials: [TestimonialInput]): [Testimonial]
 
     adminManageAdminNotices(adminNotices: [AdminNoticeInput]): [AdminNotice]
+
+    adminManageBusinessAdBannerImage(
+      businessMobileAdBannerImages: [BusinessAdBannerImageInput]
+    ): [AdminBusinessAdBannerImage]
+
+    adminManageBusinessMobileAdBannerImage(
+      businessMobileAdBannerImages: [businessMobileAdBannerImageInput]
+    ): [AdminBusinessMobileAdBannerImage]
   }
 
   input BusinessesVerify {
@@ -334,5 +349,17 @@ export const typeDefs = gql`
     note: String
     toDelete: Boolean
     expiresAt: Date
+  }
+
+  input BusinessAdBannerImageInput {
+    id: ID
+    order: Int
+    toDelete: Boolean
+  }
+
+  input businessMobileAdBannerImageInput {
+    id: ID
+    order: Int
+    toDelete: Boolean
   }
 `;
