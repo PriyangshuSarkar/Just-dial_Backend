@@ -28,6 +28,10 @@ import {
   AdminLoginSchema,
   AdminManageAdminNoticesInput,
   AdminManageAdminNoticesSchema,
+  AdminManageBusinessAdBannerImageInput,
+  AdminManageBusinessAdBannerImageSchema,
+  AdminManageBusinessMobileAdBannerImageInput,
+  AdminManageBusinessMobileAdBannerImageSchema,
   AdminManageBusinessSubscriptionsInput,
   AdminManageBusinessSubscriptionsSchema,
   AdminManageCategoriesInput,
@@ -1409,6 +1413,10 @@ export const adminManageCategories = async (
                   },
                   create: {
                     name: category.groupName,
+                    slug: slugify(category.groupName, {
+                      lower: true,
+                      strict: true,
+                    }),
                   },
                 },
               }
@@ -2245,6 +2253,137 @@ export const adminManageAdminNotices = async (
           message: "Notice created successfully",
         });
       }
+    }
+  }
+
+  return results;
+};
+
+export const adminManageBusinessAdBannerImage = async (
+  _: unknown,
+  args: AdminManageBusinessAdBannerImageInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminManageBusinessAdBannerImageSchema.parse(args);
+
+  if (!validatedData?.businessAdBannerImages) return;
+
+  const results = [];
+
+  for (const businessAdBannerImage of validatedData.businessAdBannerImages) {
+    if (businessAdBannerImage.toDelete) {
+      const existingBusinessAdBannerImage =
+        await prisma.adminBusinessAdBannerImage.findFirst({
+          where: {
+            id: businessAdBannerImage.id,
+          },
+        });
+
+      if (!existingBusinessAdBannerImage) {
+        results.push({ message: "Image not found for deletion" });
+      } else {
+        const createdAdminBusinessAdBannerImage =
+          await prisma.adminBusinessAdBannerImage.delete({
+            where: {
+              id: existingBusinessAdBannerImage.id,
+            },
+          });
+
+        if (createdAdminBusinessAdBannerImage) {
+          results.push({ message: "Image deleted successfully" });
+        }
+      }
+    } else {
+      const createdAdminBusinessAdBannerImage =
+        await prisma.adminBusinessAdBannerImage.create({
+          data: {
+            businessAdBannerImage: {
+              connect: {
+                id: businessAdBannerImage.id,
+              },
+            },
+            order: businessAdBannerImage.order,
+          },
+        });
+      results.push(createdAdminBusinessAdBannerImage);
+    }
+  }
+
+  return results;
+};
+
+export const adminManageBusinessMobileAdBannerImage = async (
+  _: unknown,
+  args: AdminManageBusinessMobileAdBannerImageInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData =
+    AdminManageBusinessMobileAdBannerImageSchema.parse(args);
+
+  if (!validatedData?.businessMobileAdBannerImages) return;
+
+  const results = [];
+
+  for (const businessMobileAdBannerImage of validatedData.businessMobileAdBannerImages) {
+    if (businessMobileAdBannerImage.toDelete) {
+      const existingBusinessMobileAdBannerImage =
+        await prisma.adminBusinessMobileAdBannerImage.findFirst({
+          where: {
+            id: businessMobileAdBannerImage.id,
+          },
+        });
+
+      if (!existingBusinessMobileAdBannerImage) {
+        results.push({ message: "Image not found for deletion" });
+      } else {
+        const createdAdminBusinessMobileAdBannerImage =
+          await prisma.adminBusinessMobileAdBannerImage.delete({
+            where: {
+              id: existingBusinessMobileAdBannerImage.id,
+            },
+          });
+
+        if (createdAdminBusinessMobileAdBannerImage) {
+          results.push({ message: "Image deleted successfully" });
+        }
+      }
+    } else {
+      const createdAdminBusinessMobileAdBannerImage =
+        await prisma.adminBusinessMobileAdBannerImage.create({
+          data: {
+            businessMobileAdBannerImage: {
+              connect: {
+                id: businessMobileAdBannerImage.id,
+              },
+            },
+            order: businessMobileAdBannerImage.order,
+          },
+        });
+      results.push(createdAdminBusinessMobileAdBannerImage);
     }
   }
 

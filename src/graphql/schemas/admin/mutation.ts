@@ -3,6 +3,8 @@ import {
   adminBlockUsers,
   adminDeleteReviews,
   adminManageAdminNotices,
+  adminManageBusinessAdBannerImage,
+  adminManageBusinessMobileAdBannerImage,
   adminManageBusinessSubscriptions,
   adminManageCategories,
   adminManageCities,
@@ -52,4 +54,8 @@ export const Mutation = {
   adminManageTestimonials,
 
   adminManageAdminNotices,
+
+  adminManageBusinessAdBannerImage,
+
+  adminManageBusinessMobileAdBannerImage,
 };

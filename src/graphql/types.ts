@@ -226,6 +226,17 @@ export const typeDefs = gql`
     businessDetails: BusinessDetails
     message: String
   }
+
+  type AdminBusinessAdBannerImage {
+    id: ID
+    order: Int
+    businessAdBannerImage: BusinessAdBannerImage
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
+    message: String
+  }
+
   type BusinessMobileAdBannerImage {
     id: ID
     url: String
@@ -235,6 +246,16 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetailsId: ID
     businessDetails: BusinessDetails
+    message: String
+  }
+
+  type AdminBusinessMobileAdBannerImage {
+    id: ID
+    order: Int
+    businessMobileAdBannerImage: BusinessMobileAdBannerImage
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date
     message: String
   }
 

@@ -386,3 +386,29 @@ export const AdminManageAdminNoticesSchema = object({
 export type AdminManageAdminNoticesInput = infer_<
   typeof AdminManageAdminNoticesSchema
 >;
+
+export const AdminManageBusinessAdBannerImageSchema = object({
+  businessAdBannerImages: object({
+    id: string().optional(),
+    order: number().optional(),
+    toDelete: boolean().optional().default(false),
+  })
+    .array()
+    .optional(),
+}).optional();
+export type AdminManageBusinessAdBannerImageInput = infer_<
+  typeof AdminManageBusinessAdBannerImageSchema
+>;
+
+export const AdminManageBusinessMobileAdBannerImageSchema = object({
+  businessMobileAdBannerImages: object({
+    id: string().optional(),
+    order: number().optional(),
+    toDelete: boolean().optional().default(false),
+  })
+    .array()
+    .optional(),
+}).optional();
+export type AdminManageBusinessMobileAdBannerImageInput = infer_<
+  typeof AdminManageBusinessMobileAdBannerImageSchema
+>;
