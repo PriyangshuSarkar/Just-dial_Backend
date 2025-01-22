@@ -19,6 +19,12 @@ export const typeDefs = gql`
     FEEDBACK
   }
 
+  enum AllAdminNoticeType {
+    GLOBAL
+    ALL_USER
+    ALL_BUSINESS
+  }
+
   type SearchResult {
     businesses: [Business]
     categories: [Category]
@@ -85,7 +91,7 @@ export const typeDefs = gql`
 
     getAllMobileAddBanners: [AdminBusinessMobileAdBannerImage]
 
-    getAllGlobalAdminNotice: [AdminNotice]
+    getAllAdminNotices(types: [AllAdminNoticeType]): [AdminNotice]
 
     getAllUserSubscriptions: [UserSubscription]
 

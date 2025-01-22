@@ -1,6 +1,9 @@
+import { AdminNoticeType } from "@prisma/client";
 import { prisma } from "../../../utils/dbConnect";
 import {
   AllTestimonialsInput,
+  GetAllAdminNoticesInput,
+  GetAllAdminNoticesSchema,
   GetBusinessByIdInput,
   GetBusinessByIdSchema,
   LocationInput,
@@ -890,21 +893,71 @@ export const getAllMobileAddBanners = async () => {
   return allMobileAdBanners;
 };
 
-export const getAllGlobalAdminNotice = async () => {
-  const globalAdminNotice = prisma.adminNotice.findMany({
+export const getAllAdminNotices = async (
+  _: unknown,
+  args: GetAllAdminNoticesInput
+) => {
+  const validatedData = GetAllAdminNoticesSchema.parse(args);
+
+  const types: AdminNoticeType[] = validatedData?.types ?? ["GLOBAL"];
+
+  const cacheKey = `adminNotices:${types.join(",")}`;
+  const cachedResult = getCachedResult(cacheKey);
+
+  if (cachedResult) return cachedResult;
+
+  const adminNotices = await prisma.adminNotice.findMany({
     where: {
       deletedAt: null,
-      type: "GLOBAL",
+      type: {
+        in: types, // Allows filtering by the specified types
+      },
       expiresAt: {
         gt: new Date(), // Filters for notices that have not expired
       },
+    },
+    select: {
+      id: true,
+      type: true,
+      note: true,
+      expiresAt: true,
     },
     orderBy: {
       createdAt: "desc",
     },
   });
 
-  return globalAdminNotice;
+  setCachedResult(cacheKey, adminNotices);
+
+  return adminNotices;
+};
+
+export const getAllUserSubscriptions = async () => {
+  const cachedResult = getCachedResult("userSubscriptions");
+
+  if (cachedResult) return cachedResult;
+
+  const userSubscriptions = await prisma.userSubscription.findMany({
+    where: { deletedAt: null },
+  });
+
+  setCachedResult("userSubscriptions", userSubscriptions);
+
+  return userSubscriptions;
+};
+
+export const getAllBusinessSubscriptions = async () => {
+  const cachedResult = getCachedResult("businessSubscriptions");
+
+  if (cachedResult) return cachedResult;
+
+  const businessSubscriptions = await prisma.businessSubscription.findMany({
+    where: { deletedAt: null },
+  });
+
+  setCachedResult("businessSubscriptions", businessSubscriptions);
+
+  return businessSubscriptions;
 };
 
 const getCachedResult = (key: string) => {

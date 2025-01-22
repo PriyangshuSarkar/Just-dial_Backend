@@ -343,6 +343,7 @@ export const typeDefs = gql`
     user: User
     type: AdminNoticeType
     note: String
+    expiresAt: Date
     createdAt: Date
     updatedAt: Date
     deletedAt: Date
