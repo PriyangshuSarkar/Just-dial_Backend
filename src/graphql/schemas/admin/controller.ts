@@ -2209,11 +2209,6 @@ export const adminManageTestimonials = async (
       continue;
     }
 
-    if (!testimonial.order) {
-      results.push({ message: "Testimonial Order is required" });
-      continue;
-    }
-
     // Retrieve the associated review or feedback
     let existingReview;
     if (entityType === "REVIEW") {
@@ -2227,13 +2222,37 @@ export const adminManageTestimonials = async (
     }
 
     if (!existingReview) {
-      results.push({ message: "Associated review/feedback not found." });
-      continue;
+      throw new Error("Associated review/feedback not found.");
     }
 
+    const existingTestimonial = await prisma.testimonial.findFirst({
+      where: {
+        OR: [
+          { id: testimonial.id },
+          { reviewId: testimonial.reviewId },
+          { feedbackId: testimonial.feedbackId },
+        ],
+      },
+    });
+
     // Create or update the testimonial
-    const createdTestimonial = await prisma.testimonial.create({
-      data: {
+    const createdTestimonial = await prisma.testimonial.upsert({
+      where: {
+        id: existingTestimonial?.id || undefined, // Using the found testimonial's id
+      },
+      update: {
+        reviewId: testimonial.reviewId,
+        feedbackId: testimonial.feedbackId,
+        order: testimonial.order,
+        type: entityType,
+        rating: existingReview?.rating,
+        comment: existingReview?.comment,
+        businessId: existingReview?.businessId,
+        userId: existingReview?.userId,
+        createdAt: existingReview?.createdAt,
+        updatedAt: existingReview?.updatedAt,
+      },
+      create: {
         reviewId: testimonial.reviewId,
         feedbackId: testimonial.feedbackId,
         order: testimonial.order,
@@ -2246,6 +2265,7 @@ export const adminManageTestimonials = async (
         updatedAt: existingReview?.updatedAt,
       },
     });
+
     results.push({
       ...createdTestimonial,
       message: "Testimonial created successfully!",

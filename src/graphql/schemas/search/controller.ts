@@ -776,6 +776,9 @@ export const allTestimonials = async (
     where: {
       deletedAt: null,
       type: type,
+      order: {
+        not: null,
+      },
     },
     select: {
       id: true,
