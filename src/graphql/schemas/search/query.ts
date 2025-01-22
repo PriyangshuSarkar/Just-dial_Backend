@@ -10,9 +10,9 @@ import {
   getAllAddBanners,
   getAllMobileAddBanners,
   getAllBusinesses,
-  getAllGlobalAdminNotice,
   getAllUserSubscriptions,
   getAllBusinessSubscriptions,
+  getAllAdminNotices,
 } from "./controller";
 import { search } from "./searchController";
 
@@ -43,7 +43,7 @@ export const Query = {
 
   getAllMobileAddBanners,
 
-  getAllGlobalAdminNotice,
+  getAllAdminNotices,
 
   getAllUserSubscriptions,
 

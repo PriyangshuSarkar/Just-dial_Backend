@@ -70,3 +70,8 @@ export const AllTestimonialsInput = object({
 });
 
 export type AllTestimonialsInput = infer_<typeof AllTestimonialsInput>;
+
+export const GetAllAdminNoticesSchema = object({
+  types: enum_(["GLOBAL", "ALL_USER", "ALL_BUSINESS"]).array().optional(),
+}).optional();
+export type GetAllAdminNoticesInput = infer_<typeof GetAllAdminNoticesSchema>;

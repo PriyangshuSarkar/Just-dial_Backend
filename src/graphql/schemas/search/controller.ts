@@ -1,6 +1,9 @@
+import { AdminNoticeType } from "@prisma/client";
 import { prisma } from "../../../utils/dbConnect";
 import {
   AllTestimonialsInput,
+  GetAllAdminNoticesInput,
+  GetAllAdminNoticesSchema,
   GetBusinessByIdInput,
   GetBusinessByIdSchema,
   LocationInput,
@@ -890,27 +893,43 @@ export const getAllMobileAddBanners = async () => {
   return allMobileAdBanners;
 };
 
-export const getAllGlobalAdminNotice = async () => {
-  const cachedResult = getCachedResult("globalAdminNotices");
+export const getAllAdminNotices = async (
+  _: unknown,
+  args: GetAllAdminNoticesInput
+) => {
+  const validatedData = GetAllAdminNoticesSchema.parse(args);
+
+  const types: AdminNoticeType[] = validatedData?.types ?? ["GLOBAL"];
+
+  const cacheKey = `adminNotices:${types.join(",")}`;
+  const cachedResult = getCachedResult(cacheKey);
 
   if (cachedResult) return cachedResult;
 
-  const globalAdminNotice = await prisma.adminNotice.findMany({
+  const adminNotices = await prisma.adminNotice.findMany({
     where: {
       deletedAt: null,
-      type: "GLOBAL",
+      type: {
+        in: types, // Allows filtering by the specified types
+      },
       expiresAt: {
         gt: new Date(), // Filters for notices that have not expired
       },
+    },
+    select: {
+      id: true,
+      type: true,
+      note: true,
+      expiresAt: true,
     },
     orderBy: {
       createdAt: "desc",
     },
   });
 
-  setCachedResult("globalAdminNotices", globalAdminNotice);
+  setCachedResult(cacheKey, adminNotices);
 
-  return globalAdminNotice;
+  return adminNotices;
 };
 
 export const getAllUserSubscriptions = async () => {
