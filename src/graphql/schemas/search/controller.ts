@@ -891,7 +891,11 @@ export const getAllMobileAddBanners = async () => {
 };
 
 export const getAllGlobalAdminNotice = async () => {
-  const globalAdminNotice = prisma.adminNotice.findMany({
+  const cachedResult = getCachedResult("globalAdminNotices");
+
+  if (cachedResult) return cachedResult;
+
+  const globalAdminNotice = await prisma.adminNotice.findMany({
     where: {
       deletedAt: null,
       type: "GLOBAL",
@@ -904,7 +908,37 @@ export const getAllGlobalAdminNotice = async () => {
     },
   });
 
+  setCachedResult("globalAdminNotices", globalAdminNotice);
+
   return globalAdminNotice;
+};
+
+export const getAllUserSubscriptions = async () => {
+  const cachedResult = getCachedResult("userSubscriptions");
+
+  if (cachedResult) return cachedResult;
+
+  const userSubscriptions = await prisma.userSubscription.findMany({
+    where: { deletedAt: null },
+  });
+
+  setCachedResult("userSubscriptions", userSubscriptions);
+
+  return userSubscriptions;
+};
+
+export const getAllBusinessSubscriptions = async () => {
+  const cachedResult = getCachedResult("businessSubscriptions");
+
+  if (cachedResult) return cachedResult;
+
+  const businessSubscriptions = await prisma.businessSubscription.findMany({
+    where: { deletedAt: null },
+  });
+
+  setCachedResult("businessSubscriptions", businessSubscriptions);
+
+  return businessSubscriptions;
 };
 
 const getCachedResult = (key: string) => {
@@ -930,20 +964,4 @@ const setCachedResult = (key: string, data: any) => {
     data,
     timestamp: Date.now(),
   });
-};
-
-export const getAllUserSubscriptions = async () => {
-  const userSubscriptions = await prisma.userSubscription.findMany({
-    where: { deletedAt: null },
-  });
-
-  return userSubscriptions;
-};
-
-export const getAllBusinessSubscriptions = async () => {
-  const businessSubscriptions = await prisma.businessSubscription.findMany({
-    where: { deletedAt: null },
-  });
-
-  return businessSubscriptions;
 };
