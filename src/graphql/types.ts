@@ -35,6 +35,7 @@ export const typeDefs = gql`
     bookings: [Booking]
     reviews: [Review]
     feedbacks: [Feedback]
+    testimonials: [Testimonial]
     subscription: UserSubscription
     adminNotice: AdminNotice
     message: String
@@ -115,6 +116,7 @@ export const typeDefs = gql`
     bookings: [Booking]
     reviews: [Review]
     feedbacks: [Feedback]
+    testimonials: [Testimonial]
     businessSupportingDocuments: [BusinessSupportingDocuments]
     businessDetails: BusinessDetails
     adminNotice: AdminNotice
@@ -431,6 +433,8 @@ export const typeDefs = gql`
 
   type Testimonial {
     id: ID
+    reviewId: ID
+    feedbackId: ID
     order: Int
     type: TestimonialType
     rating: Float

@@ -238,6 +238,7 @@ export const adminAllUsers = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -247,6 +248,7 @@ export const adminAllUsers = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -256,6 +258,7 @@ export const adminAllUsers = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -315,6 +318,7 @@ export const adminGetUserById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -324,6 +328,7 @@ export const adminGetUserById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -333,6 +338,7 @@ export const adminGetUserById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -598,6 +604,7 @@ export const adminAllBusinesses = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -607,6 +614,7 @@ export const adminAllBusinesses = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -616,6 +624,7 @@ export const adminAllBusinesses = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -701,6 +710,7 @@ export const adminGetBusinessById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -710,6 +720,7 @@ export const adminGetBusinessById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -719,6 +730,7 @@ export const adminGetBusinessById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
