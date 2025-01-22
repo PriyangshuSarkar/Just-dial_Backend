@@ -19,7 +19,7 @@ export const typeDefs = gql`
     FEEDBACK
   }
 
-  enum allTestimonialFilter {
+  enum AllTestimonialFilter {
     USER
     BUSINESS
   }
@@ -86,7 +86,7 @@ export const typeDefs = gql`
 
     allTestimonials(
       type: AllTestimonialType
-      filter: allTestimonialFilter
+      filter: AllTestimonialFilter
       page: Int = 1
       limit: Int = 10
     ): [Testimonial]

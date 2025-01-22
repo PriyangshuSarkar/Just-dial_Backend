@@ -2126,22 +2126,32 @@ export const adminGetAllTestimonials = async (
   const validatedData = AdminGetAllTestimonialsSchema.parse(args);
   if (!validatedData) return;
 
-  let sort = validatedData.sortBy;
+  const { page, limit, type, filter, sortBy, sortOrder } = validatedData;
+
+  let sort = sortBy;
   sort = (sort === "alphabetical" ? "name" : sort) as
     | "alphabetical"
     | "createdAt"
     | "updatedAt";
 
-  const skip = (validatedData?.page - 1) * validatedData?.limit;
-
   const [testimonials, total] = await Promise.all([
     await prisma.testimonial.findMany({
       where: {
-        type: validatedData.type,
+        deletedAt: null,
+        type: type,
+        userId: filter == "USER" ? { not: null } : undefined,
+        businessId: filter == "BUSINESS" ? { not: null } : undefined,
+        order: {
+          not: null,
+        },
       },
-      skip,
-      take: validatedData.limit,
-      orderBy: { [sort]: validatedData.sortOrder },
+      include: {
+        user: true,
+        business: true,
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { [sort]: sortOrder },
     }),
     await prisma.testimonial.count({
       where: {

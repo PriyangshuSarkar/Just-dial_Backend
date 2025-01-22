@@ -325,7 +325,8 @@ export type AdminManagePincodesInput = infer_<typeof AdminManagePincodesSchema>;
 export const AdminGetAllTestimonialsSchema = object({
   page: number().int().positive().default(1),
   limit: number().int().positive().default(10),
-  type: enum_(["REVIEW", "FEEDBACK"]).optional(),
+  type: enum_(["REVIEW", "FEEDBACK"]).optional().default("FEEDBACK"),
+  filter: enum_(["USER", "BUSINESS"]).optional(),
   sortBy: enum_(["alphabetical", "createdAt", "updatedAt"]).default(
     "createdAt"
   ),

@@ -27,6 +27,16 @@ export const typeDefs = gql`
     reviewCount
   }
 
+  enum AllTestimonialType {
+    REVIEW
+    FEEDBACK
+  }
+
+  enum AllTestimonialFilter {
+    BUSINESS
+    USER
+  }
+
   type AllUsersResult {
     users: [User]
     total: Int
@@ -58,7 +68,7 @@ export const typeDefs = gql`
   }
 
   type AllTestimonialsResult {
-    Testimonials: [Testimonial]
+    testimonials: [Testimonial]
     total: Int
     page: Int
     limit: Int
@@ -166,6 +176,7 @@ export const typeDefs = gql`
 
     adminGetAllTestimonials(
       type: AllTestimonialType
+      filter: AllTestimonialFilter
       page: Int = 1
       limit: Int = 10
       sortBy: SortByEnum = createdAt
