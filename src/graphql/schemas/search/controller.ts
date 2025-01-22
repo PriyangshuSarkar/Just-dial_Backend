@@ -899,7 +899,10 @@ export const getAllAdminNotices = async (
 ) => {
   const validatedData = GetAllAdminNoticesSchema.parse(args);
 
-  const types: AdminNoticeType[] = validatedData?.types ?? ["GLOBAL"];
+  const types: AdminNoticeType[] =
+    validatedData?.types && validatedData.types.length > 0
+      ? validatedData.types
+      : ["GLOBAL"];
 
   const cacheKey = `adminNotices:${types.join(",")}`;
   const cachedResult = getCachedResult(cacheKey);
