@@ -764,7 +764,7 @@ export const allTestimonials = async (
   _: unknown,
   args: AllTestimonialsInput
 ) => {
-  const { page, limit, type } = AllTestimonialsInput.parse(args);
+  const { page, limit, type, filter } = AllTestimonialsInput.parse(args);
 
   const cacheKey = JSON.stringify({ page, limit, type });
 
@@ -776,6 +776,8 @@ export const allTestimonials = async (
     where: {
       deletedAt: null,
       type: type,
+      userId: filter == "USER" ? { not: null } : undefined,
+      businessId: filter == "BUSINESS" ? { not: null } : undefined,
       order: {
         not: null,
       },

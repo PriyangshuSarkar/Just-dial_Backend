@@ -64,7 +64,8 @@ export const LocationSchema = object({
 export type LocationInput = infer_<typeof LocationSchema>;
 
 export const AllTestimonialsInput = object({
-  type: enum_(["REVIEW", "FEEDBACK"]).optional(),
+  type: enum_(["REVIEW", "FEEDBACK"]).optional().default("FEEDBACK"),
+  filter: enum_(["USER", "BUSINESS"]).optional(),
   page: number().optional().default(1),
   limit: number().optional().default(10),
 });
@@ -72,6 +73,9 @@ export const AllTestimonialsInput = object({
 export type AllTestimonialsInput = infer_<typeof AllTestimonialsInput>;
 
 export const GetAllAdminNoticesSchema = object({
-  types: enum_(["GLOBAL", "ALL_USER", "ALL_BUSINESS"]).array().optional(),
+  types: enum_(["GLOBAL", "ALL_USER", "ALL_BUSINESS"])
+    .array()
+    .optional()
+    .default(["GLOBAL"]),
 }).optional();
 export type GetAllAdminNoticesInput = infer_<typeof GetAllAdminNoticesSchema>;
