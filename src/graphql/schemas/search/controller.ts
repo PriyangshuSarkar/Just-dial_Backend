@@ -984,3 +984,19 @@ const setCachedResult = (key: string, data: any) => {
     timestamp: Date.now(),
   });
 };
+
+export const getAllUserSubscriptions = async () => {
+  const userSubscriptions = await prisma.userSubscription.findMany({
+    where: { deletedAt: null },
+  });
+
+  return userSubscriptions;
+};
+
+export const getAllBusinessSubscriptions = async () => {
+  const businessSubscriptions = await prisma.businessSubscription.findMany({
+    where: { deletedAt: null },
+  });
+
+  return businessSubscriptions;
+};
