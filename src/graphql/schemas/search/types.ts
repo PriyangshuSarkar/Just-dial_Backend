@@ -19,6 +19,11 @@ export const typeDefs = gql`
     FEEDBACK
   }
 
+  enum allTestimonialFilter {
+    USER
+    BUSINESS
+  }
+
   enum AllAdminNoticeType {
     GLOBAL
     ALL_USER
@@ -81,6 +86,7 @@ export const typeDefs = gql`
 
     allTestimonials(
       type: AllTestimonialType
+      filter: allTestimonialFilter
       page: Int = 1
       limit: Int = 10
     ): [Testimonial]
