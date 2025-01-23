@@ -344,6 +344,11 @@ export const AdminManageTestimonialsSchema = object({
     order: number().optional(),
     toDelete: boolean().optional().default(false),
   })
+    .refine((data) => data.id || data.reviewId || data.feedbackId, {
+      message:
+        "At least one of 'id', 'reviewId', or 'feedbackId' must be provided",
+      path: ["id", "reviewId", "feedbackId"], // Highlight the relevant fields in the error
+    })
     .array()
     .optional(),
 }).optional();
