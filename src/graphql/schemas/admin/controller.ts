@@ -2280,16 +2280,7 @@ export const adminManageTestimonials = async (
         id: existingTestimonial?.id || "", // Using the found testimonial's id
       },
       update: {
-        reviewId: testimonial.reviewId,
-        feedbackId: testimonial.feedbackId,
         order: testimonial.order,
-        type: entityType,
-        rating: existingReview?.rating,
-        comment: existingReview?.comment,
-        businessId: existingReview?.businessId,
-        userId: existingReview?.userId,
-        createdAt: existingReview?.createdAt,
-        updatedAt: existingReview?.updatedAt,
       },
       create: {
         reviewId: testimonial.reviewId,
