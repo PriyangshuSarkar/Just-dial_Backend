@@ -114,8 +114,8 @@ export const typeDefs = gql`
       isVerified: Boolean
       createdAtStart: String
       createdAtEnd: String
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: AllUsersSortBy = createdAt
       sortOrder: SortOrder = desc
       hasAdminNotice: Boolean = false
@@ -136,8 +136,8 @@ export const typeDefs = gql`
       isListed: Boolean
       createdAtStart: String
       createdAtEnd: String
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: AllBusinessesSortBy = createdAt
       sortOrder: SortOrder = desc
       hasReviews: Boolean
@@ -154,16 +154,16 @@ export const typeDefs = gql`
 
     adminSearchAllReviews(
       search: String
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: SortByEnum
       sortOrder: OrderEnum
     ): AllReviewsResult
 
     adminSearchAllFeedbacks(
       search: String
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: SortByEnum
       sortOrder: OrderEnum
     ): AllFeedbacksResult
@@ -193,30 +193,30 @@ export const typeDefs = gql`
     adminGetAllTestimonials(
       type: AllTestimonialType
       filter: AllTestimonialFilter
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: SortByEnum
       sortOrder: OrderEnum
     ): AllTestimonialsResult
 
     adminGetAllAdminNotices(
       type: AdminNoticeType
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: SortByEnum
       sortOrder: OrderEnum
     ): AllAdminNoticesResult
 
     adminGetAllBusinessAdBannerImages(
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: SortByEnum
       sortOrder: OrderEnum
     ): AllAdminBusinessAdBannerImagesResult
 
     adminGetAllBusinessMobileAdBannerImages(
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: SortByEnum
       sortOrder: OrderEnum
     ): AllAdminBusinessMobileAdBannerImagesResult

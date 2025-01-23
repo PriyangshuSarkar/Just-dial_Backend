@@ -2538,6 +2538,14 @@ export const adminGetAllBusinessAdBannerImages = async (
       orderBy: {
         [validatedData.sortBy]: validatedData.sortOrder,
       },
+      include: {
+        adminBusinessAdBannerImage: true,
+        businessDetails: {
+          include: {
+            business: true,
+          },
+        },
+      },
       skip,
       take: validatedData.limit,
     }),
@@ -2659,6 +2667,14 @@ export const adminGetAllBusinessMobileAdBannerImages = async (
       },
       orderBy: {
         [validatedData.sortBy]: validatedData.sortOrder,
+      },
+      include: {
+        adminBusinessMobileAdBannerImage: true,
+        businessDetails: {
+          include: {
+            business: true,
+          },
+        },
       },
       skip,
       take: validatedData.limit,
