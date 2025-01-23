@@ -2134,17 +2134,36 @@ export const adminGetAllTestimonials = async (
     | "createdAt"
     | "updatedAt";
 
+  let where: Prisma.TestimonialWhereInput = {
+    deletedAt: null,
+    order: {
+      not: null,
+    },
+  };
+
+  if (type === "REVIEW") {
+    where = {
+      type,
+    };
+  } else if (type === "FEEDBACK") {
+    where = {
+      type,
+    };
+  }
+
+  if (filter === "BUSINESS") {
+    where = {
+      businessId: filter === "BUSINESS" ? { not: null } : undefined,
+    };
+  } else if (filter === "USER") {
+    where = {
+      userId: filter === "USER" ? { not: null } : undefined,
+    };
+  }
+
   const [testimonials, total] = await Promise.all([
     await prisma.testimonial.findMany({
-      where: {
-        deletedAt: null,
-        type: type,
-        userId: filter == "USER" ? { not: null } : undefined,
-        businessId: filter == "BUSINESS" ? { not: null } : undefined,
-        order: {
-          not: null,
-        },
-      },
+      where,
       include: {
         user: true,
         business: true,
@@ -2154,9 +2173,7 @@ export const adminGetAllTestimonials = async (
       orderBy: { [sort]: sortOrder },
     }),
     await prisma.testimonial.count({
-      where: {
-        type: validatedData.type || undefined,
-      },
+      where,
     }),
   ]);
 
