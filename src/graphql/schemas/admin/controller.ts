@@ -1576,26 +1576,30 @@ export const adminManageCategories = async (
         });
         continue;
       }
-      let slug: string | undefined = undefined;
+      let slug: string | undefined;
       const initialSlug = category.slug || category.name;
+
       if (initialSlug) {
-        slug = slugify(initialSlug, {
+        const baseSlug = slugify(initialSlug, {
           lower: true,
           strict: true,
         });
 
         let uniqueSuffixLength = 2;
-        let existingSlug = await prisma.category.findFirst({ where: { slug } });
+        slug = baseSlug;
 
-        while (existingSlug) {
+        while (true) {
+          const existingSlug = await prisma.category.findFirst({
+            where: { slug, NOT: { id: category.id } },
+          });
+
+          if (!existingSlug) break;
+
           const uniqueSuffix = Math.random()
             .toString(16)
             .slice(2, 2 + uniqueSuffixLength);
-          slug = `${slugify(initialSlug, {
-            lower: true,
-            strict: true,
-          })}-${uniqueSuffix}`;
-          existingSlug = await prisma.category.findFirst({ where: { slug } });
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
           uniqueSuffixLength += 1;
         }
       }
@@ -1642,29 +1646,30 @@ export const adminManageCategories = async (
         continue;
       }
 
-      let slug: string | undefined = undefined;
-      const initialSlug = category.slug || category.name;
-      if (
-        (category.slug && initialSlug) ||
-        (!existingCategory?.slug && initialSlug)
-      ) {
-        slug = slugify(initialSlug, {
+      let slug: string | undefined;
+      const initialSlug: string = (category.slug || category.name) as string;
+
+      if (category.slug || !existingCategory?.slug) {
+        const baseSlug = slugify(initialSlug, {
           lower: true,
           strict: true,
         });
 
         let uniqueSuffixLength = 2;
-        let existingSlug = await prisma.category.findFirst({ where: { slug } });
+        slug = baseSlug;
 
-        while (existingSlug) {
+        while (true) {
+          const existingSlug = await prisma.category.findFirst({
+            where: { slug, NOT: { id: category.id } },
+          });
+
+          if (!existingSlug) break;
+
           const uniqueSuffix = Math.random()
             .toString(16)
             .slice(2, 2 + uniqueSuffixLength);
-          slug = `${slugify(initialSlug, {
-            lower: true,
-            strict: true,
-          })}-${uniqueSuffix}`;
-          existingSlug = await prisma.category.findFirst({ where: { slug } });
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
           uniqueSuffixLength += 1;
         }
       }

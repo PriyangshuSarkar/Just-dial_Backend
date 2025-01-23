@@ -240,19 +240,27 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
 
     // Create user
     const { salt, hash } = hashPassword(validatedData.password);
-    let slug = slugify(validatedData.name, { lower: true, strict: true });
-    let uniqueSuffixLength = 2;
-    let existingSlug = await prisma.user.findFirst({ where: { slug } });
 
-    while (existingSlug) {
+    let slug: string | undefined;
+
+    const baseSlug = slugify(validatedData.name, { lower: true, strict: true });
+
+    let uniqueSuffixLength = 2;
+    slug = baseSlug;
+
+    while (true) {
+      const existingSlug = await prisma.user.findFirst({
+        where: { slug },
+      });
+
+      if (!existingSlug) break;
+
       const uniqueSuffix = Math.random()
         .toString(16)
         .slice(2, 2 + uniqueSuffixLength);
-      slug = `${slugify(validatedData.name, {
-        lower: true,
-        strict: true,
-      })}-${uniqueSuffix}`;
-      existingSlug = await prisma.user.findFirst({ where: { slug } });
+
+      slug = `${baseSlug}-${uniqueSuffix}`;
+      uniqueSuffixLength += 1;
       uniqueSuffixLength += 1;
     }
 
@@ -1019,24 +1027,31 @@ export const updateUserDetails = async (
   //   if (existingSlug) throw new Error("Slug already exists.");
   // }
 
-  let slug = undefined;
+  let slug: string | undefined;
 
   const initialSlug = validatedData.slug || name;
 
   if (initialSlug) {
-    slug = slugify(initialSlug, { lower: true, strict: true });
-    let uniqueSuffixLength = 2;
-    let existingSlug = await prisma.user.findFirst({ where: { slug } });
+    const baseSlug = slugify(initialSlug, {
+      lower: true,
+      strict: true,
+    });
 
-    while (existingSlug) {
+    let uniqueSuffixLength = 2;
+    slug = baseSlug;
+
+    while (true) {
+      const existingSlug = await prisma.user.findFirst({
+        where: { slug, NOT: { id: user.id } },
+      });
+
+      if (!existingSlug) break;
+
       const uniqueSuffix = Math.random()
         .toString(16)
         .slice(2, 2 + uniqueSuffixLength);
-      slug = `${slugify(initialSlug, {
-        lower: true,
-        strict: true,
-      })}-${uniqueSuffix}`;
-      existingSlug = await prisma.user.findFirst({ where: { slug } });
+
+      slug = `${baseSlug}-${uniqueSuffix}`;
       uniqueSuffixLength += 1;
     }
   }

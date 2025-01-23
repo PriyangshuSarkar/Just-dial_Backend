@@ -1312,24 +1312,32 @@ export const updateBusinessDetails = async (
   //   if (existingSlug) throw new Error("Slug already exists.");
   // }
 
-  let slug = undefined;
-
+  let slug: string | undefined;
   const initialSlug = validatedData.slug || name;
 
   if (initialSlug) {
-    slug = slugify(initialSlug, { lower: true, strict: true });
-    let uniqueSuffixLength = 2;
-    let existingSlug = await prisma.business.findFirst({ where: { slug } });
+    const baseSlug = slugify(initialSlug, { lower: true, strict: true });
 
-    while (existingSlug) {
+    let uniqueSuffixLength = 2;
+    slug = baseSlug;
+
+    while (true) {
+      const existingSlug = await prisma.business.findFirst({
+        where: { slug, NOT: { id: business.id } },
+      });
+
+      if (!existingSlug) break;
+
       const uniqueSuffix = Math.random()
         .toString(16)
         .slice(2, 2 + uniqueSuffixLength);
+
       slug = `${slugify(initialSlug, {
         lower: true,
         strict: true,
       })}-${uniqueSuffix}`;
-      existingSlug = await prisma.business.findFirst({ where: { slug } });
+
+      slug = `${baseSlug}-${uniqueSuffix}`;
       uniqueSuffixLength += 1;
     }
   }
