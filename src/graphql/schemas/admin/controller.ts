@@ -2260,7 +2260,7 @@ export const adminManageTestimonials = async (
     // Create or update the testimonial
     const createdTestimonial = await prisma.testimonial.upsert({
       where: {
-        id: existingTestimonial?.id || undefined, // Using the found testimonial's id
+        id: existingTestimonial?.id || "", // Using the found testimonial's id
       },
       update: {
         reviewId: testimonial.reviewId,
