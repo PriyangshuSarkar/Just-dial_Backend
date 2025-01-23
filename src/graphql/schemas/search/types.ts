@@ -7,6 +7,7 @@ export const typeDefs = gql`
     price
     popularity
     experience
+    order
   }
 
   enum OrderEnum {

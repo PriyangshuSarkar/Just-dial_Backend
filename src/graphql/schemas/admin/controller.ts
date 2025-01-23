@@ -18,6 +18,10 @@ import {
   AdminDeleteReviewsSchema,
   AdminGetAllAdminNoticesInput,
   AdminGetAllAdminNoticesSchema,
+  AdminGetAllBusinessAdBannerImagesInput,
+  AdminGetAllBusinessAdBannerImagesSchema,
+  AdminGetAllBusinessMobileAdBannerImagesInput,
+  AdminGetAllBusinessMobileAdBannerImagesSchema,
   AdminGetAllTestimonialsInput,
   AdminGetAllTestimonialsSchema,
   AdminGetBusinessByIdInput,
@@ -2493,6 +2497,62 @@ export const adminManageAdminNotices = async (
   return results;
 };
 
+export const adminGetAllBusinessAdBannerImages = async (
+  _: unknown,
+  args: AdminGetAllBusinessAdBannerImagesInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminGetAllBusinessAdBannerImagesSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const skip = (validatedData.page - 1) * validatedData.limit;
+
+  const [images, total] = await Promise.all([
+    await prisma.businessAdBannerImage.findMany({
+      where: {
+        adminBusinessAdBannerImage: {
+          isNot: null,
+        },
+      },
+      orderBy: {
+        [validatedData.sortBy]: validatedData.sortOrder,
+      },
+      skip,
+      take: validatedData.limit,
+    }),
+    await prisma.businessAdBannerImage.count({
+      where: {
+        adminBusinessAdBannerImage: {
+          isNot: null,
+        },
+      },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / validatedData.limit);
+
+  return {
+    images,
+    total,
+    page: validatedData.page,
+    limit: validatedData.limit,
+    totalPages,
+  };
+};
+
 export const adminManageBusinessAdBannerImage = async (
   _: unknown,
   args: AdminManageBusinessAdBannerImageInput,
@@ -2556,6 +2616,63 @@ export const adminManageBusinessAdBannerImage = async (
   }
 
   return results;
+};
+
+export const adminGetAllBusinessMobileAdBannerImages = async (
+  _: unknown,
+  args: AdminGetAllBusinessMobileAdBannerImagesInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData =
+    AdminGetAllBusinessMobileAdBannerImagesSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const skip = (validatedData.page - 1) * validatedData.limit;
+
+  const [images, total] = await Promise.all([
+    await prisma.businessMobileAdBannerImage.findMany({
+      where: {
+        adminBusinessMobileAdBannerImage: {
+          isNot: null,
+        },
+      },
+      orderBy: {
+        [validatedData.sortBy]: validatedData.sortOrder,
+      },
+      skip,
+      take: validatedData.limit,
+    }),
+    await prisma.businessMobileAdBannerImage.count({
+      where: {
+        adminBusinessMobileAdBannerImage: {
+          isNot: null,
+        },
+      },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / validatedData.limit);
+
+  return {
+    images,
+    total,
+    page: validatedData.page,
+    limit: validatedData.limit,
+    totalPages,
+  };
 };
 
 export const adminManageBusinessMobileAdBannerImage = async (

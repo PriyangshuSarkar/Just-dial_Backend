@@ -83,6 +83,22 @@ export const typeDefs = gql`
     totalPages: Int
   }
 
+  type AllAdminBusinessAdBannerImagesResult {
+    images: [BusinessAdBannerImage]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+
+  type AllAdminBusinessMobileAdBannerImagesResult {
+    images: [BusinessMobileAdBannerImage]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+
   # Query Type Definitions
   type Query {
     status: String!
@@ -140,16 +156,16 @@ export const typeDefs = gql`
       search: String
       page: Int = 1
       limit: Int = 10
-      sortBy: SortByEnum = createdAt
-      sortOrder: OrderEnum = desc
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
     ): AllReviewsResult
 
     adminSearchAllFeedbacks(
       search: String
       page: Int = 1
       limit: Int = 10
-      sortBy: SortByEnum = createdAt
-      sortOrder: OrderEnum = desc
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
     ): AllFeedbacksResult
 
     adminGetAllUserSubscriptions: [UserSubscription]
@@ -179,17 +195,31 @@ export const typeDefs = gql`
       filter: AllTestimonialFilter
       page: Int = 1
       limit: Int = 10
-      sortBy: SortByEnum = createdAt
-      sortOrder: OrderEnum = desc
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
     ): AllTestimonialsResult
 
     adminGetAllAdminNotices(
       type: AdminNoticeType
       page: Int = 1
       limit: Int = 10
-      sortBy: SortByEnum = createdAt
-      sortOrder: OrderEnum = desc
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
     ): AllAdminNoticesResult
+
+    adminGetAllBusinessAdBannerImages(
+      page: Int = 1
+      limit: Int = 10
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
+    ): AllAdminBusinessAdBannerImagesResult
+
+    adminGetAllBusinessMobileAdBannerImages(
+      page: Int = 1
+      limit: Int = 10
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
+    ): AllAdminBusinessMobileAdBannerImagesResult
   }
 
   # Mutation Type Definitions

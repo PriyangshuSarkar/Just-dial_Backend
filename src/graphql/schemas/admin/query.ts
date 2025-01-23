@@ -2,6 +2,8 @@ import {
   adminAllBusinesses,
   adminAllUsers,
   adminGetAllAdminNotices,
+  adminGetAllBusinessAdBannerImages,
+  adminGetAllBusinessMobileAdBannerImages,
   adminGetAllBusinessSubscriptions,
   adminGetAllCategories,
   adminGetAllCities,
@@ -63,4 +65,8 @@ export const Query = {
   adminGetAllTestimonials,
 
   adminGetAllAdminNotices,
+
+  adminGetAllBusinessAdBannerImages,
+
+  adminGetAllBusinessMobileAdBannerImages,
 };

@@ -327,8 +327,8 @@ export const AdminGetAllTestimonialsSchema = object({
   limit: number().int().positive().default(10),
   type: enum_(["REVIEW", "FEEDBACK"]).optional().default("FEEDBACK"),
   filter: enum_(["USER", "BUSINESS"]).optional(),
-  sortBy: enum_(["alphabetical", "createdAt", "updatedAt"]).default(
-    "createdAt"
+  sortBy: enum_(["alphabetical", "createdAt", "updatedAt", "order"]).default(
+    "order"
   ),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
 }).optional();
@@ -400,6 +400,16 @@ export type AdminManageAdminNoticesInput = infer_<
   typeof AdminManageAdminNoticesSchema
 >;
 
+export const AdminGetAllBusinessAdBannerImagesSchema = object({
+  page: number().int().positive().default(1),
+  limit: number().int().positive().default(10),
+  sortBy: enum_(["createdAt", "updatedAt", "order"]).default("order"),
+  sortOrder: enum_(["asc", "desc"]).default("desc"),
+}).optional();
+export type AdminGetAllBusinessAdBannerImagesInput = infer_<
+  typeof AdminGetAllBusinessAdBannerImagesSchema
+>;
+
 export const AdminManageBusinessAdBannerImageSchema = object({
   businessAdBannerImages: object({
     id: string().optional(),
@@ -411,6 +421,16 @@ export const AdminManageBusinessAdBannerImageSchema = object({
 }).optional();
 export type AdminManageBusinessAdBannerImageInput = infer_<
   typeof AdminManageBusinessAdBannerImageSchema
+>;
+
+export const AdminGetAllBusinessMobileAdBannerImagesSchema = object({
+  page: number().int().positive().default(1),
+  limit: number().int().positive().default(10),
+  sortBy: enum_(["createdAt", "updatedAt", "order"]).default("order"),
+  sortOrder: enum_(["asc", "desc"]).default("desc"),
+});
+export type AdminGetAllBusinessMobileAdBannerImagesInput = infer_<
+  typeof AdminGetAllBusinessMobileAdBannerImagesSchema
 >;
 
 export const AdminManageBusinessMobileAdBannerImageSchema = object({
