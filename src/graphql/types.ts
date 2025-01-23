@@ -226,6 +226,7 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetailsId: ID
     businessDetails: BusinessDetails
+    adminBusinessAdBannerImage: AdminBusinessAdBannerImage
     message: String
   }
 
@@ -248,6 +249,7 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetailsId: ID
     businessDetails: BusinessDetails
+    adminBusinessMobileAdBannerImage: AdminBusinessMobileAdBannerImage
     message: String
   }
 
