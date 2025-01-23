@@ -2307,7 +2307,7 @@ export const adminManageTestimonials = async (
 
     results.push({
       ...createdTestimonial,
-      message: "Testimonial created successfully!",
+      message: "Testimonial created/updated successfully!",
     });
   }
 
