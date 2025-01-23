@@ -1509,6 +1509,9 @@ export const adminGetAllCategories = async (
     include: {
       groupName: true,
     },
+    orderBy: {
+      order: "asc",
+    },
   });
 
   return categories;
