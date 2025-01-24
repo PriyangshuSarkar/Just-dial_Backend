@@ -42,7 +42,7 @@ export const uploadToSpaces = async (
         Key: key,
       });
     } catch (error) {
-      throw new Error(`Failed to delete file ${key}: ${error}`);
+      console.log(error);
     }
   }
 
@@ -82,7 +82,7 @@ export const deleteFromSpaces = async (url: string): Promise<void> => {
       Key: key,
     });
   } catch (error) {
-    throw new Error(`Failed to delete file ${key}: ${error}`);
+    console.log(error);
   }
 };
 
