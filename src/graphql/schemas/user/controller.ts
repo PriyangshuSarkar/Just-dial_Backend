@@ -39,6 +39,7 @@ import { verifyCode } from "../../../utils/oAuthVerify";
 import { initiateOAuth } from "../../../utils/oAuth";
 import { razorpay } from "../../../utils/razorpay";
 import { createHmac } from "crypto";
+import { addressUtility } from "../../../utils/addressUtility";
 
 const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
 
@@ -1253,6 +1254,13 @@ export const manageUserAddress = async (
         },
       });
 
+      addressUtility({
+        pincode: updatedAddress.pincode,
+        city: updatedAddress.city,
+        state: updatedAddress.state,
+        country: updatedAddress.country,
+      });
+
       updatedAddresses.push({
         ...updatedAddress,
         message: "User address updated successfully.",
@@ -1270,6 +1278,13 @@ export const manageUserAddress = async (
             connect: { id: user.id },
           },
         },
+      });
+
+      addressUtility({
+        pincode: newAddress.pincode,
+        city: newAddress.city,
+        state: newAddress.state,
+        country: newAddress.country,
       });
 
       updatedAddresses.push({

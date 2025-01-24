@@ -8,7 +8,7 @@ import {
 } from "zod";
 
 export const FilterSchema = object({
-  search: string().toLowerCase().optional(),
+  search: string().trim().toLowerCase().optional(),
   verified: boolean()
     .transform((value) => (value === true ? true : undefined))
     .optional(),
@@ -25,13 +25,13 @@ export const FilterSchema = object({
   order: enum_(["asc", "desc"]).optional(),
   categoryId: string().optional(),
   categorySlug: string().optional(),
-  languages: string().toLowerCase().array().optional(),
-  courts: string().toLowerCase().array().optional(),
-  proficiencies: string().toLowerCase().array().optional(),
-  pincode: string().toLowerCase().optional(),
-  city: string().toLowerCase().optional(),
-  state: string().toLowerCase().optional(),
-  country: string().toLowerCase().optional(),
+  languages: string().trim().toLowerCase().array().optional(),
+  courts: string().trim().toLowerCase().array().optional(),
+  proficiencies: string().trim().toLowerCase().array().optional(),
+  pincode: string().trim().toLowerCase().regex(/^\d*$/).optional(),
+  city: string().time().toLowerCase().optional(),
+  state: string().time().toLowerCase().optional(),
+  country: string().trim().toLowerCase().optional(),
 });
 export type FilterInput = infer_<typeof FilterSchema>;
 

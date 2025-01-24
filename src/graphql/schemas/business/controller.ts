@@ -45,6 +45,7 @@ import { sendOtpPhone } from "../../../utils/phoneService";
 import { verifyOtp } from "../../../utils/verifyOtp";
 import { razorpay } from "../../../utils/razorpay";
 import { createHmac } from "crypto";
+import { addressUtility } from "../../../utils/addressUtility";
 
 const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
 
@@ -1301,7 +1302,7 @@ export const updateBusinessDetails = async (
 
   let name;
 
-  if (validatedData && validatedData.name !== business.name) {
+  if (validatedData.name && validatedData.name !== business.name) {
     name = validatedData.name;
   }
 
@@ -1857,6 +1858,13 @@ export const manageBusinessAddress = async (
         },
       });
 
+      addressUtility({
+        pincode: updatedAddress.pincode,
+        city: updatedAddress.city,
+        state: updatedAddress.state,
+        country: updatedAddress.country,
+      });
+
       updatedAddresses.push({
         ...updatedAddress,
         message: "Business address updated successfully.",
@@ -1875,6 +1883,13 @@ export const manageBusinessAddress = async (
             connect: { id: business.id },
           },
         },
+      });
+
+      addressUtility({
+        pincode: newAddress.pincode,
+        city: newAddress.city,
+        state: newAddress.state,
+        country: newAddress.country,
       });
 
       updatedAddresses.push({
