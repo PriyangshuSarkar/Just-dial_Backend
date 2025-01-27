@@ -1387,6 +1387,9 @@ export const userSubscription = async (
     amount: plan.price * 100,
     currency: "INR",
     receipt: user.id,
+    notes: {
+      subscriptionId: plan.id,
+    },
   });
 
   await prisma.user.update({
@@ -1394,7 +1397,6 @@ export const userSubscription = async (
       id: user.id,
     },
     data: {
-      subscriptionId: plan.id,
       razorpay_order_id: order.id,
     },
   });
@@ -1409,7 +1411,6 @@ export const userVerifyPayment = async (
   args: UserVerifyPaymentInput
 ) => {
   const validatedData = UserVerifyPaymentSchema.parse(args);
-
   if (!validatedData) return;
 
   const body = `${validatedData.razorpay_order_id}|${validatedData.razorpay_payment_id}`;
@@ -1424,6 +1425,21 @@ export const userVerifyPayment = async (
   if (generatedSignature !== validatedData.razorpay_signature) {
     throw new Error("Incorrect razorpay signature. Validation failed!");
   }
+
+  const order = await razorpay.orders.fetch(validatedData.razorpay_order_id);
+
+  const subscriptionId = order.notes?.subscriptionId as string;
+
+  if (!subscriptionId) {
+    throw new Error("Razorpay Error!");
+  }
+
+  const subscription = await prisma.userSubscription.findUniqueOrThrow({
+    where: {
+      id: subscriptionId,
+      deletedAt: null,
+    },
+  });
 
   const user = await prisma.user.findUniqueOrThrow({
     where: {
@@ -1441,18 +1457,24 @@ export const userVerifyPayment = async (
     },
   });
 
-  const subscriptionExpire = new Date();
-  subscriptionExpire.setDate(
-    subscriptionExpire.getDate() + user.subscription!.duration
-  );
+  const currentDate = new Date();
+
+  const baseDate =
+    user.subscriptionExpire && user.subscriptionExpire > currentDate
+      ? user.subscriptionExpire
+      : currentDate;
+
+  const newExpiryDate = new Date(baseDate);
+  newExpiryDate.setDate(newExpiryDate.getDate() + subscription.duration);
 
   const verifiedUserPayment = await prisma.user.update({
     where: {
       id: user.id,
     },
     data: {
+      subscriptionId: subscription.id,
       paymentVerification: true,
-      subscriptionExpire: subscriptionExpire,
+      subscriptionExpire: newExpiryDate,
     },
   });
 

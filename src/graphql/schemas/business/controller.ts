@@ -2671,6 +2671,9 @@ export const businessSubscription = async (
     amount: plan.price * 100,
     currency: "INR",
     receipt: business.id,
+    notes: {
+      subscriptionId: plan.id,
+    },
   });
 
   await prisma.business.update({
@@ -2678,7 +2681,6 @@ export const businessSubscription = async (
       id: business.id,
     },
     data: {
-      subscriptionId: plan.id,
       razorpay_order_id: order.id,
     },
   });
@@ -2708,6 +2710,21 @@ export const businessVerifyPayment = async (
     throw new Error("Incorrect razorpay signature. Validation failed!");
   }
 
+  const order = await razorpay.orders.fetch(validatedData.razorpay_order_id);
+
+  const subscriptionId = order.notes?.subscriptionId as string;
+
+  if (!subscriptionId) {
+    throw new Error("Razorpay Error!");
+  }
+
+  const subscription = await prisma.businessSubscription.findUniqueOrThrow({
+    where: {
+      id: subscriptionId,
+      deletedAt: null,
+    },
+  });
+
   const business = await prisma.business.findUniqueOrThrow({
     where: {
       razorpay_order_id: validatedData.razorpay_order_id,
@@ -2724,18 +2741,24 @@ export const businessVerifyPayment = async (
     },
   });
 
-  const subscriptionExpire = new Date();
-  subscriptionExpire.setDate(
-    subscriptionExpire.getDate() + business.subscription!.duration
-  );
+  const currentDate = new Date();
+
+  const baseDate =
+    business.subscriptionExpire && business.subscriptionExpire > currentDate
+      ? business.subscriptionExpire
+      : currentDate;
+
+  const newExpiryDate = new Date(baseDate);
+  newExpiryDate.setDate(newExpiryDate.getDate() + subscription.duration);
 
   const verifiedBusinessPayment = await prisma.business.update({
     where: {
       id: business.id,
     },
     data: {
+      subscriptionId: subscription.id,
       paymentVerification: true,
-      subscriptionExpire: subscriptionExpire,
+      subscriptionExpire: newExpiryDate,
     },
   });
 
