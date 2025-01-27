@@ -2915,9 +2915,16 @@ export const adminGetAllBusinessAdBannerImages = async (
   const [images, total] = await Promise.all([
     await prisma.businessAdBannerImage.findMany({
       where,
-      orderBy: {
-        [validatedData.sortBy]: validatedData.sortOrder,
-      },
+      orderBy: [
+        {
+          [validatedData.sortBy]: validatedData.sortOrder,
+        },
+        {
+          adminBusinessAdBannerImage: {
+            order: "asc",
+          },
+        },
+      ],
       include: {
         adminBusinessAdBannerImage: true,
         businessDetails: {
@@ -3049,9 +3056,14 @@ export const adminGetAllBusinessMobileAdBannerImages = async (
   const [images, total] = await Promise.all([
     await prisma.businessMobileAdBannerImage.findMany({
       where,
-      orderBy: {
-        [validatedData.sortBy]: validatedData.sortOrder,
-      },
+      orderBy: [
+        { [validatedData.sortBy]: validatedData.sortOrder },
+        {
+          adminBusinessMobileAdBannerImage: {
+            order: "asc",
+          },
+        },
+      ],
       include: {
         adminBusinessMobileAdBannerImage: true,
         businessDetails: {
