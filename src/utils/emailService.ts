@@ -23,7 +23,7 @@ export const sendOtpEmail = async (
     },
     body: JSON.stringify({
       email,
-      expiry: (expiry * 60) / 5, // OTP expiry time in seconds
+      expiry: (expiry * 60) / 2, // OTP expiry time in seconds
       otpLength, // Length of the OTP
       channels: ["EMAIL"],
       metadata: {
