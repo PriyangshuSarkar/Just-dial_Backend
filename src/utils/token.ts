@@ -5,12 +5,12 @@ export const verifyToken = (token: string) => {
     return verify(token, process.env.JWT_SECRET!); // Use your secret here
   } catch (error: unknown) {
     console.log(error);
-    return null;
+    return undefined;
   }
 };
 
 export const generateToken = (
-  payload: string,
+  payload: any,
   type: "USER" | "BUSINESS" | "ADMIN"
 ) => {
   if (!process.env.JWT_SECRET || !process.env.JWT_EXPIRATION_TIME) {
