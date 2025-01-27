@@ -29,8 +29,8 @@ export const FilterSchema = object({
   courts: string().trim().toLowerCase().array().optional(),
   proficiencies: string().trim().toLowerCase().array().optional(),
   pincode: string().trim().toLowerCase().regex(/^\d*$/).optional(),
-  city: string().time().toLowerCase().optional(),
-  state: string().time().toLowerCase().optional(),
+  city: string().trim().toLowerCase().optional(),
+  state: string().trim().toLowerCase().optional(),
   country: string().trim().toLowerCase().optional(),
 });
 export type FilterInput = infer_<typeof FilterSchema>;

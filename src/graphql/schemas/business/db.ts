@@ -32,7 +32,7 @@ export type ResendBusinessOtpInput = infer_<typeof ResendBusinessOtpSchema>;
 
 export const VerifyBusinessPrimaryContactSchema = object({
   email: string().trim().optional(),
-  phone: string().time().optional(),
+  phone: string().trim().optional(),
   otp: string(),
   requestId: string(),
   password: string().optional(),

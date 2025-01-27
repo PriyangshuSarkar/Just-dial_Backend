@@ -38,7 +38,7 @@ export type ResendUserOtpInput = infer_<typeof ResendUserOtpSchema>;
 
 export const AddUserContactSchema = object({
   email: string().trim().email().optional(),
-  phone: string().time().optional(),
+  phone: string().trim().optional(),
 })
   .refine((data) => (data.email ? !data.phone : !!data.phone), {
     message: "Only one of email or phone should be provided.",
