@@ -3016,7 +3016,10 @@ export const adminManageBusinessAdBannerImage = async (
             order: businessAdBannerImage.order,
           },
         });
-      results.push(createdAdminBusinessAdBannerImage);
+      results.push({
+        ...createdAdminBusinessAdBannerImage,
+        message: "Image updated successfully",
+      });
     }
   }
 
@@ -3156,7 +3159,10 @@ export const adminManageBusinessMobileAdBannerImage = async (
             order: businessMobileAdBannerImage.order,
           },
         });
-      results.push(createdAdminBusinessMobileAdBannerImage);
+      results.push({
+        ...createdAdminBusinessMobileAdBannerImage,
+        message: "Image updated successfully",
+      });
     }
   }
 
