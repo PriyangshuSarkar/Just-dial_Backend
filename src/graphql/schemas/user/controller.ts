@@ -203,23 +203,26 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
   if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
+    let contactConditions: Prisma.UserContactWhereInput;
+
+    if (validatedData.email) {
+      contactConditions = {
+        value: validatedData.email,
+        type: "EMAIL",
+        isVerified: true,
+        deletedAt: null,
+      };
+    } else {
+      contactConditions = {
+        value: validatedData.phone,
+        type: "PHONE",
+        isVerified: true,
+        deletedAt: null,
+      };
+    }
+
     const existingContact = await tx.userContact.findFirst({
-      where: {
-        OR: [
-          {
-            value: validatedData.email,
-            type: "EMAIL",
-            isVerified: true,
-            deletedAt: null,
-          },
-          {
-            value: validatedData.phone,
-            type: "PHONE",
-            isVerified: true,
-            deletedAt: null,
-          },
-        ],
-      },
+      where: contactConditions,
     });
 
     if (existingContact) {
@@ -280,27 +283,23 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
     let reachedIdEmail: string | undefined;
     let reachedIdPhone: string | undefined;
     // Send verification codes
-    try {
-      if (validatedData.email && otpExpiresAt) {
-        const response = await sendOtpEmail(
-          user.name,
-          validatedData.email,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-        reachedIdEmail = response.requestId;
-      } else if (validatedData.phone && otpExpiresAt) {
-        const response = await sendOtpPhone(
-          user.name,
-          validatedData.phone,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-        reachedIdPhone = response.requestId;
-      }
-    } catch (error) {
-      // Log error but don't fail the transaction
-      console.error("Error sending OTP:", error);
+
+    if (validatedData.email && otpExpiresAt) {
+      const response = await sendOtpEmail(
+        user.name,
+        validatedData.email,
+        OTP_EXPIRY_MINUTES
+      );
+      requestId = response.requestId;
+      reachedIdEmail = response.requestId;
+    } else if (validatedData.phone && otpExpiresAt) {
+      const response = await sendOtpPhone(
+        user.name,
+        validatedData.phone,
+        OTP_EXPIRY_MINUTES
+      );
+      requestId = response.requestId;
+      reachedIdPhone = response.requestId;
     }
 
     // Create contacts

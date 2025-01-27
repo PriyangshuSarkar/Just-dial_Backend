@@ -375,27 +375,22 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
     let reachedIdEmail: string | undefined;
     let reachedIdPhone: string | undefined;
 
-    try {
-      if (validatedData.email && otpExpiresAt) {
-        const response = await sendOtpEmail(
-          business.name,
-          validatedData.email,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-        reachedIdEmail = response.requestId;
-      } else if (validatedData.phone && otpExpiresAt) {
-        const response = await sendOtpPhone(
-          business.name,
-          validatedData.phone,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-        reachedIdPhone = response.requestId;
-      }
-    } catch (error) {
-      // Log error but don't fail the transaction
-      console.error("Error sending OTP:", error);
+    if (validatedData.email && otpExpiresAt) {
+      const response = await sendOtpEmail(
+        business.name,
+        validatedData.email,
+        OTP_EXPIRY_MINUTES
+      );
+      requestId = response.requestId;
+      reachedIdEmail = response.requestId;
+    } else if (validatedData.phone && otpExpiresAt) {
+      const response = await sendOtpPhone(
+        business.name,
+        validatedData.phone,
+        OTP_EXPIRY_MINUTES
+      );
+      requestId = response.requestId;
+      reachedIdPhone = response.requestId;
     }
 
     // Create contacts

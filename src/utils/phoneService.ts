@@ -23,7 +23,7 @@ export const sendOtpPhone = async (
     },
     body: JSON.stringify({
       phoneNumber: phone,
-      expiry, // OTP expiry time in minutes
+      expiry: (expiry * 60) / 5, // OTP expiry time in seconds
       otpLength, // Length of the OTP
       channels: ["WHATSAPP", "SMS"], // Send via WhatsApp and SMS
       metadata: {
