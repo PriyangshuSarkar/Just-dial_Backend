@@ -947,6 +947,14 @@ export const getAllUserSubscriptions = async () => {
 
   const userSubscriptions = await prisma.userSubscription.findMany({
     where: { deletedAt: null },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      duration: true,
+      features: true,
+    },
   });
 
   setCachedResult("userSubscriptions", userSubscriptions);
@@ -961,6 +969,21 @@ export const getAllBusinessSubscriptions = async () => {
 
   const businessSubscriptions = await prisma.businessSubscription.findMany({
     where: { deletedAt: null },
+    select: {
+      id: true,
+      name: true,
+      priceDescription: true,
+      description: true,
+      price: true,
+      duration: true,
+      features: true,
+      order: true,
+      priority: true,
+      tierLevel: true,
+    },
+    orderBy: {
+      order: "asc",
+    },
   });
 
   setCachedResult("businessSubscriptions", businessSubscriptions);

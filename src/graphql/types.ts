@@ -80,11 +80,14 @@ export const typeDefs = gql`
   type BusinessSubscription {
     id: ID
     name: String
+    priceDescription: String
     description: String
     type: String
     price: Float
     duration: Int
     features: [String]
+    order: Int
+    priority: Int
     tierLevel: Int
     createdAt: Date
     updatedAt: Date
