@@ -10,7 +10,7 @@ export const verifyToken = (token: string) => {
 };
 
 export const generateToken = (
-  payload: any,
+  payload: string,
   type: "USER" | "BUSINESS" | "ADMIN"
 ) => {
   if (!process.env.JWT_SECRET || !process.env.JWT_EXPIRATION_TIME) {

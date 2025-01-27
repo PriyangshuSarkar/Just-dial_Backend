@@ -388,7 +388,6 @@ export const typeDefs = gql`
     id: ID
     slug: ID
     name: String
-
     Category: [Category]
     message: String
   }
