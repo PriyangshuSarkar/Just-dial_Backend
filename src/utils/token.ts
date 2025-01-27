@@ -1,4 +1,4 @@
-import { verify, sign } from "jsonwebtoken";
+import { verify, sign, Secret, SignOptions } from "jsonwebtoken";
 
 export const verifyToken = (token: string) => {
   try {
@@ -12,16 +12,26 @@ export const verifyToken = (token: string) => {
 export const generateToken = (
   payload: string,
   type: "USER" | "BUSINESS" | "ADMIN"
-) => {
+): string => {
+  // Ensure environment variables are properly set
   if (!process.env.JWT_SECRET || !process.env.JWT_EXPIRATION_TIME) {
     throw new Error("JWT configuration is missing in environment variables.");
   }
 
-  const tokenPayload = {
+  // Type assertions for environment variables
+  const jwtSecret: Secret = process.env.JWT_SECRET;
+  const jwtExpirationTime: string | number = process.env.JWT_EXPIRATION_TIME;
+
+  // JWT options
+  const options: SignOptions = {
+    expiresIn: jwtExpirationTime as any, // `expiresIn` is of type `string | number`
+  };
+
+  // Token payload
+  const tokenPayload: object = {
     [`${type.toLowerCase()}Id`]: payload,
   };
 
-  return sign(tokenPayload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRATION_TIME,
-  });
+  // Generate and return the JWT
+  return sign(tokenPayload, jwtSecret, options);
 };
