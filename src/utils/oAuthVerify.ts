@@ -40,50 +40,6 @@ export type OAuthVerifyResponse = infer_<typeof OAuthVerifyResponseSchema>;
 export const verifyCode = async (
   code: string
 ): Promise<OAuthVerifyResponse> => {
-  return {
-    requestId: "test",
-    message: "Verification successful",
-    userDetails: {
-      token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-      status: "verified",
-      completedAt: 1708003200000,
-      name: "John Doe",
-      identities: [
-        {
-          identityType: "email",
-          identityValue: "john.doe@example.com",
-          channel: "email",
-          methods: ["OTP", "password"],
-          verified: true,
-          verifiedTimestamp: 1708003200000,
-        },
-        {
-          identityType: "phone",
-          identityValue: "+1234567890",
-          channel: "sms",
-          methods: ["OTP"],
-          verified: false,
-          verifiedTimestamp: 123456,
-        },
-      ],
-      network: {
-        ip: "192.168.1.100",
-      },
-      deviceInfo: {
-        userAgent:
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
-        platform: "Windows",
-        vendor: "Google Inc.",
-        language: "en-US",
-        cookieEnabled: true,
-        screenWidth: 1920,
-        screenHeight: 1080,
-        screenColorDepth: 24,
-        devicePixelRatio: 1.5,
-      },
-    },
-  };
-
   const options = {
     method: "POST",
     headers: {

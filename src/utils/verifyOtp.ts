@@ -13,11 +13,6 @@ export const verifyOtp = async (
   requestId: string,
   otp: string
 ): Promise<VerifyOtpResponse> => {
-  return {
-    requestId: "test",
-    isOTPVerified: true,
-    message: "test OTP verified successfully",
-  };
   const options = {
     method: "POST",
     headers: {
