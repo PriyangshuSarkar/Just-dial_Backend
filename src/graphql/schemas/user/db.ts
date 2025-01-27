@@ -15,7 +15,7 @@ export type UserGoogleOAuthVerifyInput = infer_<
 export const UserSignupSchema = object({
   name: string().trim().min(2).max(50),
   email: string().trim().email().optional(),
-  phone: string().time().optional(),
+  phone: string().trim().optional(),
   password: string().min(6).max(100),
 })
   .refine((data) => data.email || data.phone, {

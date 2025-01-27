@@ -197,6 +197,7 @@ export const userGoogleOAuthVerify = async (
     message,
   };
 };
+
 export const userSignup = async (_: unknown, args: UserSignupInput) => {
   const validatedData = UserSignupSchema.parse(args);
 
