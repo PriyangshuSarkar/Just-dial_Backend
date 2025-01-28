@@ -85,6 +85,6 @@ export const RaiseQuerySchema = object({
   phone: string().trim().optional(),
   email: string().trim().email(),
   subject: string().trim().optional(),
-  message: string().time().optional(),
+  message: string().trim().optional(),
 }).optional();
 export type RaiseQueryInput = infer_<typeof RaiseQuerySchema>;
