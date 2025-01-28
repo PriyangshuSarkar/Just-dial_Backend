@@ -1,6 +1,7 @@
 import {
   adminBlockBusinesses,
   adminBlockUsers,
+  adminChangePassword,
   adminDeleteReviews,
   adminManageAdminNotices,
   adminManageBusinessAdBannerImage,
@@ -21,6 +22,8 @@ import {
 } from "./controller";
 
 export const Mutation = {
+  adminChangePassword,
+
   adminBlockUsers,
 
   adminBlockBusinesses,

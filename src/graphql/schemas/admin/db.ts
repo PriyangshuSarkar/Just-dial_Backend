@@ -330,7 +330,7 @@ export const AdminGetAllTestimonialsSchema = object({
   sortBy: enum_(["alphabetical", "createdAt", "updatedAt", "order"]).default(
     "order"
   ),
-  sortOrder: enum_(["asc", "desc"]).default("desc"),
+  sortOrder: enum_(["asc", "desc"]).default("asc"),
 }).optional();
 export type AdminGetAllTestimonialsInput = infer_<
   typeof AdminGetAllTestimonialsSchema

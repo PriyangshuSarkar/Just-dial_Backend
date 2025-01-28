@@ -224,6 +224,8 @@ export const typeDefs = gql`
 
   # Mutation Type Definitions
   type Mutation {
+    adminChangePassword(password: String!): Admin
+
     adminBlockUsers(users: [UsersBlock]): [User]
 
     adminBlockBusinesses(businesses: [BusinessesBlock]): [Business]
