@@ -79,3 +79,12 @@ export const GetAllAdminNoticesSchema = object({
     .default(["GLOBAL"]),
 }).optional();
 export type GetAllAdminNoticesInput = infer_<typeof GetAllAdminNoticesSchema>;
+
+export const RaiseQuerySchema = object({
+  name: string().trim().optional(),
+  phone: string().trim().optional(),
+  email: string().trim().email(),
+  subject: string().trim().optional(),
+  message: string().time().optional(),
+}).optional();
+export type RaiseQueryInput = infer_<typeof RaiseQuerySchema>;

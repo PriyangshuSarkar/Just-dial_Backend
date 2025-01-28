@@ -104,4 +104,18 @@ export const typeDefs = gql`
 
     getAllBusinessSubscriptions: [BusinessSubscription]
   }
+
+  type Mutation {
+    raiseQuery(
+      name: String
+      email: String!
+      phone: String
+      subject: String
+      message: String
+    ): RaiseQueryResponse
+  }
+
+  type RaiseQueryResponse {
+    message: String
+  }
 `;

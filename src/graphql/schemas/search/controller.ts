@@ -8,7 +8,10 @@ import {
   GetBusinessByIdSchema,
   LocationInput,
   LocationSchema,
+  RaiseQueryInput,
+  RaiseQuerySchema,
 } from "./db";
+import sendEmail from "../../../utils/emailService";
 
 const requestCache = new Map();
 const CACHE_TTL = parseInt(process.env.CASH_TIME || "5") * 60 * 1000; // 5 minutes
@@ -989,6 +992,27 @@ export const getAllBusinessSubscriptions = async () => {
   setCachedResult("businessSubscriptions", businessSubscriptions);
 
   return businessSubscriptions;
+};
+
+export const raiseQuery = async (_: unknown, args: RaiseQueryInput) => {
+  const validatedData = RaiseQuerySchema.parse(args);
+
+  if (!validatedData) return;
+
+  try {
+    await sendEmail({
+      to: validatedData.email,
+      subject: validatedData.subject || "",
+      message: `Name: ${validatedData.name}\nEmail: ${validatedData.email}\nPhone: ${validatedData.phone}\n\nQuery: ${validatedData.message}`,
+    });
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to send email");
+  }
+
+  return {
+    message: "Email sent successfully",
+  };
 };
 
 const getCachedResult = (key: string) => {
