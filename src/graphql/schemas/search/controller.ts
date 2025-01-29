@@ -640,45 +640,45 @@ export const location = async (_: unknown, args: LocationInput) => {
 
   // Run all queries in parallel using Promise.all
   const [pincodes, cities, states, countries] = await Promise.all([
-    prisma.pincode.findMany({
-      where: search
-        ? {
+    search && /^\d/.test(search)
+      ? prisma.pincode.findMany({
+          where: {
             OR: [
               { code: { contains: search, mode: "insensitive" } },
               { slug: { contains: search, mode: "insensitive" } },
             ],
-          }
-        : {},
-      select: {
-        id: true,
-        code: true,
-        slug: true,
-        cityId: true,
-        city: {
+          },
           select: {
             id: true,
-            name: true,
+            code: true,
             slug: true,
-            stateId: true,
-            state: {
+            cityId: true,
+            city: {
               select: {
                 id: true,
                 name: true,
                 slug: true,
-                countryId: true,
-                country: {
+                stateId: true,
+                state: {
                   select: {
                     id: true,
                     name: true,
                     slug: true,
+                    countryId: true,
+                    country: {
+                      select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                      },
+                    },
                   },
                 },
               },
             },
           },
-        },
-      },
-    }),
+        })
+      : [],
     prisma.city.findMany({
       where: search
         ? {
