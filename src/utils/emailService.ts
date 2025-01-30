@@ -10,6 +10,16 @@ const transporter = createTransport({
   },
 });
 
+/**
+ * Sends an email using the Nodemailer transporter.
+ *
+ * @param {Object} params - The email parameters.
+ * @param {string} params.to - The recipient's email address.
+ * @param {string | undefined} params.subject - The subject of the email.
+ * @param {string | undefined} params.message - The message body of the email.
+ * @returns {Promise<void>} A promise that resolves when the email is sent.
+ */
+
 async function sendEmail({
   to,
   subject,
