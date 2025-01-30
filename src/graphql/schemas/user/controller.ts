@@ -161,10 +161,7 @@ export const userGoogleOAuthVerify = async (
 
   let name =
     identity.name && identity.name !== user?.name ? identity.name : undefined;
-  const avatar =
-    identity.picture && identity.picture !== user?.avatar
-      ? identity.picture
-      : undefined;
+  let avatar = identity.picture && !user?.avatar ? identity.picture : undefined;
   let slug = name
     ? await generateUniqueSlug({ initialSlug: name, id: user?.id })
     : undefined;
@@ -198,6 +195,7 @@ export const userGoogleOAuthVerify = async (
       ((identity.identityType as ContactType) === "EMAIL"
         ? identity.identityValue.split("@")[0]
         : identity.identityValue);
+    avatar = identity.picture ? identity.picture : undefined;
     slug = await generateUniqueSlug({ initialSlug: name, id: undefined });
 
     return await tx.user.create({
