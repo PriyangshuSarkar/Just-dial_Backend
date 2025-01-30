@@ -366,7 +366,11 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
     // const phoneOtpData = validatedData.phone ? createOtpData() : null;
 
     const business = await tx.business.create({
-      data: {},
+      data: {
+        name: validatedData.email
+          ? validatedData.email.split("@")[0]
+          : validatedData.phone,
+      },
     });
 
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
@@ -456,7 +460,7 @@ export const resendBusinessOtp = async (
     });
 
     if (!contact) {
-      throw new Error("User not found");
+      throw new Error("Business not found");
     }
 
     // Use the checkVerificationAttempts function to check the attempts
@@ -578,6 +582,14 @@ export const verifyBusinessPrimaryContact = async (
       where: { id: contact.businessId },
     });
 
+    let slug: string | undefined;
+    if (!business?.slug && business?.name) {
+      await generateUniqueSlug({
+        initialSlug: business?.name,
+        id: business?.id,
+      });
+    }
+
     let passwordUpdate = {};
     if (!business?.password && validatedData.password) {
       const { salt, hash } = hashPassword(validatedData.password);
@@ -596,7 +608,7 @@ export const verifyBusinessPrimaryContact = async (
           update: {
             ...passwordUpdate,
             type: "FIRM",
-            slug: business?.slug ? undefined : business?.id,
+            slug,
           },
         },
       },
@@ -1312,30 +1324,7 @@ export const updateBusinessDetails = async (
   const initialSlug = validatedData.slug || name;
 
   if (initialSlug) {
-    const baseSlug = slugify(initialSlug, { lower: true, strict: true });
-
-    let uniqueSuffixLength = 2;
-    slug = baseSlug;
-
-    while (true) {
-      const existingSlug = await prisma.business.findFirst({
-        where: { slug, NOT: { id: business.id } },
-      });
-
-      if (!existingSlug) break;
-
-      const uniqueSuffix = Math.random()
-        .toString(16)
-        .slice(2, 2 + uniqueSuffixLength);
-
-      slug = `${slugify(initialSlug, {
-        lower: true,
-        strict: true,
-      })}-${uniqueSuffix}`;
-
-      slug = `${baseSlug}-${uniqueSuffix}`;
-      uniqueSuffixLength += 1;
-    }
+    slug = await generateUniqueSlug({ initialSlug, id: business.id });
   }
   // Handle logo update if provided
   if (validatedData.logo) {
@@ -2761,4 +2750,26 @@ export const businessVerifyPayment = async (
     ...verifiedBusinessPayment,
     message: "Payment Verified!",
   };
+};
+
+const generateUniqueSlug = async ({
+  initialSlug,
+  id,
+}: {
+  initialSlug: string;
+  id: string | undefined;
+}): Promise<string> => {
+  const baseSlug = slugify(initialSlug, { lower: true, strict: true });
+  let slug = baseSlug;
+  let uniqueSuffixLength = 2;
+
+  while (await prisma.business.findFirst({ where: { slug, NOT: { id } } })) {
+    const uniqueSuffix = Math.random()
+      .toString(16)
+      .slice(2, 2 + uniqueSuffixLength);
+    slug = `${baseSlug}-${uniqueSuffix}`;
+    uniqueSuffixLength += 2;
+  }
+
+  return slug;
 };

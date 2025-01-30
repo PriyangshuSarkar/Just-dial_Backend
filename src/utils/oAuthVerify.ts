@@ -10,14 +10,23 @@ export const OAuthVerifyResponseSchema = object({
     token: string(),
     status: string(),
     completedAt: number(), // Timestamp in milliseconds
-    name: string().optional(),
     identities: object({
       identityType: string(),
       identityValue: string(),
       channel: string(),
       methods: string().array(),
+      name: string().optional(), // Moved name inside identities
       verified: boolean(),
       verifiedTimestamp: number(), // Timestamp in milliseconds
+      picture: string().optional(), // Added picture field
+      isCompanyEmail: boolean().optional(), // Added isCompanyEmail field
+      providerMetadata: object({
+        email: string().optional(),
+        nonce: string().optional(),
+        isEmailVerified: boolean().optional(),
+        name: string().optional(),
+        picture: string().optional(),
+      }).optional(), // Added providerMetadata field
     }).array(),
     network: object({
       ip: string(), // IPv4 or IPv6 address
