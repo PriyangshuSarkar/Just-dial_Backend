@@ -40,11 +40,12 @@ import { generateToken } from "../../../utils/token";
 import slugify from "slugify";
 import { ContactType, Prisma } from "@prisma/client";
 import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
-import { sendOtpEmail } from "../../../utils/emailService";
-import { sendOtpPhone } from "../../../utils/phoneService";
+import { sendOtpEmail } from "../../../utils/sendOtpEmail";
+import { sendOtpPhone } from "../../../utils/sendOtpPhone";
 import { verifyOtp } from "../../../utils/verifyOtp";
 import { razorpay } from "../../../utils/razorpay";
 import { createHmac } from "crypto";
+import { addressUtility } from "../../../utils/addressUtility";
 
 const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
 
@@ -365,7 +366,11 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
     // const phoneOtpData = validatedData.phone ? createOtpData() : null;
 
     const business = await tx.business.create({
-      data: {},
+      data: {
+        name: validatedData.email
+          ? validatedData.email.split("@")[0]
+          : validatedData.phone,
+      },
     });
 
     const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
@@ -374,27 +379,22 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
     let reachedIdEmail: string | undefined;
     let reachedIdPhone: string | undefined;
 
-    try {
-      if (validatedData.email && otpExpiresAt) {
-        const response = await sendOtpEmail(
-          business.name,
-          validatedData.email,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-        reachedIdEmail = response.requestId;
-      } else if (validatedData.phone && otpExpiresAt) {
-        const response = await sendOtpPhone(
-          business.name,
-          validatedData.phone,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-        reachedIdPhone = response.requestId;
-      }
-    } catch (error) {
-      // Log error but don't fail the transaction
-      console.error("Error sending OTP:", error);
+    if (validatedData.email && otpExpiresAt) {
+      const response = await sendOtpEmail(
+        business.name,
+        validatedData.email,
+        OTP_EXPIRY_MINUTES
+      );
+      requestId = response.requestId;
+      reachedIdEmail = response.requestId;
+    } else if (validatedData.phone && otpExpiresAt) {
+      const response = await sendOtpPhone(
+        business.name,
+        validatedData.phone,
+        OTP_EXPIRY_MINUTES
+      );
+      requestId = response.requestId;
+      reachedIdPhone = response.requestId;
     }
 
     // Create contacts
@@ -460,7 +460,7 @@ export const resendBusinessOtp = async (
     });
 
     if (!contact) {
-      throw new Error("User not found");
+      throw new Error("Business not found");
     }
 
     // Use the checkVerificationAttempts function to check the attempts
@@ -582,6 +582,14 @@ export const verifyBusinessPrimaryContact = async (
       where: { id: contact.businessId },
     });
 
+    let slug: string | undefined;
+    if (!business?.slug && business?.name) {
+      await generateUniqueSlug({
+        initialSlug: business?.name,
+        id: business?.id,
+      });
+    }
+
     let passwordUpdate = {};
     if (!business?.password && validatedData.password) {
       const { salt, hash } = hashPassword(validatedData.password);
@@ -600,7 +608,7 @@ export const verifyBusinessPrimaryContact = async (
           update: {
             ...passwordUpdate,
             type: "FIRM",
-            slug: business?.slug ? undefined : business?.id,
+            slug,
           },
         },
       },
@@ -1301,7 +1309,7 @@ export const updateBusinessDetails = async (
 
   let name;
 
-  if (validatedData && validatedData.name !== business.name) {
+  if (validatedData.name && validatedData.name !== business.name) {
     name = validatedData.name;
   }
 
@@ -1312,26 +1320,11 @@ export const updateBusinessDetails = async (
   //   if (existingSlug) throw new Error("Slug already exists.");
   // }
 
-  let slug = undefined;
-
+  let slug: string | undefined;
   const initialSlug = validatedData.slug || name;
 
   if (initialSlug) {
-    slug = slugify(initialSlug, { lower: true, strict: true });
-    let uniqueSuffixLength = 2;
-    let existingSlug = await prisma.business.findFirst({ where: { slug } });
-
-    while (existingSlug) {
-      const uniqueSuffix = Math.random()
-        .toString(16)
-        .slice(2, 2 + uniqueSuffixLength);
-      slug = `${slugify(initialSlug, {
-        lower: true,
-        strict: true,
-      })}-${uniqueSuffix}`;
-      existingSlug = await prisma.business.findFirst({ where: { slug } });
-      uniqueSuffixLength += 1;
-    }
+    slug = await generateUniqueSlug({ initialSlug, id: business.id });
   }
   // Handle logo update if provided
   if (validatedData.logo) {
@@ -1849,6 +1842,13 @@ export const manageBusinessAddress = async (
         },
       });
 
+      addressUtility({
+        pincode: updatedAddress.pincode,
+        city: updatedAddress.city,
+        state: updatedAddress.state,
+        country: updatedAddress.country,
+      });
+
       updatedAddresses.push({
         ...updatedAddress,
         message: "Business address updated successfully.",
@@ -1867,6 +1867,13 @@ export const manageBusinessAddress = async (
             connect: { id: business.id },
           },
         },
+      });
+
+      addressUtility({
+        pincode: newAddress.pincode,
+        city: newAddress.city,
+        state: newAddress.state,
+        country: newAddress.country,
       });
 
       updatedAddresses.push({
@@ -2648,6 +2655,9 @@ export const businessSubscription = async (
     amount: plan.price * 100,
     currency: "INR",
     receipt: business.id,
+    notes: {
+      subscriptionId: plan.id,
+    },
   });
 
   await prisma.business.update({
@@ -2655,7 +2665,6 @@ export const businessSubscription = async (
       id: business.id,
     },
     data: {
-      subscriptionId: plan.id,
       razorpay_order_id: order.id,
     },
   });
@@ -2685,6 +2694,21 @@ export const businessVerifyPayment = async (
     throw new Error("Incorrect razorpay signature. Validation failed!");
   }
 
+  const order = await razorpay.orders.fetch(validatedData.razorpay_order_id);
+
+  const subscriptionId = order.notes?.subscriptionId as string;
+
+  if (!subscriptionId) {
+    throw new Error("Razorpay Error!");
+  }
+
+  const subscription = await prisma.businessSubscription.findUniqueOrThrow({
+    where: {
+      id: subscriptionId,
+      deletedAt: null,
+    },
+  });
+
   const business = await prisma.business.findUniqueOrThrow({
     where: {
       razorpay_order_id: validatedData.razorpay_order_id,
@@ -2701,18 +2725,24 @@ export const businessVerifyPayment = async (
     },
   });
 
-  const subscriptionExpire = new Date();
-  subscriptionExpire.setDate(
-    subscriptionExpire.getDate() + business.subscription!.duration
-  );
+  const currentDate = new Date();
+
+  const baseDate =
+    business.subscriptionExpire && business.subscriptionExpire > currentDate
+      ? business.subscriptionExpire
+      : currentDate;
+
+  const newExpiryDate = new Date(baseDate);
+  newExpiryDate.setDate(newExpiryDate.getDate() + subscription.duration);
 
   const verifiedBusinessPayment = await prisma.business.update({
     where: {
       id: business.id,
     },
     data: {
+      subscriptionId: subscription.id,
       paymentVerification: true,
-      subscriptionExpire: subscriptionExpire,
+      subscriptionExpire: newExpiryDate,
     },
   });
 
@@ -2720,4 +2750,26 @@ export const businessVerifyPayment = async (
     ...verifiedBusinessPayment,
     message: "Payment Verified!",
   };
+};
+
+const generateUniqueSlug = async ({
+  initialSlug,
+  id,
+}: {
+  initialSlug: string;
+  id: string | undefined;
+}): Promise<string> => {
+  const baseSlug = slugify(initialSlug, { lower: true, strict: true });
+  let slug = baseSlug;
+  let uniqueSuffixLength = 2;
+
+  while (await prisma.business.findFirst({ where: { slug, NOT: { id } } })) {
+    const uniqueSuffix = Math.random()
+      .toString(16)
+      .slice(2, 2 + uniqueSuffixLength);
+    slug = `${baseSlug}-${uniqueSuffix}`;
+    uniqueSuffixLength += 2;
+  }
+
+  return slug;
 };

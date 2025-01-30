@@ -35,6 +35,7 @@ export const typeDefs = gql`
     bookings: [Booking]
     reviews: [Review]
     feedbacks: [Feedback]
+    testimonials: [Testimonial]
     subscription: UserSubscription
     adminNotice: AdminNotice
     message: String
@@ -79,11 +80,14 @@ export const typeDefs = gql`
   type BusinessSubscription {
     id: ID
     name: String
+    priceDescription: String
     description: String
     type: String
     price: Float
     duration: Int
     features: [String]
+    order: Int
+    priority: Int
     tierLevel: Int
     createdAt: Date
     updatedAt: Date
@@ -115,6 +119,7 @@ export const typeDefs = gql`
     bookings: [Booking]
     reviews: [Review]
     feedbacks: [Feedback]
+    testimonials: [Testimonial]
     businessSupportingDocuments: [BusinessSupportingDocuments]
     businessDetails: BusinessDetails
     adminNotice: AdminNotice
@@ -224,6 +229,7 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetailsId: ID
     businessDetails: BusinessDetails
+    adminBusinessAdBannerImage: AdminBusinessAdBannerImage
     message: String
   }
 
@@ -246,6 +252,7 @@ export const typeDefs = gql`
     updatedAt: Date
     businessDetailsId: ID
     businessDetails: BusinessDetails
+    adminBusinessMobileAdBannerImage: AdminBusinessMobileAdBannerImage
     message: String
   }
 
@@ -381,7 +388,6 @@ export const typeDefs = gql`
     id: ID
     slug: ID
     name: String
-
     Category: [Category]
     message: String
   }
@@ -431,6 +437,8 @@ export const typeDefs = gql`
 
   type Testimonial {
     id: ID
+    reviewId: ID
+    feedbackId: ID
     order: Int
     type: TestimonialType
     rating: Float

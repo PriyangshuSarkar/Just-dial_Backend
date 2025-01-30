@@ -7,6 +7,7 @@ export const typeDefs = gql`
     price
     popularity
     experience
+    order
   }
 
   enum OrderEnum {
@@ -17,6 +18,11 @@ export const typeDefs = gql`
   enum AllTestimonialType {
     REVIEW
     FEEDBACK
+  }
+
+  enum AllTestimonialFilter {
+    USER
+    BUSINESS
   }
 
   enum AllAdminNoticeType {
@@ -81,6 +87,7 @@ export const typeDefs = gql`
 
     allTestimonials(
       type: AllTestimonialType
+      filter: AllTestimonialFilter
       page: Int = 1
       limit: Int = 10
     ): [Testimonial]
@@ -96,5 +103,19 @@ export const typeDefs = gql`
     getAllUserSubscriptions: [UserSubscription]
 
     getAllBusinessSubscriptions: [BusinessSubscription]
+  }
+
+  type Mutation {
+    raiseQuery(
+      name: String
+      email: String!
+      phone: String
+      subject: String
+      message: String
+    ): RaiseQueryResponse
+  }
+
+  type RaiseQueryResponse {
+    message: String
   }
 `;

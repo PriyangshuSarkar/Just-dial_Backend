@@ -9,8 +9,8 @@ import {
 } from "zod";
 
 export const BusinessSignupSchema = object({
-  email: string().email().optional(),
-  phone: string().optional(),
+  email: string().trim().email().optional(),
+  phone: string().trim().optional(),
 })
   .refine((data) => data.email || data.phone, {
     message: "Either email or phone must be provided.",
@@ -20,8 +20,8 @@ export const BusinessSignupSchema = object({
 export type BusinessSignupInput = infer_<typeof BusinessSignupSchema>;
 
 export const ResendBusinessOtpSchema = object({
-  email: string().email().optional(),
-  phone: string().optional(),
+  email: string().trim().email().optional(),
+  phone: string().trim().optional(),
 })
   .refine((data) => data.email || data.phone, {
     message: "Either email or phone must be provided.",
@@ -31,8 +31,8 @@ export const ResendBusinessOtpSchema = object({
 export type ResendBusinessOtpInput = infer_<typeof ResendBusinessOtpSchema>;
 
 export const VerifyBusinessPrimaryContactSchema = object({
-  email: string().optional(),
-  phone: string().optional(),
+  email: string().trim().optional(),
+  phone: string().trim().optional(),
   otp: string(),
   requestId: string(),
   password: string().optional(),
@@ -47,8 +47,8 @@ export type VerifyBusinessPrimaryContactInput = infer_<
 >;
 
 export const AddBusinessPrimaryContactSchema = object({
-  email: string().email().optional(),
-  phone: string().optional(),
+  email: string().trim().email().optional(),
+  phone: string().trim().optional(),
 })
   .refine((data) => (data.email ? !data.phone : !!data.phone), {
     message: "Only one of email or phone should be provided.",
@@ -60,8 +60,8 @@ export type AddBusinessPrimaryContactInput = infer_<
 >;
 
 export const BusinessLoginSchema = object({
-  email: string().optional(),
-  phone: string().optional(),
+  email: string().trim().optional(),
+  phone: string().trim().optional(),
   password: string(),
 })
   .refine((data) => (data.email ? !data.phone : !!data.phone), {
@@ -72,8 +72,8 @@ export const BusinessLoginSchema = object({
 export type BusinessLoginInput = infer_<typeof BusinessLoginSchema>;
 
 export const ForgetBusinessPasswordSchema = object({
-  email: string().optional(),
-  phone: string().optional(),
+  email: string().trim().optional(),
+  phone: string().trim().optional(),
 })
   .refine((data) => (data.email ? !data.phone : !!data.phone), {
     message: "Only one of email or phone should be provided.",
@@ -85,8 +85,8 @@ export type ForgetBusinessPasswordInput = infer_<
 >;
 
 export const ChangeBusinessPasswordSchema = object({
-  email: string().optional(),
-  phone: string().optional(),
+  email: string().trim().optional(),
+  phone: string().trim().optional(),
   password: string(),
   otp: string(),
   requestId: string(),
@@ -101,26 +101,26 @@ export type ChangeBusinessPasswordInput = infer_<
 >;
 
 export const UpdateBusinessDetailsSchema = object({
-  name: string().optional(),
-  slug: string().optional(),
+  name: string().trim().optional(),
+  slug: string().trim().optional(),
   isListed: boolean().optional(),
-  registrationNumber: string().optional(),
-  license: string().optional(),
+  registrationNumber: string().trim().optional(),
+  license: string().trim().optional(),
   experience: number().optional(),
   teamSize: number().optional(),
   description: string().optional(),
-  degrees: string().toLowerCase().array().optional(),
-  gstNumber: string().optional(),
+  degrees: string().trim().array().optional(),
+  gstNumber: string().trim().optional(),
   categoryIds: string().optional().array().optional(),
-  languages: string().toLowerCase().array().optional(),
-  proficiencies: string().toLowerCase().array().optional(),
-  courts: string().toLowerCase().array().optional(),
-  tags: string().toLowerCase().array().optional(),
+  languages: string().trim().toLowerCase().array().optional(),
+  proficiencies: string().trim().toLowerCase().array().optional(),
+  courts: string().trim().toLowerCase().array().optional(),
+  tags: string().trim().toUpperCase().array().optional(),
   latitude: number().optional(),
   longitude: number().optional(),
-  additionalContacts: string().array().optional(),
+  additionalContacts: string().trim().array().optional(),
   logo: any().optional(),
-  primaryWebsite: string().optional(),
+  primaryWebsite: string().trim().optional(),
 }).optional();
 export type UpdateBusinessDetailsInput = infer_<
   typeof UpdateBusinessDetailsSchema
@@ -130,11 +130,11 @@ export const ManageBusinessAddressSchema = object({
   addresses: object({
     order: number().optional(),
     addressId: string().optional(),
-    street: string().optional(),
-    city: string().optional(),
-    state: string().optional(),
-    country: string().optional(),
-    pincode: string().optional(),
+    street: string().trim().optional(),
+    city: string().trim().optional(),
+    state: string().trim().optional(),
+    country: string().trim().optional(),
+    pincode: string().trim().regex(/^\d*$/).optional(),
     toDelete: boolean().optional(),
   })
     .array()
@@ -147,8 +147,8 @@ export type ManageBusinessAddressInput = infer_<
 export const ManageBusinessWebsiteSchema = object({
   websites: object({
     websiteId: string().optional(),
-    type: string().optional(),
-    url: string().optional(),
+    type: string().trim().optional(),
+    url: string().trim().optional(),
     toDelete: boolean().optional(),
   })
     .array()
@@ -201,7 +201,7 @@ export type ManageBusinessMobileAdBannerImageInput = infer_<
 export const ManageBusinessSupportingDocumentsSchema = object({
   documents: object({
     documentId: string().optional(),
-    type: string().optional(),
+    type: string().trim().optional(),
     document: any().optional(),
     toDelete: boolean().optional(),
   })

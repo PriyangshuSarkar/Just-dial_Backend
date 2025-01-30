@@ -1,56 +1,41 @@
-import { infer as infer_, object, string } from "zod";
+import { createTransport } from "nodemailer";
 
-const otpApiKey = process.env.OTPLESS_API_KEY!;
-const otpApiSecret = process.env.OTPLESS_SECRET!;
-const otpLength = process.env.OTP_LENGTH || 6;
-
-export const SendOtpEmailResponseSchema = object({
-  requestId: string(),
+const transporter = createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || "587"),
+  secure: process.env.SMTP_SECURE === "true",
+  auth: {
+    user: process.env.SMTP_USERNAME,
+    pass: process.env.SMTP_PASSWORD,
+  },
 });
-export type SendOtpEmailResponse = infer_<typeof SendOtpEmailResponseSchema>;
 
-export const sendOtpEmail = async (
-  userName: string | null,
-  email: string,
-  expiry: number
-): Promise<{ requestId: string }> => {
-  return {
-    requestId: "test",
-  };
-  const options = {
-    method: "POST",
-    headers: {
-      clientId: otpApiKey,
-      clientSecret: otpApiSecret,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email,
-      expiry, // OTP expiry time in minutes
-      otpLength, // Length of the OTP
-      channels: ["EMAIL"],
-      metadata: {
-        userName,
-      },
-    }),
-  };
+/**
+ * Sends an email using the Nodemailer transporter.
+ *
+ * @param {Object} params - The email parameters.
+ * @param {string} params.to - The recipient's email address.
+ * @param {string | undefined} params.subject - The subject of the email.
+ * @param {string | undefined} params.message - The message body of the email.
+ * @returns {Promise<void>} A promise that resolves when the email is sent.
+ */
 
-  try {
-    const response = await fetch(
-      "https://auth.otpless.app/auth/v1/initiate/otp",
-      options
-    );
-    if (response.ok) {
-      const data = await response.json();
-      console.log("OTP request initiated successfully:", data);
-      return data;
-    } else {
-      const errorData = await response.json();
-      console.error("Error initiating OTP request:", errorData);
-      throw new Error(`Failed to send OTP: ${errorData.message}`);
-    }
-  } catch (error) {
-    console.error("Error sending OTP:", error);
-    throw new Error("Failed to send OTP");
-  }
-};
+async function sendEmail({
+  to,
+  subject,
+  message,
+}: {
+  to: string;
+  subject: string | undefined;
+  message: string | undefined;
+}) {
+  const mail = {
+    from: process.env.SMTP_USERNAME,
+    to: [to, process.env.SMTP_USERNAME].join(","),
+    subject,
+    text: message, // Using 'text' instead of 'message' for Nodemailer
+  };
+  await transporter.sendMail(mail);
+}
+
+export default sendEmail;

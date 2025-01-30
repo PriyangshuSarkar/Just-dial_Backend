@@ -8,11 +8,14 @@ import {
   GetBusinessByIdSchema,
   LocationInput,
   LocationSchema,
+  RaiseQueryInput,
+  RaiseQuerySchema,
 } from "./db";
+import sendEmail from "../../../utils/emailService";
 
 const requestCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-const MAX_CACHE_SIZE = 100; // Max number of items in cache
+const CACHE_TTL = parseInt(process.env.CASH_TIME || "5") * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = parseInt(process.env.CASH_SIZE || "100"); // Max number of items in cache
 
 export const getAllBusinesses = async () => {
   const cachedResult = getCachedResult("allBusinesses");
@@ -637,45 +640,45 @@ export const location = async (_: unknown, args: LocationInput) => {
 
   // Run all queries in parallel using Promise.all
   const [pincodes, cities, states, countries] = await Promise.all([
-    prisma.pincode.findMany({
-      where: search
-        ? {
+    search && /^\d/.test(search)
+      ? prisma.pincode.findMany({
+          where: {
             OR: [
               { code: { contains: search, mode: "insensitive" } },
               { slug: { contains: search, mode: "insensitive" } },
             ],
-          }
-        : {},
-      select: {
-        id: true,
-        code: true,
-        slug: true,
-        cityId: true,
-        city: {
+          },
           select: {
             id: true,
-            name: true,
+            code: true,
             slug: true,
-            stateId: true,
-            state: {
+            cityId: true,
+            city: {
               select: {
                 id: true,
                 name: true,
                 slug: true,
-                countryId: true,
-                country: {
+                stateId: true,
+                state: {
                   select: {
                     id: true,
                     name: true,
                     slug: true,
+                    countryId: true,
+                    country: {
+                      select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                      },
+                    },
                   },
                 },
               },
             },
           },
-        },
-      },
-    }),
+        })
+      : [],
     prisma.city.findMany({
       where: search
         ? {
@@ -764,7 +767,7 @@ export const allTestimonials = async (
   _: unknown,
   args: AllTestimonialsInput
 ) => {
-  const { page, limit, type } = AllTestimonialsInput.parse(args);
+  const { page, limit, type, filter } = AllTestimonialsInput.parse(args);
 
   const cacheKey = JSON.stringify({ page, limit, type });
 
@@ -776,6 +779,8 @@ export const allTestimonials = async (
     where: {
       deletedAt: null,
       type: type,
+      userId: filter == "USER" ? { not: null } : undefined,
+      businessId: filter == "BUSINESS" ? { not: null } : undefined,
       order: {
         not: null,
       },
@@ -945,6 +950,14 @@ export const getAllUserSubscriptions = async () => {
 
   const userSubscriptions = await prisma.userSubscription.findMany({
     where: { deletedAt: null },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      duration: true,
+      features: true,
+    },
   });
 
   setCachedResult("userSubscriptions", userSubscriptions);
@@ -959,11 +972,51 @@ export const getAllBusinessSubscriptions = async () => {
 
   const businessSubscriptions = await prisma.businessSubscription.findMany({
     where: { deletedAt: null },
+    select: {
+      id: true,
+      name: true,
+      priceDescription: true,
+      description: true,
+      price: true,
+      duration: true,
+      features: true,
+      order: true,
+      priority: true,
+      tierLevel: true,
+    },
+    orderBy: {
+      order: "asc",
+    },
   });
 
   setCachedResult("businessSubscriptions", businessSubscriptions);
 
   return businessSubscriptions;
+};
+
+export const raiseQuery = async (_: unknown, args: RaiseQueryInput) => {
+  const validatedData = RaiseQuerySchema.parse(args);
+
+  if (!validatedData) return;
+
+  try {
+    await sendEmail({
+      to: validatedData.email,
+      subject: validatedData.subject || "",
+      message: `Name: ${validatedData.name}\nEmail: ${
+        validatedData.email
+      }\nPhone: ${validatedData.phone}\n\n${
+        validatedData.message
+      }\n\nCreated at: ${new Date().toLocaleString()}`,
+    });
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to send email");
+  }
+
+  return {
+    message: "Email sent successfully",
+  };
 };
 
 const getCachedResult = (key: string) => {

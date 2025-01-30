@@ -97,18 +97,21 @@ model UserAddress {
 }
 
 model BusinessSubscription {
-  id          String       @id @default(uuid())
-  name        String
-  description String?
-  type        BusinessType
-  price       Float
-  duration    Int
-  features    String[]
-  tierLevel   Int          @default(1)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
-  businesses  Business[]
+  id               String        @id @default(uuid())
+  name             String
+  priceDescription String?
+  description      String?
+  type             BusinessType? @default(FIRM)
+  price            Float
+  duration         Int
+  features         String[]
+  order            Int?
+  priority         Int?
+  tierLevel        Int?          @default(1)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deletedAt        DateTime?
+  businesses       Business[]
 }
 
 enum BusinessType {

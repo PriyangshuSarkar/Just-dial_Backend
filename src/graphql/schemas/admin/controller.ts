@@ -18,6 +18,10 @@ import {
   AdminDeleteReviewsSchema,
   AdminGetAllAdminNoticesInput,
   AdminGetAllAdminNoticesSchema,
+  AdminGetAllBusinessAdBannerImagesInput,
+  AdminGetAllBusinessAdBannerImagesSchema,
+  AdminGetAllBusinessMobileAdBannerImagesInput,
+  AdminGetAllBusinessMobileAdBannerImagesSchema,
   AdminGetAllTestimonialsInput,
   AdminGetAllTestimonialsSchema,
   AdminGetBusinessByIdInput,
@@ -56,6 +60,8 @@ import {
   AdminManageTestimonialsSchema,
   AdminManageUserSubscriptionsInput,
   AdminManageUserSubscriptionsSchema,
+  AdminSearchAllFeedbacksInput,
+  AdminSearchAllFeedbacksSchema,
   AdminSearchAllReviewsInput,
   AdminSearchAllReviewsSchema,
   AdminVerifyBusinessesInput,
@@ -238,6 +244,7 @@ export const adminAllUsers = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -247,6 +254,7 @@ export const adminAllUsers = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -256,6 +264,7 @@ export const adminAllUsers = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -315,6 +324,7 @@ export const adminGetUserById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -324,6 +334,7 @@ export const adminGetUserById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -333,6 +344,7 @@ export const adminGetUserById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -598,6 +610,7 @@ export const adminAllBusinesses = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -607,6 +620,7 @@ export const adminAllBusinesses = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -616,6 +630,7 @@ export const adminAllBusinesses = async (
             deletedAt: null,
           },
           include: {
+            user: true,
             business: true,
           },
           take: 20,
@@ -701,6 +716,7 @@ export const adminGetBusinessById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -710,6 +726,7 @@ export const adminGetBusinessById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -719,6 +736,7 @@ export const adminGetBusinessById = async (
           deletedAt: null,
         },
         include: {
+          user: true,
           business: true,
         },
         take: 20,
@@ -784,17 +802,19 @@ export const adminSearchAllReviews = async (
   // Calculate pagination values
   const skip = (page - 1) * limit;
 
+  const where: Prisma.ReviewWhereInput = {
+    deletedAt: null,
+    comment: search
+      ? {
+          contains: search,
+          mode: "insensitive", // Case-insensitive search
+        }
+      : undefined,
+  };
+
   const [reviews, total] = await Promise.all([
     prisma.review.findMany({
-      where: {
-        deletedAt: null,
-        comment: search
-          ? {
-              contains: search,
-              mode: "insensitive", // Case-insensitive search
-            }
-          : undefined,
-      },
+      where,
       orderBy: {
         [sortBy]: sortOrder, // Dynamic sorting
       },
@@ -802,15 +822,7 @@ export const adminSearchAllReviews = async (
       take: limit,
     }),
     prisma.review.count({
-      where: {
-        deletedAt: null,
-        comment: search
-          ? {
-              contains: search,
-              mode: "insensitive",
-            }
-          : undefined,
-      },
+      where,
     }),
   ]);
 
@@ -872,7 +884,7 @@ export const adminDeleteReviews = async (
 
 export const adminSearchAllFeedbacks = async (
   _: unknown,
-  args: AdminSearchAllReviewsInput,
+  args: AdminSearchAllFeedbacksInput,
   context: any
 ) => {
   // Validate the adminId in the context
@@ -889,7 +901,7 @@ export const adminSearchAllFeedbacks = async (
   }
 
   // Validate and parse the input data
-  const validatedData = AdminSearchAllReviewsSchema.parse(args);
+  const validatedData = AdminSearchAllFeedbacksSchema.parse(args);
   if (!validatedData) return;
 
   const { search, sortBy, sortOrder, page, limit } = validatedData;
@@ -897,12 +909,14 @@ export const adminSearchAllFeedbacks = async (
   // Calculate pagination values
   const skip = (page - 1) * limit;
 
+  const where: Prisma.FeedbackWhereInput = {
+    comment: search ? { contains: search, mode: "insensitive" } : undefined,
+    deletedAt: null,
+  };
+
   const [feedbacks, total] = await Promise.all([
     prisma.feedback.findMany({
-      where: {
-        comment: search ? { contains: search, mode: "insensitive" } : undefined,
-        deletedAt: null,
-      },
+      where,
       orderBy: {
         [sortBy]: sortOrder, // Dynamic sorting
       },
@@ -910,9 +924,7 @@ export const adminSearchAllFeedbacks = async (
       take: limit,
     }),
     prisma.feedback.count({
-      where: {
-        comment: search ? { contains: search, mode: "insensitive" } : undefined,
-      },
+      where,
     }),
   ]);
 
@@ -1306,20 +1318,75 @@ export const adminManageLanguages = async (
   for (const language of validatedData.languages) {
     let result;
     if (!language.id) {
+      let slug: string | undefined;
+      const initialSlug = language.slug || language.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.language.findFirst({
+            where: { slug, NOT: { id: language.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
       // Create a new language
       result = await prisma.language.create({
         data: {
           name: language.name,
-          slug: language.slug,
+          slug,
         },
       });
     } else {
+      let slug: string | undefined;
+      const initialSlug = language.slug || language.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.language.findFirst({
+            where: { slug, NOT: { id: language.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       // Update the existing language
       result = await prisma.language.update({
         where: { id: language.id },
         data: {
           name: language.name,
-          slug: language.slug,
+          slug,
           deletedAt: language.toDelete ? new Date() : null,
         },
       });
@@ -1376,20 +1443,75 @@ export const adminManageProficiencies = async (
   for (const proficiency of validatedData.proficiencies) {
     let result;
     if (!proficiency.id) {
+      let slug: string | undefined;
+      const initialSlug = proficiency.slug || proficiency.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.proficiency.findFirst({
+            where: { slug, NOT: { id: proficiency.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
       // Create a new proficiency
       result = await prisma.proficiency.create({
         data: {
           name: proficiency.name,
-          slug: proficiency.slug,
+          slug: slug,
         },
       });
     } else {
+      let slug: string | undefined;
+      const initialSlug = proficiency.slug || proficiency.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.proficiency.findFirst({
+            where: { slug, NOT: { id: proficiency.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       // Update an existing proficiency
       result = await prisma.proficiency.update({
         where: { id: proficiency.id },
         data: {
           name: proficiency.name,
-          slug: proficiency.slug,
+          slug: slug,
           deletedAt: proficiency.toDelete ? new Date() : null,
         },
       });
@@ -1446,20 +1568,74 @@ export const adminManageCourts = async (
   for (const court of validatedData.courts) {
     let result;
     if (!court.id) {
+      let slug: string | undefined;
+      const initialSlug = court.slug || court.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.court.findFirst({
+            where: { slug, NOT: { id: court.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
       // Create a new court
       result = await prisma.court.create({
         data: {
           name: court.name,
-          slug: court.slug,
+          slug,
         },
       });
     } else {
+      let slug: string | undefined;
+      const initialSlug = court.slug || court.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.court.findFirst({
+            where: { slug, NOT: { id: court.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
       // Update an existing court
       result = await prisma.court.update({
         where: { id: court.id },
         data: {
           name: court.name,
-          slug: court.slug,
+          slug,
           deletedAt: court.toDelete ? new Date() : null,
         },
       });
@@ -1492,6 +1668,9 @@ export const adminGetAllCategories = async (
     },
     include: {
       groupName: true,
+    },
+    orderBy: {
+      order: "asc",
     },
   });
 
@@ -1557,26 +1736,30 @@ export const adminManageCategories = async (
         });
         continue;
       }
-      let slug: string | undefined = undefined;
+      let slug: string | undefined;
       const initialSlug = category.slug || category.name;
+
       if (initialSlug) {
-        slug = slugify(initialSlug, {
+        const baseSlug = slugify(initialSlug, {
           lower: true,
           strict: true,
         });
 
         let uniqueSuffixLength = 2;
-        let existingSlug = await prisma.category.findFirst({ where: { slug } });
+        slug = baseSlug;
 
-        while (existingSlug) {
+        while (true) {
+          const existingSlug = await prisma.category.findFirst({
+            where: { slug, NOT: { id: category.id } },
+          });
+
+          if (!existingSlug) break;
+
           const uniqueSuffix = Math.random()
             .toString(16)
             .slice(2, 2 + uniqueSuffixLength);
-          slug = `${slugify(initialSlug, {
-            lower: true,
-            strict: true,
-          })}-${uniqueSuffix}`;
-          existingSlug = await prisma.category.findFirst({ where: { slug } });
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
           uniqueSuffixLength += 1;
         }
       }
@@ -1623,29 +1806,30 @@ export const adminManageCategories = async (
         continue;
       }
 
-      let slug: string | undefined = undefined;
+      let slug: string | undefined;
       const initialSlug = category.slug || category.name;
-      if (
-        (category.slug && initialSlug) ||
-        (!existingCategory?.slug && initialSlug)
-      ) {
-        slug = slugify(initialSlug, {
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
           lower: true,
           strict: true,
         });
 
         let uniqueSuffixLength = 2;
-        let existingSlug = await prisma.category.findFirst({ where: { slug } });
+        slug = baseSlug;
 
-        while (existingSlug) {
+        while (true) {
+          const existingSlug = await prisma.category.findFirst({
+            where: { slug, NOT: { id: category.id } },
+          });
+
+          if (!existingSlug) break;
+
           const uniqueSuffix = Math.random()
             .toString(16)
             .slice(2, 2 + uniqueSuffixLength);
-          slug = `${slugify(initialSlug, {
-            lower: true,
-            strict: true,
-          })}-${uniqueSuffix}`;
-          existingSlug = await prisma.category.findFirst({ where: { slug } });
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
           uniqueSuffixLength += 1;
         }
       }
@@ -1812,11 +1996,39 @@ export const adminManageCountries = async (
 
   for (const country of validatedData.countries) {
     if (!country.id) {
+      let slug: string | undefined;
+      const initialSlug = country.slug || country.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.country.findFirst({
+            where: { slug, NOT: { id: country.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       // Create a new country
       const newCountry = await prisma.country.create({
         data: {
           name: country.name,
-          slug: country.slug,
+          slug,
         },
       });
       results.push({ ...newCountry, message: "Country created successfully!" });
@@ -1831,11 +2043,39 @@ export const adminManageCountries = async (
         continue;
       }
 
+      let slug: string | undefined;
+      const initialSlug = country.slug || country.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.country.findFirst({
+            where: { slug, NOT: { id: country.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       const updatedCountry = await prisma.country.update({
         where: { id: country.id },
         data: {
           name: country.name,
-          slug: country.slug,
+          slug,
         },
       });
       results.push({
@@ -1894,12 +2134,40 @@ export const adminManageStates = async (
 
   for (const state of validatedData.states) {
     if (!state.id) {
+      let slug: string | undefined;
+      const initialSlug = state.slug || state.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.state.findFirst({
+            where: { slug, NOT: { id: state.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       // Create a new state
       const newState = await prisma.state.create({
         data: {
           countryId: state.countryId,
           name: state.name,
-          slug: state.slug,
+          slug,
         },
       });
       results.push({ ...newState, message: "State created successfully!" });
@@ -1914,12 +2182,40 @@ export const adminManageStates = async (
         continue;
       }
 
+      let slug: string | undefined;
+      const initialSlug = state.slug || state.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.state.findFirst({
+            where: { slug, NOT: { id: state.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       const updatedState = await prisma.state.update({
         where: { id: state.id },
         data: {
           countryId: state.countryId,
           name: state.name,
-          slug: state.slug,
+          slug: slug,
         },
       });
       results.push({ ...updatedState, message: "State updated successfully!" });
@@ -1975,12 +2271,40 @@ export const adminManageCities = async (
 
   for (const city of validatedData.cities) {
     if (!city.id) {
+      let slug: string | undefined;
+      const initialSlug = city.slug || city.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.city.findFirst({
+            where: { slug, NOT: { id: city.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       // Create a new city
       const newCity = await prisma.city.create({
         data: {
           stateId: city.stateId,
           name: city.name,
-          slug: city.slug,
+          slug,
         },
       });
       results.push({ ...newCity, message: "City created successfully!" });
@@ -1995,12 +2319,40 @@ export const adminManageCities = async (
         continue;
       }
 
+      let slug: string | undefined;
+      const initialSlug = city.slug || city.name;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.city.findFirst({
+            where: { slug, NOT: { id: city.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       const updatedCity = await prisma.city.update({
         where: { id: city.id },
         data: {
           stateId: city.stateId,
           name: city.name,
-          slug: city.slug,
+          slug,
         },
       });
       results.push({ ...updatedCity, message: "City updated successfully!" });
@@ -2056,12 +2408,41 @@ export const adminManagePincodes = async (
 
   for (const pincode of validatedData.pincodes) {
     if (!pincode.id) {
+      let slug: string | undefined;
+
+      const initialSlug = pincode.slug || pincode.code;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.pincode.findFirst({
+            where: { slug, NOT: { id: pincode.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       // Create a new pincode
       const newPincode = await prisma.pincode.create({
         data: {
           cityId: pincode.cityId,
           code: pincode.code,
-          slug: pincode.slug,
+          slug,
         },
       });
       results.push({ ...newPincode, message: "Pincode created successfully!" });
@@ -2076,12 +2457,40 @@ export const adminManagePincodes = async (
         continue;
       }
 
+      let slug: string | undefined;
+      const initialSlug = pincode.slug || pincode.code;
+
+      if (initialSlug) {
+        const baseSlug = slugify(initialSlug, {
+          lower: true,
+          strict: true,
+        });
+
+        let uniqueSuffixLength = 2;
+        slug = baseSlug;
+
+        while (true) {
+          const existingSlug = await prisma.pincode.findFirst({
+            where: { slug, NOT: { id: pincode.id } },
+          });
+
+          if (!existingSlug) break;
+
+          const uniqueSuffix = Math.random()
+            .toString(16)
+            .slice(2, 2 + uniqueSuffixLength);
+
+          slug = `${baseSlug}-${uniqueSuffix}`;
+          uniqueSuffixLength += 1;
+        }
+      }
+
       const updatedPincode = await prisma.pincode.update({
         where: { id: pincode.id },
         data: {
           cityId: pincode.cityId,
           code: pincode.code,
-          slug: pincode.slug,
+          slug,
         },
       });
       results.push({
@@ -2114,27 +2523,51 @@ export const adminGetAllTestimonials = async (
   const validatedData = AdminGetAllTestimonialsSchema.parse(args);
   if (!validatedData) return;
 
-  let sort = validatedData.sortBy;
+  const { page, limit, type, filter, sortBy, sortOrder } = validatedData;
+
+  let sort = sortBy;
   sort = (sort === "alphabetical" ? "name" : sort) as
     | "alphabetical"
     | "createdAt"
     | "updatedAt";
 
-  const skip = (validatedData?.page - 1) * validatedData?.limit;
+  let where: Prisma.TestimonialWhereInput = {
+    deletedAt: null,
+  };
+
+  if (type === "REVIEW") {
+    where = {
+      type,
+    };
+  } else if (type === "FEEDBACK") {
+    where = {
+      type,
+    };
+  }
+
+  if (filter === "BUSINESS") {
+    where = {
+      businessId: filter === "BUSINESS" ? { not: null } : undefined,
+    };
+  } else if (filter === "USER") {
+    where = {
+      userId: filter === "USER" ? { not: null } : undefined,
+    };
+  }
 
   const [testimonials, total] = await Promise.all([
     await prisma.testimonial.findMany({
-      where: {
-        type: validatedData.type,
+      where,
+      include: {
+        user: true,
+        business: true,
       },
-      skip,
-      take: validatedData.limit,
-      orderBy: { [sort]: validatedData.sortOrder },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { [sort]: sortOrder },
     }),
     await prisma.testimonial.count({
-      where: {
-        type: validatedData.type || undefined,
-      },
+      where,
     }),
   ]);
 
@@ -2238,19 +2671,13 @@ export const adminManageTestimonials = async (
     // Create or update the testimonial
     const createdTestimonial = await prisma.testimonial.upsert({
       where: {
-        id: existingTestimonial?.id || undefined, // Using the found testimonial's id
+        id: existingTestimonial?.id || "", // Using the found testimonial's id
       },
       update: {
-        reviewId: testimonial.reviewId,
-        feedbackId: testimonial.feedbackId,
-        order: testimonial.order,
-        type: entityType,
-        rating: existingReview?.rating,
-        comment: existingReview?.comment,
-        businessId: existingReview?.businessId,
-        userId: existingReview?.userId,
-        createdAt: existingReview?.createdAt,
-        updatedAt: existingReview?.updatedAt,
+        order: testimonial.order || undefined,
+        type: entityType || undefined,
+        rating: existingReview?.rating || undefined,
+        comment: existingReview?.comment || undefined,
       },
       create: {
         reviewId: testimonial.reviewId,
@@ -2261,14 +2688,12 @@ export const adminManageTestimonials = async (
         comment: existingReview?.comment,
         businessId: existingReview?.businessId,
         userId: existingReview?.userId,
-        createdAt: existingReview?.createdAt,
-        updatedAt: existingReview?.updatedAt,
       },
     });
 
     results.push({
       ...createdTestimonial,
-      message: "Testimonial created successfully!",
+      message: "Testimonial created/updated successfully!",
     });
   }
 
@@ -2302,15 +2727,17 @@ export const adminGetAllAdminNotices = async (
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
+  const where: Prisma.AdminNoticeWhereInput = {
+    deletedAt: null,
+    type: validatedData.type,
+    expiresAt: {
+      gt: new Date(), // Filters for notices that have not expired
+    },
+  };
+
   const [notices, total] = await Promise.all([
     prisma.adminNotice.findMany({
-      where: {
-        deletedAt: null,
-        type: validatedData.type,
-        expiresAt: {
-          gt: new Date(), // Filters for notices that have not expired
-        },
-      },
+      where,
       skip,
       take: validatedData.limit,
       orderBy: {
@@ -2318,13 +2745,7 @@ export const adminGetAllAdminNotices = async (
       },
     }),
     prisma.adminNotice.count({
-      where: {
-        deletedAt: null,
-        type: validatedData.type,
-        expiresAt: {
-          gt: new Date(), // Filters for notices that have not expired
-        },
-      },
+      where,
     }),
   ]);
 
@@ -2462,6 +2883,75 @@ export const adminManageAdminNotices = async (
   return results;
 };
 
+export const adminGetAllBusinessAdBannerImages = async (
+  _: unknown,
+  args: AdminGetAllBusinessAdBannerImagesInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData = AdminGetAllBusinessAdBannerImagesSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const skip = (validatedData.page - 1) * validatedData.limit;
+
+  const where: Prisma.BusinessAdBannerImageWhereInput = {
+    adminBusinessAdBannerImage: {
+      isNot: null,
+    },
+  };
+
+  const [images, total] = await Promise.all([
+    await prisma.businessAdBannerImage.findMany({
+      where,
+      orderBy: [
+        {
+          [validatedData.sortBy]: validatedData.sortOrder,
+        },
+        {
+          adminBusinessAdBannerImage: {
+            order: "asc",
+          },
+        },
+      ],
+      include: {
+        adminBusinessAdBannerImage: true,
+        businessDetails: {
+          include: {
+            business: true,
+          },
+        },
+      },
+      skip,
+      take: validatedData.limit,
+    }),
+    await prisma.businessAdBannerImage.count({
+      where,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / validatedData.limit);
+
+  return {
+    images,
+    total,
+    page: validatedData.page,
+    limit: validatedData.limit,
+    totalPages,
+  };
+};
+
 export const adminManageBusinessAdBannerImage = async (
   _: unknown,
   args: AdminManageBusinessAdBannerImageInput,
@@ -2510,8 +3000,14 @@ export const adminManageBusinessAdBannerImage = async (
       }
     } else {
       const createdAdminBusinessAdBannerImage =
-        await prisma.adminBusinessAdBannerImage.create({
-          data: {
+        await prisma.adminBusinessAdBannerImage.upsert({
+          where: {
+            id: businessAdBannerImage.id,
+          },
+          update: {
+            order: businessAdBannerImage.order,
+          },
+          create: {
             businessAdBannerImage: {
               connect: {
                 id: businessAdBannerImage.id,
@@ -2520,11 +3016,82 @@ export const adminManageBusinessAdBannerImage = async (
             order: businessAdBannerImage.order,
           },
         });
-      results.push(createdAdminBusinessAdBannerImage);
+      results.push({
+        ...createdAdminBusinessAdBannerImage,
+        message: "Image updated successfully",
+      });
     }
   }
 
   return results;
+};
+
+export const adminGetAllBusinessMobileAdBannerImages = async (
+  _: unknown,
+  args: AdminGetAllBusinessMobileAdBannerImagesInput,
+  context: any
+) => {
+  if (!context.owner.adminId || typeof context.owner.adminId !== "string") {
+    throw new Error("Invalid or missing token");
+  }
+
+  const admin = await prisma.admin.findFirst({
+    where: { id: context.owner.adminId, deletedAt: null },
+  });
+
+  if (!admin) {
+    throw new Error("Unauthorized access");
+  }
+
+  const validatedData =
+    AdminGetAllBusinessMobileAdBannerImagesSchema.parse(args);
+
+  if (!validatedData) return;
+
+  const skip = (validatedData.page - 1) * validatedData.limit;
+
+  const where: Prisma.BusinessMobileAdBannerImageWhereInput = {
+    adminBusinessMobileAdBannerImage: {
+      isNot: null,
+    },
+  };
+
+  const [images, total] = await Promise.all([
+    await prisma.businessMobileAdBannerImage.findMany({
+      where,
+      orderBy: [
+        { [validatedData.sortBy]: validatedData.sortOrder },
+        {
+          adminBusinessMobileAdBannerImage: {
+            order: "asc",
+          },
+        },
+      ],
+      include: {
+        adminBusinessMobileAdBannerImage: true,
+        businessDetails: {
+          include: {
+            business: true,
+          },
+        },
+      },
+      skip,
+      take: validatedData.limit,
+    }),
+    await prisma.businessMobileAdBannerImage.count({
+      where,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / validatedData.limit);
+
+  return {
+    images,
+    total,
+    page: validatedData.page,
+    limit: validatedData.limit,
+    totalPages,
+  };
 };
 
 export const adminManageBusinessMobileAdBannerImage = async (
@@ -2576,8 +3143,14 @@ export const adminManageBusinessMobileAdBannerImage = async (
       }
     } else {
       const createdAdminBusinessMobileAdBannerImage =
-        await prisma.adminBusinessMobileAdBannerImage.create({
-          data: {
+        await prisma.adminBusinessMobileAdBannerImage.upsert({
+          where: {
+            id: businessMobileAdBannerImage.id,
+          },
+          update: {
+            order: businessMobileAdBannerImage.order,
+          },
+          create: {
             businessMobileAdBannerImage: {
               connect: {
                 id: businessMobileAdBannerImage.id,
@@ -2586,7 +3159,10 @@ export const adminManageBusinessMobileAdBannerImage = async (
             order: businessMobileAdBannerImage.order,
           },
         });
-      results.push(createdAdminBusinessMobileAdBannerImage);
+      results.push({
+        ...createdAdminBusinessMobileAdBannerImage,
+        message: "Image updated successfully",
+      });
     }
   }
 

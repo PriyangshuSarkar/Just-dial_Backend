@@ -28,8 +28,8 @@ const ACTIVE_RECORD = {
 
 // Implement request caching
 const requestCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-const MAX_CACHE_SIZE = 100; // Max number of items in cache
+const CACHE_TTL = parseInt(process.env.CASH_TIME || "5") * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = parseInt(process.env.CASH_SIZE || "100"); // Max number of items in cache
 
 export const search = async (_: unknown, args: SearchInput) => {
   const { page = 1, limit = 10, ...filters } = SearchSchema.parse(args);

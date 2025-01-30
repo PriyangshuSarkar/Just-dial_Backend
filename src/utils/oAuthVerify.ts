@@ -10,14 +10,23 @@ export const OAuthVerifyResponseSchema = object({
     token: string(),
     status: string(),
     completedAt: number(), // Timestamp in milliseconds
-    name: string().optional(),
     identities: object({
       identityType: string(),
       identityValue: string(),
       channel: string(),
       methods: string().array(),
+      name: string().optional(), // Moved name inside identities
       verified: boolean(),
       verifiedTimestamp: number(), // Timestamp in milliseconds
+      picture: string().optional(), // Added picture field
+      isCompanyEmail: boolean().optional(), // Added isCompanyEmail field
+      providerMetadata: object({
+        email: string().optional(),
+        nonce: string().optional(),
+        isEmailVerified: boolean().optional(),
+        name: string().optional(),
+        picture: string().optional(),
+      }).optional(), // Added providerMetadata field
     }).array(),
     network: object({
       ip: string(), // IPv4 or IPv6 address
@@ -40,50 +49,6 @@ export type OAuthVerifyResponse = infer_<typeof OAuthVerifyResponseSchema>;
 export const verifyCode = async (
   code: string
 ): Promise<OAuthVerifyResponse> => {
-  return {
-    requestId: "test",
-    message: "Verification successful",
-    userDetails: {
-      token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-      status: "verified",
-      completedAt: 1708003200000,
-      name: "John Doe",
-      identities: [
-        {
-          identityType: "email",
-          identityValue: "john.doe@example.com",
-          channel: "email",
-          methods: ["OTP", "password"],
-          verified: true,
-          verifiedTimestamp: 1708003200000,
-        },
-        {
-          identityType: "phone",
-          identityValue: "+1234567890",
-          channel: "sms",
-          methods: ["OTP"],
-          verified: false,
-          verifiedTimestamp: 123456,
-        },
-      ],
-      network: {
-        ip: "192.168.1.100",
-      },
-      deviceInfo: {
-        userAgent:
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
-        platform: "Windows",
-        vendor: "Google Inc.",
-        language: "en-US",
-        cookieEnabled: true,
-        screenWidth: 1920,
-        screenHeight: 1080,
-        screenColorDepth: 24,
-        devicePixelRatio: 1.5,
-      },
-    },
-  };
-
   const options = {
     method: "POST",
     headers: {

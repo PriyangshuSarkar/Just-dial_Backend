@@ -27,6 +27,16 @@ export const typeDefs = gql`
     reviewCount
   }
 
+  enum AllTestimonialType {
+    REVIEW
+    FEEDBACK
+  }
+
+  enum AllTestimonialFilter {
+    BUSINESS
+    USER
+  }
+
   type AllUsersResult {
     users: [User]
     total: Int
@@ -58,7 +68,7 @@ export const typeDefs = gql`
   }
 
   type AllTestimonialsResult {
-    Testimonials: [Testimonial]
+    testimonials: [Testimonial]
     total: Int
     page: Int
     limit: Int
@@ -67,6 +77,22 @@ export const typeDefs = gql`
 
   type AllAdminNoticesResult {
     notices: [AdminNotice]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+
+  type AllAdminBusinessAdBannerImagesResult {
+    images: [BusinessAdBannerImage]
+    total: Int
+    page: Int
+    limit: Int
+    totalPages: Int
+  }
+
+  type AllAdminBusinessMobileAdBannerImagesResult {
+    images: [BusinessMobileAdBannerImage]
     total: Int
     page: Int
     limit: Int
@@ -88,8 +114,8 @@ export const typeDefs = gql`
       isVerified: Boolean
       createdAtStart: String
       createdAtEnd: String
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: AllUsersSortBy = createdAt
       sortOrder: SortOrder = desc
       hasAdminNotice: Boolean = false
@@ -110,8 +136,8 @@ export const typeDefs = gql`
       isListed: Boolean
       createdAtStart: String
       createdAtEnd: String
-      page: Int = 1
-      limit: Int = 10
+      page: Int
+      limit: Int
       sortBy: AllBusinessesSortBy = createdAt
       sortOrder: SortOrder = desc
       hasReviews: Boolean
@@ -128,18 +154,18 @@ export const typeDefs = gql`
 
     adminSearchAllReviews(
       search: String
-      page: Int = 1
-      limit: Int = 10
-      sortBy: SortByEnum = createdAt
-      sortOrder: OrderEnum = desc
+      page: Int
+      limit: Int
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
     ): AllReviewsResult
 
     adminSearchAllFeedbacks(
       search: String
-      page: Int = 1
-      limit: Int = 10
-      sortBy: SortByEnum = createdAt
-      sortOrder: OrderEnum = desc
+      page: Int
+      limit: Int
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
     ): AllFeedbacksResult
 
     adminGetAllUserSubscriptions: [UserSubscription]
@@ -166,23 +192,40 @@ export const typeDefs = gql`
 
     adminGetAllTestimonials(
       type: AllTestimonialType
-      page: Int = 1
-      limit: Int = 10
-      sortBy: SortByEnum = createdAt
-      sortOrder: OrderEnum = desc
+      filter: AllTestimonialFilter
+      page: Int
+      limit: Int
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
     ): AllTestimonialsResult
 
     adminGetAllAdminNotices(
       type: AdminNoticeType
-      page: Int = 1
-      limit: Int = 10
-      sortBy: SortByEnum = createdAt
-      sortOrder: OrderEnum = desc
+      page: Int
+      limit: Int
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
     ): AllAdminNoticesResult
+
+    adminGetAllBusinessAdBannerImages(
+      page: Int
+      limit: Int
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
+    ): AllAdminBusinessAdBannerImagesResult
+
+    adminGetAllBusinessMobileAdBannerImages(
+      page: Int
+      limit: Int
+      sortBy: SortByEnum
+      sortOrder: OrderEnum
+    ): AllAdminBusinessMobileAdBannerImagesResult
   }
 
   # Mutation Type Definitions
   type Mutation {
+    adminChangePassword(password: String!): Admin
+
     adminBlockUsers(users: [UsersBlock]): [User]
 
     adminBlockBusinesses(businesses: [BusinessesBlock]): [Business]

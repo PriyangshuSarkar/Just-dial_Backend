@@ -10,8 +10,8 @@ import {
 } from "zod";
 
 export const AdminLoginSchema = object({
-  email: string(),
-  password: string(),
+  email: string().trim(),
+  password: string().trim(),
 }).optional();
 export type AdminLoginInput = infer_<typeof AdminLoginSchema>;
 
@@ -21,7 +21,7 @@ export const AdminChangePasswordSchema = object({
 export type AdminChangePasswordInput = infer_<typeof AdminChangePasswordSchema>;
 
 export const AdminSearchAllReviewsSchema = object({
-  search: string().toLowerCase().optional(),
+  search: string().trim().toLowerCase().optional(),
   sortBy: enum_(["rating", "createdAt"]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
   page: number().int().positive().default(1),
@@ -42,7 +42,7 @@ export const AdminDeleteReviewsSchema = object({
 export type AdminDeleteReviewsInput = infer_<typeof AdminDeleteReviewsSchema>;
 
 export const AdminSearchAllFeedbacksSchema = object({
-  search: string().toLowerCase().optional(),
+  search: string().trim().toLowerCase().optional(),
   sortBy: enum_(["rating", "createdAt"]).default("createdAt"),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
   page: number().int().positive().default(1),
@@ -64,9 +64,9 @@ export const AdminGetUserByIdSchema = object({
 export type AdminGetUserByIdInput = infer_<typeof AdminGetUserByIdSchema>;
 
 export const AdminAllUsersSchema = object({
-  name: string().optional(),
-  email: string().optional(),
-  phone: string().optional(),
+  name: string().trim().optional(),
+  email: string().trim().optional(),
+  phone: string().trim().optional(),
   subscriptionId: string().optional(),
   hasSubscription: boolean().optional(),
   isVerified: boolean().optional(),
@@ -96,9 +96,9 @@ export type AdminGetBusinessByIdInput = infer_<
 >;
 
 export const AdminAllBusinessesSchema = object({
-  name: string().optional(),
-  email: string().optional(),
-  phone: string().optional(),
+  name: string().trim().optional(),
+  email: string().trim().optional(),
+  phone: string().trim().optional(),
   isBusinessVerified: boolean().optional(),
   subscriptionId: string().optional(),
   hasSubscription: boolean().optional(),
@@ -180,11 +180,11 @@ export type AdminBlockUsersInput = infer_<typeof AdminBlockUsersSchema>;
 
 export const AdminManageUserSubscriptionsSchema = object({
   id: string().optional(),
-  name: string().optional(),
+  name: string().trim().optional(),
   description: string().optional(),
   price: number().optional(),
   duration: number().optional(),
-  features: string().array().optional(),
+  features: string().trim().array().optional(),
   toDelete: boolean().optional().default(false),
 }).optional();
 export type AdminManageUserSubscriptionsInput = infer_<
@@ -193,11 +193,11 @@ export type AdminManageUserSubscriptionsInput = infer_<
 
 export const AdminManageBusinessSubscriptionsSchema = object({
   id: string().optional(),
-  name: string().optional(),
+  name: string().trim().optional(),
   description: string().optional(),
   price: number().optional(),
   duration: number().optional(),
-  features: string().array().optional(),
+  features: string().trim().array().optional(),
   tierLevel: number().optional(),
   toDelete: boolean().optional().default(false),
 }).optional();
@@ -208,8 +208,8 @@ export type AdminManageBusinessSubscriptionsInput = infer_<
 export const AdminManageLanguagesSchema = object({
   languages: object({
     id: string().optional(),
-    name: string(),
-    slug: string().optional(),
+    name: string().trim().toLowerCase(),
+    slug: string().trim().optional(),
     toDelete: boolean().optional().default(false),
   })
     .array()
@@ -222,8 +222,8 @@ export type AdminManageLanguagesInput = infer_<
 export const AdminManageProficienciesSchema = object({
   proficiencies: object({
     id: string().optional(),
-    name: string(),
-    slug: string().optional(),
+    name: string().trim().toLowerCase(),
+    slug: string().trim().optional(),
     toDelete: boolean().optional().default(false),
   })
     .array()
@@ -236,8 +236,8 @@ export type AdminManageProficienciesInput = infer_<
 export const AdminManageCourtsSchema = object({
   courts: object({
     id: string().optional(),
-    name: string(),
-    slug: string().optional(),
+    name: string().trim().toLowerCase(),
+    slug: string().trim().optional(),
     toDelete: boolean().optional().default(false),
   })
     .array()
@@ -248,12 +248,12 @@ export type AdminManageCourtsInput = infer_<typeof AdminManageCourtsSchema>;
 export const AdminManageCategoriesSchema = object({
   categories: object({
     id: string().optional(),
-    name: string().optional(),
+    name: string().trim().optional(),
     order: number().optional(),
     description: string().optional(),
-    slug: string().optional(),
+    slug: string().trim().optional(),
     categoryImage: any().optional(),
-    groupName: string().optional(),
+    groupName: string().trim().toLowerCase().optional(),
     toDelete: boolean().optional().default(false),
   })
     .array()
@@ -265,8 +265,8 @@ export type AdminManageCategoriesInput = infer_<
 
 export const AdminManageTagsSchema = object({
   tags: object({
-    id: string().optional(),
-    name: string(),
+    id: string().trim().toUpperCase().optional(),
+    name: string().trim().toUpperCase().trim(),
   })
     .array()
     .optional(),
@@ -276,8 +276,8 @@ export type AdminManageTagsInput = infer_<typeof AdminManageTagsSchema>;
 export const AdminManageCountriesSchema = object({
   countries: object({
     id: string().optional(),
-    name: string(),
-    slug: string().optional(),
+    name: string().trim(),
+    slug: string().trim().optional(),
   })
     .array()
     .optional(),
@@ -289,8 +289,8 @@ export type AdminManageCountriesInput = infer_<
 export const AdminManageStatesSchema = object({
   states: object({
     id: string().optional(),
-    name: string(),
-    slug: string().optional(),
+    name: string().trim(),
+    slug: string().trim().optional(),
     countryId: string(),
   })
     .array()
@@ -301,8 +301,8 @@ export type AdminManageStatesInput = infer_<typeof AdminManageStatesSchema>;
 export const AdminManageCitiesSchema = object({
   cities: object({
     id: string().optional(),
-    name: string(),
-    slug: string().optional(),
+    name: string().trim(),
+    slug: string().trim().optional(),
     stateId: string(),
   })
     .array()
@@ -313,8 +313,8 @@ export type AdminManageCitiesInput = infer_<typeof AdminManageCitiesSchema>;
 export const AdminManagePincodesSchema = object({
   pincodes: object({
     id: string().optional(),
-    code: string(),
-    slug: string().optional(),
+    code: string().regex(/^\d*$/),
+    slug: string().trim().optional(),
     cityId: string(),
   })
     .array()
@@ -325,11 +325,12 @@ export type AdminManagePincodesInput = infer_<typeof AdminManagePincodesSchema>;
 export const AdminGetAllTestimonialsSchema = object({
   page: number().int().positive().default(1),
   limit: number().int().positive().default(10),
-  type: enum_(["REVIEW", "FEEDBACK"]).optional(),
-  sortBy: enum_(["alphabetical", "createdAt", "updatedAt"]).default(
-    "createdAt"
+  type: enum_(["REVIEW", "FEEDBACK"]).optional().default("FEEDBACK"),
+  filter: enum_(["USER", "BUSINESS"]).optional(),
+  sortBy: enum_(["alphabetical", "createdAt", "updatedAt", "order"]).default(
+    "order"
   ),
-  sortOrder: enum_(["asc", "desc"]).default("desc"),
+  sortOrder: enum_(["asc", "desc"]).default("asc"),
 }).optional();
 export type AdminGetAllTestimonialsInput = infer_<
   typeof AdminGetAllTestimonialsSchema
@@ -343,6 +344,11 @@ export const AdminManageTestimonialsSchema = object({
     order: number().optional(),
     toDelete: boolean().optional().default(false),
   })
+    .refine((data) => data.id || data.reviewId || data.feedbackId, {
+      message:
+        "At least one of 'id', 'reviewId', or 'feedbackId' must be provided",
+      path: ["id", "reviewId", "feedbackId"], // Highlight the relevant fields in the error
+    })
     .array()
     .optional(),
 }).optional();
@@ -394,6 +400,16 @@ export type AdminManageAdminNoticesInput = infer_<
   typeof AdminManageAdminNoticesSchema
 >;
 
+export const AdminGetAllBusinessAdBannerImagesSchema = object({
+  page: number().int().positive().default(1),
+  limit: number().int().positive().default(10),
+  sortBy: enum_(["createdAt", "updatedAt", "order"]).default("order"),
+  sortOrder: enum_(["asc", "desc"]).default("desc"),
+}).optional();
+export type AdminGetAllBusinessAdBannerImagesInput = infer_<
+  typeof AdminGetAllBusinessAdBannerImagesSchema
+>;
+
 export const AdminManageBusinessAdBannerImageSchema = object({
   businessAdBannerImages: object({
     id: string().optional(),
@@ -405,6 +421,16 @@ export const AdminManageBusinessAdBannerImageSchema = object({
 }).optional();
 export type AdminManageBusinessAdBannerImageInput = infer_<
   typeof AdminManageBusinessAdBannerImageSchema
+>;
+
+export const AdminGetAllBusinessMobileAdBannerImagesSchema = object({
+  page: number().int().positive().default(1),
+  limit: number().int().positive().default(10),
+  sortBy: enum_(["createdAt", "updatedAt", "order"]).default("order"),
+  sortOrder: enum_(["asc", "desc"]).default("desc"),
+});
+export type AdminGetAllBusinessMobileAdBannerImagesInput = infer_<
+  typeof AdminGetAllBusinessMobileAdBannerImagesSchema
 >;
 
 export const AdminManageBusinessMobileAdBannerImageSchema = object({

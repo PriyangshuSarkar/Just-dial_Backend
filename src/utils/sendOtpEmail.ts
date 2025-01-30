@@ -4,19 +4,16 @@ const otpApiKey = process.env.OTPLESS_API_KEY!;
 const otpApiSecret = process.env.OTPLESS_SECRET!;
 const otpLength = process.env.OTP_LENGTH || 6;
 
-export const SendOtpPhoneResponseSchema = object({
+export const SendOtpEmailResponseSchema = object({
   requestId: string(),
 });
-export type SendOtpPhoneResponse = infer_<typeof SendOtpPhoneResponseSchema>;
+export type SendOtpEmailResponse = infer_<typeof SendOtpEmailResponseSchema>;
 
-export const sendOtpPhone = async (
+export const sendOtpEmail = async (
   userName: string | null,
-  phone: string,
+  email: string,
   expiry: number
-): Promise<SendOtpPhoneResponse> => {
-  return {
-    requestId: "test",
-  };
+): Promise<{ requestId: string }> => {
   const options = {
     method: "POST",
     headers: {
@@ -25,15 +22,17 @@ export const sendOtpPhone = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      phoneNumber: phone,
-      expiry, // OTP expiry time in minutes
+      email,
+      expiry: (expiry * 60) / 2, // OTP expiry time in seconds
       otpLength, // Length of the OTP
-      channels: ["WHATSAPP", "SMS"], // Send via WhatsApp and SMS
+      channels: ["EMAIL"],
       metadata: {
         userName,
       },
     }),
   };
+
+  console.log(options);
 
   try {
     const response = await fetch(

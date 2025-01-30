@@ -32,13 +32,14 @@ import { generateToken } from "../../../utils/token";
 import slugify from "slugify";
 import { ContactType, Prisma } from "@prisma/client";
 import { uploadToSpaces } from "../../../utils/bucket";
-import { sendOtpEmail } from "../../../utils/emailService";
-import { sendOtpPhone } from "../../../utils/phoneService";
+import { sendOtpEmail } from "../../../utils/sendOtpEmail";
+import { sendOtpPhone } from "../../../utils/sendOtpPhone";
 import { verifyOtp } from "../../../utils/verifyOtp";
 import { verifyCode } from "../../../utils/oAuthVerify";
 import { initiateOAuth } from "../../../utils/oAuth";
 import { razorpay } from "../../../utils/razorpay";
 import { createHmac } from "crypto";
+import { addressUtility } from "../../../utils/addressUtility";
 
 const OTP_EXPIRY_MINUTES = parseInt(process.env.OTP_EXPIRY_MINUTES || "10", 10);
 
@@ -138,55 +139,80 @@ export const userGoogleOAuthVerify = async (
   args: UserGoogleOAuthVerifyInput
 ) => {
   const validatedData = UserGoogleOAuthVerifySchema.parse(args);
-
   if (!validatedData) return;
 
-  const response = await verifyCode(validatedData.code);
-
-  const requestId = response.requestId;
-
-  const message = response.message;
-
-  const userDetails = response.userDetails;
+  const { requestId, message, userDetails } = await verifyCode(
+    validatedData.code
+  );
+  const identity = userDetails.identities[0];
 
   const user = await prisma.user.findFirst({
     where: {
       contacts: {
         some: {
-          value: userDetails.identities[0].identityValue,
-          isVerified: true,
+          value: identity.identityValue,
+          type: identity.identityType as ContactType,
+          isVerified: identity.verified,
           deletedAt: null,
         },
       },
     },
   });
 
+  let name =
+    identity.name && identity.name !== user?.name ? identity.name : undefined;
+  let avatar = identity.picture && !user?.avatar ? identity.picture : undefined;
+  let slug = name
+    ? await generateUniqueSlug({ initialSlug: name, id: user?.id })
+    : undefined;
+
   if (user) {
-    if (user.isBlocked) {
-      throw new Error("User is blocked");
-    }
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { name, slug, avatar },
+      include: { contacts: true },
+    });
+
+    if (updatedUser.isBlocked) throw new Error("User is blocked");
+
     return {
-      token: generateToken(user.id, "USER"),
-      ...user,
+      token: generateToken(updatedUser.id, "USER"),
+      ...updatedUser,
       requestId,
       message,
     };
   }
 
-  const newUser = await prisma.user.create({
-    data: {
-      name: userDetails.name || "Please add name",
-      contacts: {
-        create: {
-          value: userDetails.identities[0].identityValue,
-          type: userDetails.identities[0].identityType as ContactType,
-          isVerified: true,
+  const newUser = await prisma.$transaction(async (tx) => {
+    await cleanupUnverifiedContacts(
+      tx,
+      identity.identityValue,
+      identity.identityType as ContactType
+    );
+
+    name =
+      identity.name ||
+      ((identity.identityType as ContactType) === "EMAIL"
+        ? identity.identityValue.split("@")[0]
+        : identity.identityValue);
+    avatar = identity.picture ? identity.picture : undefined;
+    slug = await generateUniqueSlug({ initialSlug: name, id: undefined });
+
+    return await tx.user.create({
+      data: {
+        name,
+        slug,
+        avatar,
+        contacts: {
+          create: {
+            value: identity.identityValue,
+            type: identity.identityType as ContactType,
+            isVerified: identity.verified,
+          },
         },
       },
-    },
-    include: {
-      contacts: true,
-    },
+      include: { contacts: true },
+    });
   });
 
   return {
@@ -196,29 +222,33 @@ export const userGoogleOAuthVerify = async (
     message,
   };
 };
+
 export const userSignup = async (_: unknown, args: UserSignupInput) => {
   const validatedData = UserSignupSchema.parse(args);
 
   if (!validatedData) return;
 
   return await prisma.$transaction(async (tx) => {
+    let contactConditions: Prisma.UserContactWhereInput;
+
+    if (validatedData.email) {
+      contactConditions = {
+        value: validatedData.email,
+        type: "EMAIL",
+        isVerified: true,
+        deletedAt: null,
+      };
+    } else {
+      contactConditions = {
+        value: validatedData.phone,
+        type: "PHONE",
+        isVerified: true,
+        deletedAt: null,
+      };
+    }
+
     const existingContact = await tx.userContact.findFirst({
-      where: {
-        OR: [
-          {
-            value: validatedData.email,
-            type: "EMAIL",
-            isVerified: true,
-            deletedAt: null,
-          },
-          {
-            value: validatedData.phone,
-            type: "PHONE",
-            isVerified: true,
-            deletedAt: null,
-          },
-        ],
-      },
+      where: contactConditions,
     });
 
     if (existingContact) {
@@ -240,26 +270,10 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
 
     // Create user
     const { salt, hash } = hashPassword(validatedData.password);
-    let slug = slugify(validatedData.name, { lower: true, strict: true });
-    let uniqueSuffixLength = 2;
-    let existingSlug = await prisma.user.findFirst({ where: { slug } });
-
-    while (existingSlug) {
-      const uniqueSuffix = Math.random()
-        .toString(16)
-        .slice(2, 2 + uniqueSuffixLength);
-      slug = `${slugify(validatedData.name, {
-        lower: true,
-        strict: true,
-      })}-${uniqueSuffix}`;
-      existingSlug = await prisma.user.findFirst({ where: { slug } });
-      uniqueSuffixLength += 1;
-    }
 
     const user = await tx.user.create({
       data: {
         name: validatedData.name,
-        slug,
         password: hash,
         salt,
       },
@@ -271,27 +285,23 @@ export const userSignup = async (_: unknown, args: UserSignupInput) => {
     let reachedIdEmail: string | undefined;
     let reachedIdPhone: string | undefined;
     // Send verification codes
-    try {
-      if (validatedData.email && otpExpiresAt) {
-        const response = await sendOtpEmail(
-          user.name,
-          validatedData.email,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-        reachedIdEmail = response.requestId;
-      } else if (validatedData.phone && otpExpiresAt) {
-        const response = await sendOtpPhone(
-          user.name,
-          validatedData.phone,
-          OTP_EXPIRY_MINUTES
-        );
-        requestId = response.requestId;
-        reachedIdPhone = response.requestId;
-      }
-    } catch (error) {
-      // Log error but don't fail the transaction
-      console.error("Error sending OTP:", error);
+
+    if (validatedData.email && otpExpiresAt) {
+      const response = await sendOtpEmail(
+        user.name,
+        validatedData.email,
+        OTP_EXPIRY_MINUTES
+      );
+      requestId = response.requestId;
+      reachedIdEmail = response.requestId;
+    } else if (validatedData.phone && otpExpiresAt) {
+      const response = await sendOtpPhone(
+        user.name,
+        validatedData.phone,
+        OTP_EXPIRY_MINUTES
+      );
+      requestId = response.requestId;
+      reachedIdPhone = response.requestId;
     }
 
     // Create contacts
@@ -567,10 +577,21 @@ export const verifyUserContact = async (
         type,
         deletedAt: null,
       },
+      include: {
+        user: true,
+      },
     });
 
     if (!contact) {
       throw new Error("Contact not found");
+    }
+
+    let slug: string | undefined;
+    if (!contact.user.slug && contact.user.name) {
+      slug = await generateUniqueSlug({
+        initialSlug: contact.user.name,
+        id: contact.user.id,
+      });
     }
 
     // if (!contact.otp || !contact.otpExpiresAt) {
@@ -595,6 +616,11 @@ export const verifyUserContact = async (
         verifiedAt: new Date(),
         otp: null,
         otpExpiresAt: null,
+        user: {
+          update: {
+            slug,
+          },
+        },
       },
       include: {
         user: {
@@ -1012,33 +1038,12 @@ export const updateUserDetails = async (
     name = validatedData.name;
   }
 
-  // if (validatedData.slug) {
-  //   const existingSlug = await prisma.user.findFirst({
-  //     where: { slug: validatedData.slug },
-  //   });
-  //   if (existingSlug) throw new Error("Slug already exists.");
-  // }
-
-  let slug = undefined;
+  let slug: string | undefined;
 
   const initialSlug = validatedData.slug || name;
 
   if (initialSlug) {
-    slug = slugify(initialSlug, { lower: true, strict: true });
-    let uniqueSuffixLength = 2;
-    let existingSlug = await prisma.user.findFirst({ where: { slug } });
-
-    while (existingSlug) {
-      const uniqueSuffix = Math.random()
-        .toString(16)
-        .slice(2, 2 + uniqueSuffixLength);
-      slug = `${slugify(initialSlug, {
-        lower: true,
-        strict: true,
-      })}-${uniqueSuffix}`;
-      existingSlug = await prisma.user.findFirst({ where: { slug } });
-      uniqueSuffixLength += 1;
-    }
+    slug = await generateUniqueSlug({ initialSlug, id: user.id });
   }
 
   // Update user name and phone
@@ -1238,6 +1243,13 @@ export const manageUserAddress = async (
         },
       });
 
+      addressUtility({
+        pincode: updatedAddress.pincode,
+        city: updatedAddress.city,
+        state: updatedAddress.state,
+        country: updatedAddress.country,
+      });
+
       updatedAddresses.push({
         ...updatedAddress,
         message: "User address updated successfully.",
@@ -1255,6 +1267,13 @@ export const manageUserAddress = async (
             connect: { id: user.id },
           },
         },
+      });
+
+      addressUtility({
+        pincode: newAddress.pincode,
+        city: newAddress.city,
+        state: newAddress.state,
+        country: newAddress.country,
       });
 
       updatedAddresses.push({
@@ -1357,6 +1376,9 @@ export const userSubscription = async (
     amount: plan.price * 100,
     currency: "INR",
     receipt: user.id,
+    notes: {
+      subscriptionId: plan.id,
+    },
   });
 
   await prisma.user.update({
@@ -1364,7 +1386,6 @@ export const userSubscription = async (
       id: user.id,
     },
     data: {
-      subscriptionId: plan.id,
       razorpay_order_id: order.id,
     },
   });
@@ -1379,7 +1400,6 @@ export const userVerifyPayment = async (
   args: UserVerifyPaymentInput
 ) => {
   const validatedData = UserVerifyPaymentSchema.parse(args);
-
   if (!validatedData) return;
 
   const body = `${validatedData.razorpay_order_id}|${validatedData.razorpay_payment_id}`;
@@ -1394,6 +1414,21 @@ export const userVerifyPayment = async (
   if (generatedSignature !== validatedData.razorpay_signature) {
     throw new Error("Incorrect razorpay signature. Validation failed!");
   }
+
+  const order = await razorpay.orders.fetch(validatedData.razorpay_order_id);
+
+  const subscriptionId = order.notes?.subscriptionId as string;
+
+  if (!subscriptionId) {
+    throw new Error("Razorpay Error!");
+  }
+
+  const subscription = await prisma.userSubscription.findUniqueOrThrow({
+    where: {
+      id: subscriptionId,
+      deletedAt: null,
+    },
+  });
 
   const user = await prisma.user.findUniqueOrThrow({
     where: {
@@ -1411,18 +1446,24 @@ export const userVerifyPayment = async (
     },
   });
 
-  const subscriptionExpire = new Date();
-  subscriptionExpire.setDate(
-    subscriptionExpire.getDate() + user.subscription!.duration
-  );
+  const currentDate = new Date();
+
+  const baseDate =
+    user.subscriptionExpire && user.subscriptionExpire > currentDate
+      ? user.subscriptionExpire
+      : currentDate;
+
+  const newExpiryDate = new Date(baseDate);
+  newExpiryDate.setDate(newExpiryDate.getDate() + subscription.duration);
 
   const verifiedUserPayment = await prisma.user.update({
     where: {
       id: user.id,
     },
     data: {
+      subscriptionId: subscription.id,
       paymentVerification: true,
-      subscriptionExpire: subscriptionExpire,
+      subscriptionExpire: newExpiryDate,
     },
   });
 
@@ -1430,4 +1471,26 @@ export const userVerifyPayment = async (
     ...verifiedUserPayment,
     message: "Payment Verified!",
   };
+};
+
+const generateUniqueSlug = async ({
+  initialSlug,
+  id,
+}: {
+  initialSlug: string;
+  id: string | undefined;
+}): Promise<string> => {
+  const baseSlug = slugify(initialSlug, { lower: true, strict: true });
+  let slug = baseSlug;
+  let uniqueSuffixLength = 2;
+
+  while (await prisma.user.findFirst({ where: { slug, NOT: { id } } })) {
+    const uniqueSuffix = Math.random()
+      .toString(16)
+      .slice(2, 2 + uniqueSuffixLength);
+    slug = `${baseSlug}-${uniqueSuffix}`;
+    uniqueSuffixLength += 2;
+  }
+
+  return slug;
 };

@@ -8,7 +8,7 @@ import {
 } from "zod";
 
 export const FilterSchema = object({
-  search: string().toLowerCase().optional(),
+  search: string().trim().toLowerCase().optional(),
   verified: boolean()
     .transform((value) => (value === true ? true : undefined))
     .optional(),
@@ -25,13 +25,13 @@ export const FilterSchema = object({
   order: enum_(["asc", "desc"]).optional(),
   categoryId: string().optional(),
   categorySlug: string().optional(),
-  languages: string().toLowerCase().array().optional(),
-  courts: string().toLowerCase().array().optional(),
-  proficiencies: string().toLowerCase().array().optional(),
-  pincode: string().toLowerCase().optional(),
-  city: string().toLowerCase().optional(),
-  state: string().toLowerCase().optional(),
-  country: string().toLowerCase().optional(),
+  languages: string().trim().toLowerCase().array().optional(),
+  courts: string().trim().toLowerCase().array().optional(),
+  proficiencies: string().trim().toLowerCase().array().optional(),
+  pincode: string().trim().toLowerCase().regex(/^\d*$/).optional(),
+  city: string().trim().toLowerCase().optional(),
+  state: string().trim().toLowerCase().optional(),
+  country: string().trim().toLowerCase().optional(),
 });
 export type FilterInput = infer_<typeof FilterSchema>;
 
@@ -64,7 +64,8 @@ export const LocationSchema = object({
 export type LocationInput = infer_<typeof LocationSchema>;
 
 export const AllTestimonialsInput = object({
-  type: enum_(["REVIEW", "FEEDBACK"]).optional(),
+  type: enum_(["REVIEW", "FEEDBACK"]).optional().default("FEEDBACK"),
+  filter: enum_(["USER", "BUSINESS"]).optional(),
   page: number().optional().default(1),
   limit: number().optional().default(10),
 });
@@ -72,6 +73,18 @@ export const AllTestimonialsInput = object({
 export type AllTestimonialsInput = infer_<typeof AllTestimonialsInput>;
 
 export const GetAllAdminNoticesSchema = object({
-  types: enum_(["GLOBAL", "ALL_USER", "ALL_BUSINESS"]).array().optional(),
+  types: enum_(["GLOBAL", "ALL_USER", "ALL_BUSINESS"])
+    .array()
+    .optional()
+    .default(["GLOBAL"]),
 }).optional();
 export type GetAllAdminNoticesInput = infer_<typeof GetAllAdminNoticesSchema>;
+
+export const RaiseQuerySchema = object({
+  name: string().trim().optional(),
+  phone: string().trim().optional(),
+  email: string().trim().email(),
+  subject: string().trim().optional(),
+  message: string().trim().optional(),
+}).optional();
+export type RaiseQueryInput = infer_<typeof RaiseQuerySchema>;
