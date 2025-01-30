@@ -1003,7 +1003,11 @@ export const raiseQuery = async (_: unknown, args: RaiseQueryInput) => {
     await sendEmail({
       to: validatedData.email,
       subject: validatedData.subject || "",
-      message: `Name: ${validatedData.name}\nEmail: ${validatedData.email}\nPhone: ${validatedData.phone}\n\nQuery: ${validatedData.message}`,
+      message: `Name: ${validatedData.name}\nEmail: ${
+        validatedData.email
+      }\nPhone: ${validatedData.phone}\n\n${
+        validatedData.message
+      }\n\nCreated at: ${new Date().toLocaleString()}`,
     });
   } catch (error) {
     console.log(error);
