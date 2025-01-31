@@ -584,7 +584,7 @@ export const verifyBusinessPrimaryContact = async (
 
     let slug: string | undefined;
     if (!business?.slug && business?.name) {
-      await generateUniqueSlug({
+      slug = await generateUniqueSlug({
         initialSlug: business?.name,
         id: business?.id,
       });
