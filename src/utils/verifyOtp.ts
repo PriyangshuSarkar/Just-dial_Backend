@@ -33,7 +33,6 @@ export const verifyOtp = async (
     );
     if (response.ok) {
       const data = await response.json();
-      console.log("OTP verified successfully:", data);
       return data;
     } else {
       const errorData = await response.json();

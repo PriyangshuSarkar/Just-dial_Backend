@@ -32,8 +32,6 @@ export const sendOtpEmail = async (
     }),
   };
 
-  console.log(options);
-
   try {
     const response = await fetch(
       "https://auth.otpless.app/auth/v1/initiate/otp",
@@ -41,7 +39,6 @@ export const sendOtpEmail = async (
     );
     if (response.ok) {
       const data = await response.json();
-      console.log("OTP request initiated successfully:", data);
       return data;
     } else {
       const errorData = await response.json();

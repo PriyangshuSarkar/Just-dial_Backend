@@ -68,7 +68,6 @@ export const verifyCode = async (
     );
     if (response.ok) {
       const data = await response.json();
-      console.log("Code verified successfully:", data);
       return data;
     } else {
       const errorData = await response.json();

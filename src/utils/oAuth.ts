@@ -32,7 +32,6 @@ export const initiateOAuth = async (
     );
     if (response.ok) {
       const data = await response.json();
-      console.log("OAuth initiation successful:", data);
       return data;
     } else {
       const errorData = await response.json();

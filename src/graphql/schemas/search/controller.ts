@@ -314,6 +314,7 @@ export const getBusinessById = async (
           teamSize: true,
           description: true,
           primaryWebsite: true,
+          registrationNumber: true,
           addresses: {
             where: {
               deletedAt: null,

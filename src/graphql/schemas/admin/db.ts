@@ -375,6 +375,12 @@ export type AdminGetAllAdminNoticesInput = infer_<
   typeof AdminGetAllAdminNoticesSchema
 >;
 
+// Parse the environment variable or default to 7 days
+const ADMIN_NOTICE_EXPIRY_DAYS = parseInt(
+  process.env.ADMIN_NOTICE_EXPIRY_DAYS || "7",
+  10 // Use radix 10 for decimal numbers
+);
+
 export const AdminManageAdminNoticesSchema = object({
   adminNotices: object({
     id: string().optional(),
@@ -391,7 +397,11 @@ export const AdminManageAdminNoticesSchema = object({
     ]).optional(),
     note: string().optional(),
     toDelete: boolean().optional().default(false),
-    expiresAt: date().optional(),
+    expiresAt: date()
+      .optional()
+      .default(
+        new Date(Date.now() + ADMIN_NOTICE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+      ),
   })
     .array()
     .optional(),

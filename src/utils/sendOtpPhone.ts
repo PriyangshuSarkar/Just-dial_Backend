@@ -39,7 +39,6 @@ export const sendOtpPhone = async (
     );
     if (response.ok) {
       const data = await response.json();
-      console.log("OTP request initiated successfully:", data);
       return data;
     } else {
       const errorData = await response.json();

@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Feedback, Prisma, Review } from "@prisma/client";
 import { deleteFromSpaces, uploadToSpaces } from "../../../utils/bucket";
 import { prisma } from "../../../utils/dbConnect";
 import { hashPassword, verifyPassword } from "../../../utils/password";
@@ -2606,9 +2606,6 @@ export const adminManageTestimonials = async (
   const results = [];
 
   for (const testimonial of validatedData.testimonials) {
-    const entityId = testimonial.reviewId || testimonial.feedbackId;
-    const entityType = testimonial.reviewId ? "REVIEW" : "FEEDBACK";
-
     // Handle deletion of testimonial
     if (
       testimonial.toDelete &&
@@ -2643,21 +2640,21 @@ export const adminManageTestimonials = async (
     }
 
     // Retrieve the associated review or feedback
-    let existingReview;
-    if (entityType === "REVIEW") {
-      existingReview = await prisma.review.findFirst({
-        where: { id: entityId },
+    let existingEntry: Review | Feedback | null = null;
+    let entityType: "REVIEW" | "FEEDBACK" | undefined = undefined;
+    if (testimonial.reviewId) {
+      existingEntry = await prisma.review.findFirst({
+        where: { id: testimonial.reviewId },
       });
-    } else {
-      existingReview = await prisma.feedback.findFirst({
-        where: { id: entityId },
+      entityType = "REVIEW";
+    } else if (testimonial.feedbackId) {
+      existingEntry = await prisma.feedback.findFirst({
+        where: { id: testimonial.feedbackId },
       });
+      entityType = "FEEDBACK";
     }
 
-    if (!existingReview) {
-      throw new Error("Associated review/feedback not found.");
-    }
-
+    // Find the existing testimonial
     const existingTestimonial = await prisma.testimonial.findFirst({
       where: {
         OR: [
@@ -2668,33 +2665,74 @@ export const adminManageTestimonials = async (
       },
     });
 
-    // Create or update the testimonial
-    const createdTestimonial = await prisma.testimonial.upsert({
-      where: {
-        id: existingTestimonial?.id || "", // Using the found testimonial's id
-      },
-      update: {
-        order: testimonial.order || undefined,
-        type: entityType || undefined,
-        rating: existingReview?.rating || undefined,
-        comment: existingReview?.comment || undefined,
-      },
-      create: {
-        reviewId: testimonial.reviewId,
-        feedbackId: testimonial.feedbackId,
-        order: testimonial.order,
-        type: entityType,
-        rating: existingReview?.rating,
-        comment: existingReview?.comment,
-        businessId: existingReview?.businessId,
-        userId: existingReview?.userId,
-      },
-    });
+    if (!existingEntry && !existingTestimonial) {
+      throw new Error("Associated review/feedback not found.");
+    }
 
-    results.push({
-      ...createdTestimonial,
-      message: "Testimonial created/updated successfully!",
-    });
+    // Prepare the data for upsert
+    const testimonialData:
+      | Prisma.TestimonialUpdateInput
+      | Prisma.TestimonialCreateInput = {
+      order: testimonial.order || undefined,
+      type: entityType,
+      rating: existingEntry?.rating || undefined,
+      comment: existingEntry?.comment || undefined,
+      business: existingEntry?.businessId
+        ? {
+            connect: {
+              id: existingEntry.businessId || undefined,
+            },
+          }
+        : undefined,
+      user: existingEntry?.userId
+        ? {
+            connect: {
+              id: existingEntry.userId || undefined,
+            },
+          }
+        : undefined,
+    };
+
+    if (existingTestimonial) {
+      const updatedTestimonial = await prisma.testimonial.update({
+        where: { id: existingTestimonial.id },
+        data: {
+          ...(testimonialData as Prisma.TestimonialUpdateInput),
+          reviewId:
+            entityType === "REVIEW"
+              ? existingEntry?.id || undefined
+              : undefined,
+          feedbackId:
+            entityType === "FEEDBACK"
+              ? existingEntry?.id || undefined
+              : undefined,
+        },
+      });
+
+      results.push({
+        ...updatedTestimonial,
+        message: "Testimonial updated successfully!",
+      });
+    } else {
+      const createdTestimonial = await prisma.testimonial.create({
+        data: {
+          ...(testimonialData as Prisma.TestimonialCreateInput),
+          reviewId:
+            entityType === "REVIEW"
+              ? existingEntry?.id || undefined
+              : undefined,
+          feedbackId:
+            entityType === "FEEDBACK"
+              ? existingEntry?.id || undefined
+              : undefined,
+        },
+      });
+
+      results.push({
+        ...createdTestimonial,
+        message: "Testimonial created successfully!",
+      });
+    }
   }
 
   return results;
@@ -2831,6 +2869,7 @@ export const adminManageAdminNotices = async (
           where: { id: existingAdminNotice.id },
           data: {
             note: notice.note,
+            expiresAt: notice.expiresAt,
           },
         });
         results.push({
@@ -2838,17 +2877,9 @@ export const adminManageAdminNotices = async (
           message: "Notice updated successfully",
         });
       } else {
-        const ADMIN_NOTICE_EXPIRY_DAYS = parseInt(
-          process.env.ADMIN_NOTICE_EXPIRY_DAYS || "7",
-          7
-        );
         // Create a new notice
         const data: Prisma.AdminNoticeCreateInput = {
-          expiresAt:
-            notice.expiresAt ||
-            new Date(
-              Date.now() + ADMIN_NOTICE_EXPIRY_DAYS! * 24 * 60 * 60 * 1000
-            ),
+          expiresAt: notice.expiresAt,
           note: notice.note,
           type: notice.type || "GLOBAL", // Default to "GLOBAL" if type is not provided
         };
