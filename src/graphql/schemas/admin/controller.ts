@@ -168,7 +168,7 @@ export const adminAllUsers = async (
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
-  const where: Prisma.UserWhereInput = {};
+  const where: Prisma.UserWhereInput = { deletedAt: null };
 
   if (validatedData.name) {
     where.name = { contains: validatedData.name, mode: "insensitive" };
@@ -423,7 +423,7 @@ export const adminAllBusinesses = async (
 
   const skip = (validatedData.page - 1) * validatedData.limit;
 
-  const where: Prisma.BusinessWhereInput = {};
+  const where: Prisma.BusinessWhereInput = { deletedAt: null };
 
   if (validatedData.name) {
     where.name = { contains: validatedData.name, mode: "insensitive" };
