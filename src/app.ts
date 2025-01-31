@@ -7,10 +7,18 @@ import { schema } from "./graphql";
 import { graphqlUploadExpress } from "graphql-upload-ts";
 import { auth } from "./middlewares/auth";
 import morgan from "morgan";
+import cors from "cors";
 
 async function startServer() {
   const app: Express = express();
-  app.use(morgan(process.env.LOG_LEVEL || "dev"));
+  app.use(morgan(process.env.LOG_LEVEL || "combined"));
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [];
+  app.use(
+    cors({
+      origin: allowedOrigins,
+      credentials: true,
+    })
+  );
   app.use(cookieParser());
   app.use(json());
   app.use(
@@ -50,8 +58,23 @@ async function startServer() {
   const port = process.env.PORT;
 
   try {
-    app.listen(port, () => {
-      console.log(`🚀 Server ready at http://127.0.0.1:${port}/graphql`);
+    const serverInstance = app.listen(port, () => {
+      const address = serverInstance.address();
+      const actualHost =
+        typeof address === "string"
+          ? address
+          : address?.address === "::"
+          ? "localhost" // Replace IPv6 shorthand with localhost
+          : address?.address;
+
+      const actualPort = typeof address === "string" ? port : address?.port;
+
+      // Determine protocol dynamically
+      const protocol = process.env.PROTOCOL === "production" ? "https" : "http";
+
+      console.log(
+        `🚀 Server ready at ${protocol}://${actualHost}:${actualPort}`
+      );
     });
   } catch (error) {
     console.error(`Server failed to start with the error:\n${error}`);

@@ -79,6 +79,9 @@ export const AdminAllUsersSchema = object({
   ),
   sortOrder: enum_(["asc", "desc"]).default("desc"),
   hasAdminNotice: boolean().optional(),
+  hasReviews: boolean().optional(),
+  hasFeedbacks: boolean().optional(),
+  hasTestimonials: boolean().optional(),
 }).optional();
 export type AdminAllUsersInput = infer_<typeof AdminAllUsersSchema>;
 

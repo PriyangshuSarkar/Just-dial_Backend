@@ -119,6 +119,9 @@ export const typeDefs = gql`
       sortBy: AllUsersSortBy = createdAt
       sortOrder: SortOrder = desc
       hasAdminNotice: Boolean = false
+      hasReviews: Boolean
+      hasFeedbacks: Boolean
+      hasTestimonials: Boolean
     ): AllUsersResult
 
     adminGetUserById(userId: ID, userSlug: ID): User

@@ -231,6 +231,48 @@ export const adminAllUsers = async (
     };
   }
 
+  if (validatedData.hasReviews !== undefined) {
+    where.reviews = validatedData.hasReviews
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
+  }
+
+  if (validatedData.hasFeedbacks !== undefined) {
+    where.feedbacks = validatedData.hasFeedbacks
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
+  }
+
+  if (validatedData.hasTestimonials !== undefined) {
+    where.testimonials = validatedData.hasTestimonials
+      ? {
+          some: {
+            deletedAt: null,
+          },
+        }
+      : {
+          none: {
+            deletedAt: null,
+          },
+        };
+  }
+
   // Execute query
   const [users, total] = await Promise.all([
     prisma.user.findMany({
