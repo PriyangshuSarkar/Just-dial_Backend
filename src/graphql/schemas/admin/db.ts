@@ -197,10 +197,14 @@ export type AdminManageUserSubscriptionsInput = infer_<
 export const AdminManageBusinessSubscriptionsSchema = object({
   id: string().optional(),
   name: string().trim().optional(),
-  description: string().optional(),
+  priceDescription: string().trim().optional(),
+  description: string().trim().optional(),
+  type: enum_(["INDIVIDUAL", "FIRM"]).optional().default("FIRM"),
   price: number().optional(),
   duration: number().optional(),
   features: string().trim().array().optional(),
+  order: number().optional(),
+  priority: number().optional(),
   tierLevel: number().optional(),
   toDelete: boolean().optional().default(false),
 }).optional();

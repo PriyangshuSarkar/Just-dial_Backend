@@ -1283,11 +1283,14 @@ export const adminManageBusinessSubscriptions = async (
     const newBusinessSubscription = await prisma.businessSubscription.create({
       data: {
         name: validatedData.name,
+        priceDescription: validatedData.priceDescription,
         description: validatedData.description,
-        type: "FIRM",
+        type: validatedData.type,
         price: validatedData.price,
         duration: validatedData.duration,
         features: validatedData.features,
+        order: validatedData.order,
+        priority: validatedData.priority,
         tierLevel: validatedData.tierLevel,
       },
     });
@@ -1300,10 +1303,14 @@ export const adminManageBusinessSubscriptions = async (
         where: { id: validatedData.id },
         data: {
           name: validatedData.name,
+          priceDescription: validatedData.priceDescription,
           description: validatedData.description,
+          type: validatedData.type,
           price: validatedData.price,
           duration: validatedData.duration,
           features: validatedData.features,
+          order: validatedData.order,
+          priority: validatedData.priority,
           tierLevel: validatedData.tierLevel,
           deletedAt: validatedData.toDelete ? new Date() : null,
         },

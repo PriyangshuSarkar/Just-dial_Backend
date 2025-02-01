@@ -570,10 +570,10 @@ model State {
 }
 
 model Country {
-  id    String  @id @default(uuid())
-  name  String
-  slug  String? @unique
-  state State[]
+  id     String  @id @default(uuid())
+  name   String
+  slug   String? @unique
+  states State[]
 
   @@index([id, name, slug])
 }
