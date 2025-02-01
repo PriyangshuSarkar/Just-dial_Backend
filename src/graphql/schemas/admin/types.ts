@@ -249,20 +249,19 @@ export const typeDefs = gql`
     ): UserSubscription
 
     adminManageBusinessSubscriptions(
-    id: ID
-    name: String
-    priceDescription: String
-    description: String
-    type: BusinessType
-    price: Float
-    duration: Int
-    features: [String]
-    order: Int
-    priority: Int
-    tierLevel: Int
-    toDelete: Boolean
-  ): BusinessSubscription
-}
+      id: ID
+      name: String
+      priceDescription: String
+      description: String
+      type: BusinessType
+      price: Float
+      duration: Int
+      features: [String]
+      order: Int
+      priority: Int
+      tierLevel: Int
+      toDelete: Boolean
+    ): BusinessSubscription
 
     adminManageLanguages(languages: [LanguageInput]): [Language]
 
