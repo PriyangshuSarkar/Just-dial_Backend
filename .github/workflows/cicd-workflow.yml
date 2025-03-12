@@ -6,21 +6,16 @@ on:
 
 jobs:
   build:
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest # No need for brackets
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Start Docker Service (if not running)
-        run: |
-          sudo systemctl start docker || echo "Docker already running"
-          sudo systemctl status docker
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: Log in to Docker Hub
+        run: docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{secrets.DOCKER_PASSWORD}}"
 
       - name: Build and Push Docker Image
         run: |
@@ -29,16 +24,16 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: [ip-172-31-13-35]
+    runs-on: ip-172-31-13-35 # No brackets
     steps:
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: Log in to Docker Hub
+        run: docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{secrets.DOCKER_PASSWORD}}"
 
-      - name: Pull and Run Docker Image
-        run: docker pull mydockerhubuser/myapp:latest
+      - name: Pull Docker Image
+        run: docker pull spritegenix/cyber-sec-backend:latest # Fixed image name
 
       - name: Delete Old Container (if exists)
         run: docker rm -f myapp-container || true
 
-      - name: Run docker container
-        run: docker run -d -p 4000:4000 --name myapp-container ghcr.io/spritegenix/cyber-sec-backend:latest
+      - name: Run Docker Container
+        run: docker run -d -p 4000:4000 --name myapp-container spritegenix/cyber-sec-backend:latest # Fixed image name
