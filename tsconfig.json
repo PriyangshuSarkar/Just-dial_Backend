@@ -21,9 +21,7 @@
     "strictBindCallApply": true,
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
-    "noEmit": false, // Changed to false to enable emission of compiled files
-    "declaration": true, // Generates .d.ts files
-    "incremental": true // Speeds up TypeScript builds
+    "noEmit": false // Changed to false to enable emission of compiled files
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "un_Used_Code"],
