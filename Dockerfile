@@ -11,6 +11,9 @@ RUN bun install
 # Copy the rest of the application
 COPY . .
 
+# Build the app before running
+RUN bun run build
+
 # Expose the application port
 EXPOSE 4000
 
