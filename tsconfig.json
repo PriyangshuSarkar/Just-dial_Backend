@@ -25,11 +25,7 @@
     "declaration": true, // Generates .d.ts files
     "incremental": true // Speeds up TypeScript builds
   },
-  "include": [
-    "src/**/*",
-    "un_Used_Code/oldSearchController.ts",
-    "un_Used_Code/newSearchController.ts"
-  ],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "un_Used_Code"],
   "ts-node": {
     "esm": true,
