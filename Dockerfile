@@ -17,7 +17,7 @@ COPY . .
 RUN bun add -g typescript
 
 # Build the app
-RUN tsc
+RUN bun run build:default
 
 # Use a lighter runtime image
 FROM oven/bun:latest AS runner
