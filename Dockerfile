@@ -12,7 +12,7 @@ RUN bun install
 COPY . .
 
 # Build the app before running
-RUN bun run build
+RUN bun run build:default
 
 # Expose the application port
 EXPOSE 4000
