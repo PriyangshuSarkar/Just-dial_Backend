@@ -31,6 +31,11 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
+      - name: Ensure Docker Permissions
+        run: |
+          sudo usermod -aG docker $USER
+          newgrp docker
+
       - name: Log in to Docker Hub
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -43,13 +48,16 @@ jobs:
         run: docker pull $IMAGE_NAME:latest
 
       - name: Stop and Remove Existing Container (if exists)
-        run: docker rm -f myapp-container || true
+        run: |
+          docker stop cyber-sec-backend || true
+          docker rm -f cyber-sec-backend || true
 
       - name: Run Docker Container
         env:
           IMAGE_NAME: spritegenix/cyber-sec-backend
         run: |
           docker run -d \
-            --name myapp-container \
+            --name cyber-sec-backend \
             -p 4000:4000 \
+            --restart unless-stopped \
             $IMAGE_NAME:latest
