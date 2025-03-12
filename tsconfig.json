@@ -12,7 +12,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noFallthroughCasesInSwitch": true,
@@ -21,7 +21,9 @@
     "strictBindCallApply": true,
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM"],
-    "noEmit": false // Changed to false to enable emission of compiled files
+    "noEmit": false, // Changed to false to enable emission of compiled files
+    "declaration": true, // Generates .d.ts files
+    "incremental": true // Speeds up TypeScript builds
   },
   "include": [
     "src/**/*",
