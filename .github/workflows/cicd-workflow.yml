@@ -60,8 +60,6 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
-      # - name: Decode and Create .env File on Server
-      #   run: echo "${{ secrets.ENV_FILE_B64 }}" | base64 --decode > /home/ubuntu/cyber-sec-env/.env
       - name: Ensure Docker Permissions
         run: |
           sudo usermod -aG docker $USER
@@ -88,7 +86,16 @@ jobs:
           IMAGE_NAME: spritegenix/cyber-sec-backend
         run: |
           docker run -d \
+            --network=host \
             --name cyber-sec-backend \
-            -p 4000:4000 \
             --restart unless-stopped \
             $IMAGE_NAME:latest
+
+      - name: Verify Container is Running
+        run: |
+          sleep 10  # Give some time for the container to initialize
+          if [ "$(docker inspect -f '{{.State.Running}}' cyber-sec-backend)" != "true" ]; then
+            echo "Deployment failed: Container is not running."
+            exit 1
+          fi
+          echo "Container is running successfully!"
