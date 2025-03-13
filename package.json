@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "module": "src/app.ts",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"bun run --watch src/app.ts\" \"bun run watch:build\" || concurrently \"npm run --watch src/app.ts\" \"node run watch:build\"",
     "watch:build": "tsc --watch",

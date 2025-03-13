@@ -1,9 +1,10 @@
 services:
   bun-app:
     build: .
-    container_name: bun-app-container
+    container_name: cyber-sec-app-container
     ports:
       - "4000:4000"
-    volumes:
-      - .:/app
+
+    env_file:
+      - .env
     command: ["bun", "run", "start"]

@@ -4,20 +4,17 @@ FROM oven/bun:latest AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy package.json and bun.lockb (if available) before installing dependencies
-COPY package.json tsconfig.json bun.lockb* ./
-
-# Install dependencies
-RUN bun install --frozen-lockfile
-
 # Copy the rest of the application
 COPY . .
 
-# Ensure TypeScript is installed
-RUN bun add -g typescript
+# Copy .env file so Prisma can access the database URL
+COPY .env .env
 
 # Build the app
 RUN bun run build:default
+
+# Generate Prisma client
+RUN bun run prisma generate
 
 # Use a lighter runtime image
 FROM oven/bun:latest AS runner
@@ -29,6 +26,7 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/.env .env 
 
 # Expose application port
 EXPOSE 4000

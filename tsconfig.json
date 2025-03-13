@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "CommonJS", // Changed to CommonJS for better compatibility
+    "module": "ESNext", // Changed to CommonJS for better compatibility
     "moduleResolution": "node",
     "rootDir": "./src",
     "outDir": "./dist",
     "removeComments": true,
-    "strict": false,
+    "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -16,12 +19,8 @@
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noFallthroughCasesInSwitch": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM"],
-    "noEmit": false // Changed to false to enable emission of compiled files
+    "lib": ["ESNext", "DOM"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "un_Used_Code"],
