@@ -10,6 +10,9 @@ COPY . .
 # Copy .env file so Prisma can access the database URL
 COPY .env .env
 
+# Install dependencies
+RUN bun install
+
 # Build the app
 RUN bun run build:default
 
