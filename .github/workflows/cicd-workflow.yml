@@ -25,12 +25,33 @@ jobs:
           ENV_FILE_B64: ${{ secrets.ENV_FILE_B64 }}
         run: echo "$ENV_FILE_B64" | base64 --decode > .env
 
-      - name: Build and Push Docker Image
+      - name: Build Docker Image
+        env:
+          IMAGE_NAME: spritegenix/cyber-sec-backend
+        run: docker build -t $IMAGE_NAME:latest .
+
+      - name: Run Docker Container for Testing
         env:
           IMAGE_NAME: spritegenix/cyber-sec-backend
         run: |
-          docker build -t $IMAGE_NAME:latest .
-          docker push $IMAGE_NAME:latest
+          docker run -d --name test-container -p 4000:4000 --env-file .env $IMAGE_NAME:latest
+          sleep 10  # Give the app time to start
+          docker logs test-container  # Check logs for issues
+
+      - name: Check if Container is Running
+        run: |
+          if [ "$(docker inspect -f '{{.State.Running}}' test-container)" != "true" ]; then
+            echo "Container failed to start. Exiting..."
+            exit 1
+          fi
+
+      - name: Stop and Remove Test Container
+        run: docker stop test-container && docker rm test-container
+
+      - name: Push Docker Image to Docker Hub (Only if Tests Pass)
+        env:
+          IMAGE_NAME: spritegenix/cyber-sec-backend
+        run: docker push $IMAGE_NAME:latest
 
       - name: Cleanup .env File
         run: rm -f .env
