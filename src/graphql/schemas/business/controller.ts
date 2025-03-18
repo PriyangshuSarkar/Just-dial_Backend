@@ -367,9 +367,9 @@ export const businessSignup = async (_: unknown, args: BusinessSignupInput) => {
 
     const business = await tx.business.create({
       data: {
-        name: validatedData.email
-          ? validatedData.email.split("@")[0]
-          : validatedData.phone,
+        // name: validatedData.email
+        //   ? validatedData.email.split("@")[0]
+        //   : validatedData.phone,
       },
     });
 
